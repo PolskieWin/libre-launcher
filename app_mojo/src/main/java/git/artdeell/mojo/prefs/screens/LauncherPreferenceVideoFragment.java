@@ -14,6 +14,7 @@ import androidx.preference.SwitchPreferenceCompat;
 
 import git.artdeell.mojo.BuildConfig;
 import git.artdeell.mojo.R;
+import git.artdeell.mojo.Tools;
 
 import git.artdeell.mojo.contracts.OpenDocumentWithExtension;
 import git.artdeell.mojo.game.renderer.RendererCache;
