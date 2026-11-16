@@ -94,6 +94,9 @@ jobs:
         run: |
           md5sum out/LibreLauncher-debug-full.apk > out/LibreLauncher-debug-full.md5
           md5sum out/LibreLauncher-debug-noruntime.apk > out/LibreLauncher-debug-noruntime.md5
+          if [ -f out/LibreLauncher-release.apk ]; then
+            md5sum out/LibreLauncher-release.apk > out/LibreLauncher-release.md5
+          fi
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -133,7 +136,10 @@ jobs:
             Libre Launcher nightly build.
             Commit hash: ${{ github.sha }}
           files: |
+            out/LibreLauncher-release.apk
             out/LibreLauncher-debug-full.apk
+            out/LibreLauncher-debug-noruntime.apk
+            out/*.md5
 
       - name: Upload onto the Google Play testing track
         continue-on-error: true
