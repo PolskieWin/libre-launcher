@@ -17,28 +17,32 @@ public class ForgelikeVersionListAdapter extends BaseExpandableListAdapter imple
 
     public ForgelikeVersionListAdapter(List<String> forgeVersions, LayoutInflater layoutInflater, ForgelikeUtils utils) {
         this.mLayoutInflater = layoutInflater;
-        mGameVersions = new ArrayList<>();
-        mLoaderVersions = new ArrayList<>();
+        java.util.Map<String, List<String>> versionMap = new java.util.LinkedHashMap<>();
         for(String version : forgeVersions) {
             if(utils.shouldSkipVersion(version)) continue;
             String gameVersion = utils.processVersionString(version);
-            List<String> versionList;
-            int gameVersionIndex = mGameVersions.indexOf(gameVersion);
-            if(gameVersionIndex != -1) {
-                versionList = mLoaderVersions.get(gameVersionIndex);
-            } else {
-                versionList = new ArrayList<>();
-                mGameVersions.add(gameVersion);
-                mLoaderVersions.add(versionList);
+            List<String> list = versionMap.get(gameVersion);
+            if (list == null) {
+                list = new ArrayList<>();
+                versionMap.put(gameVersion, list);
             }
-            versionList.add(version);
+            list.add(version);
         }
-        if(utils.isVersionOrderInversed()) {
-            for (List<String> versionList : mLoaderVersions) {
-                reverseList(versionList);
+
+        mGameVersions = new ArrayList<>(versionMap.keySet());
+        mGameVersions.sort((v1, v2) -> {
+            git.artdeell.mojo.modding.ComparableVersionString cv1 = git.artdeell.mojo.modding.ComparableVersionString.parse(v1);
+            git.artdeell.mojo.modding.ComparableVersionString cv2 = git.artdeell.mojo.modding.ComparableVersionString.parse(v2);
+            return cv2.compareTo(cv1);
+        });
+
+        mLoaderVersions = new ArrayList<>(mGameVersions.size());
+        for (String gv : mGameVersions) {
+            List<String> subList = versionMap.get(gv);
+            if (subList != null) {
+                reverseList(subList);
+                mLoaderVersions.add(subList);
             }
-            reverseList(mLoaderVersions);
-            reverseList(mGameVersions);
         }
     }
 

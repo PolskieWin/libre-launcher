@@ -189,9 +189,11 @@ public class ImportControlActivity extends Activity {
     private static boolean verify() {
         try {
             LayoutBitmaps.ControlsContainer layout = LayoutBitmaps.load(new File(Tools.CTRLMAP_PATH,"TMP_IMPORT_FILE.json"));
-            JSONObject layoutJobj = new JSONObject(layout.mControlsJson);
-            return layoutJobj.has("version") && layoutJobj.has("mControlDataList");
-        }catch (IOException | JSONException e) {
+            // Support all control versions (v1, v2, v3... and legacy Pojav controls)
+            android.graphics.Point dummySize = new android.graphics.Point(1920, 1080);
+            git.artdeell.mojo.input.CustomControls controls = git.artdeell.mojo.input.LayoutConverter.internalLoad(dummySize, layout.mControlsJson);
+            return controls != null && (controls.mControlDataList != null || controls.mDrawerDataList != null || controls.mJoystickDataList != null);
+        } catch (Exception e) {
             Log.w("ImportControlActivity", "Failed to validate layout", e);
             return false;
         }

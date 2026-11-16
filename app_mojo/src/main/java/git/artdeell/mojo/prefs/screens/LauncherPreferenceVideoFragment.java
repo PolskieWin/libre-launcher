@@ -39,6 +39,27 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
             registerForActivityResult(new OpenDocumentWithExtension("zip"), data -> {
                 if(data != null) DriverInstaller.installDriverFromUri(getContext(), data, this::openDriverDialog);
             });
+    private final ActivityResultLauncher<Object> mImportRenderer =
+            registerForActivityResult(new OpenDocumentWithExtension(new String[]{"apk", "zip"}), uri -> {
+                if (uri == null || getContext() == null) return;
+                String filename = Tools.getFileName(getContext(), uri);
+                if (filename != null && filename.toLowerCase().endsWith(".apk")) {
+                    android.content.Intent installIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+                    installIntent.setDataAndType(uri, "application/vnd.android.package-archive");
+                    installIntent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION | android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try {
+                        startActivity(installIntent);
+                    } catch (Exception e) {
+                        Tools.showError(getContext(), e);
+                    }
+                } else {
+                    DriverInstaller.installDriverFromUri(getContext(), uri, () -> {
+                        RendererCache.releaseRendererCache();
+                        updateRendererList();
+                        updateDriversPref();
+                    });
+                }
+            });
     @Override
     public void onCreatePreferences(Bundle b, String str) {
         addPreferencesFromResource(R.xml.pref_video);
@@ -93,6 +114,14 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
         rendererListPreference.setEntries(list.rendererDisplayNames);
         rendererListPreference.setEntryValues(list.rendererIds.toArray(new String[0]));
 
+        Preference importRendererPref = findPreference("import_renderer");
+        if (importRendererPref != null) {
+            importRendererPref.setOnPreferenceClickListener(pref -> {
+                mImportRenderer.launch(null);
+                return true;
+            });
+        }
+
 
         Preference drivers = requirePreference("manageDrivers");
         drivers.setOnPreferenceClickListener(pref -> {
@@ -136,6 +165,15 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
 
         boolean isMobileGluesRenderer = Renderers.MOBILEGLUES_RENDERER.equals(LauncherPreferences.PREF_RENDERER);
         requirePreference("renderer_settings").setVisible(isMobileGluesRenderer);
+    }
+
+    private void updateRendererList() {
+        ListPreference rendererListPreference = findPreference("renderer");
+        if (rendererListPreference != null && getContext() != null) {
+            RendererCache list = RendererCache.getCompatibleRenderers(getContext());
+            rendererListPreference.setEntries(list.rendererDisplayNames);
+            rendererListPreference.setEntryValues(list.rendererIds.toArray(new String[0]));
+        }
     }
 
     private void openDriverDialog(){

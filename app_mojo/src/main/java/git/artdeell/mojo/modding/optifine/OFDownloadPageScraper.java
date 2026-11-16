@@ -16,9 +16,22 @@ public class OFDownloadPageScraper implements TagNodeVisitor {
     private String mDownloadFullUrl;
 
     private String runInner(String url) throws IOException {
-        HtmlCleaner htmlCleaner = new HtmlCleaner();
-        htmlCleaner.clean(new URL(url)).traverse(this);
-        return mDownloadFullUrl;
+        try {
+            HtmlCleaner htmlCleaner = new HtmlCleaner();
+            htmlCleaner.clean(new URL(url)).traverse(this);
+            if (mDownloadFullUrl != null) return mDownloadFullUrl;
+        } catch (Exception ignored) {}
+
+        try {
+            String pageHtml = git.artdeell.mojo.utils.DownloadUtils.downloadString(url);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(downloadx?\\?f=[^\"'>\\s]+)").matcher(pageHtml);
+            if (matcher.find()) {
+                String match = matcher.group(1);
+                return "https://optifine.net/" + match;
+            }
+        } catch (Exception ignored) {}
+
+        return mDownloadFullUrl != null ? mDownloadFullUrl : url;
     }
 
     @Override

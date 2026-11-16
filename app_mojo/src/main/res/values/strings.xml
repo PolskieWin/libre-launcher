@@ -700,6 +700,8 @@
     <string name="driver_config_pref_title">Vulkan Driver</string>
     <string name="driver_config_pref_subtitle">Manage installed AdrenoTools Vulkan drivers and install new</string>
     <string name="driver_config_import">Add</string>
+    <string name="preference_import_renderer_title">Import custom renderer</string>
+    <string name="preference_import_renderer_description">Install an external renderer plugin APK or custom driver archive</string>
     <string name="driver_config_delete">Remove</string>
     <string name="driver_config_use">Use</string>
     <string name="driver_config_already_used">In use</string>
