@@ -66,8 +66,7 @@ public class ControlJoystick extends JoystickView implements ControlInterface {
                 mCurrentDirectionInt = getDirectionInt(angle, strength);
 
                 if (mLastDirectionInt != mCurrentDirectionInt) {
-                    sendDirectionalKeycode(mLastDirectionInt, false);
-                    sendDirectionalKeycode(mCurrentDirectionInt, true);
+                    updateDirection(mLastDirectionInt, mCurrentDirectionInt);
                 }
             }
 
@@ -135,40 +134,26 @@ public class ControlJoystick extends JoystickView implements ControlInterface {
         return (int) (((angle + 22.5) / 45) % 8);
     }
 
-    private void sendDirectionalKeycode(int direction, boolean isDown) {
-        switch (direction) {
-            case DIRECTION_NORTH:
-                sendInput(mDirectionForward, isDown);
-                break;
-            case DIRECTION_NORTH_EAST:
-                sendInput(mDirectionForward, isDown);
-                sendInput(mDirectionRight, isDown);
-                break;
-            case DIRECTION_EAST:
-                sendInput(mDirectionRight, isDown);
-                break;
-            case DIRECTION_SOUTH_EAST:
-                sendInput(mDirectionRight, isDown);
-                sendInput(mDirectionBackward, isDown);
-                break;
-            case DIRECTION_SOUTH:
-                sendInput(mDirectionBackward, isDown);
-                break;
-            case DIRECTION_SOUTH_WEST:
-                sendInput(mDirectionBackward, isDown);
-                sendInput(mDirectionLeft, isDown);
-                break;
-            case DIRECTION_WEST:
-                sendInput(mDirectionLeft, isDown);
-                break;
-            case DIRECTION_NORTH_WEST:
-                sendInput(mDirectionForward, isDown);
-                sendInput(mDirectionLeft, isDown);
-                break;
-            case DIRECTION_FORWARD_LOCK:
-                sendInput(mDirectionForwardLock, isDown);
-                break;
-        }
+    private void updateDirection(int oldDir, int newDir) {
+        boolean oldW = (oldDir == DIRECTION_NORTH || oldDir == DIRECTION_NORTH_EAST || oldDir == DIRECTION_NORTH_WEST);
+        boolean oldS = (oldDir == DIRECTION_SOUTH || oldDir == DIRECTION_SOUTH_EAST || oldDir == DIRECTION_SOUTH_WEST);
+        boolean oldA = (oldDir == DIRECTION_WEST || oldDir == DIRECTION_NORTH_WEST || oldDir == DIRECTION_SOUTH_WEST);
+        boolean oldD = (oldDir == DIRECTION_EAST || oldDir == DIRECTION_NORTH_EAST || oldDir == DIRECTION_SOUTH_EAST);
+
+        boolean newW = (newDir == DIRECTION_NORTH || newDir == DIRECTION_NORTH_EAST || newDir == DIRECTION_NORTH_WEST);
+        boolean newS = (newDir == DIRECTION_SOUTH || newDir == DIRECTION_SOUTH_EAST || newDir == DIRECTION_SOUTH_WEST);
+        boolean newA = (newDir == DIRECTION_WEST || newDir == DIRECTION_NORTH_WEST || newDir == DIRECTION_SOUTH_WEST);
+        boolean newD = (newDir == DIRECTION_EAST || newDir == DIRECTION_NORTH_EAST || newDir == DIRECTION_SOUTH_EAST);
+
+        if (oldW && !newW) sendInput(mDirectionForward, false);
+        if (oldS && !newS) sendInput(mDirectionBackward, false);
+        if (oldA && !newA) sendInput(mDirectionLeft, false);
+        if (oldD && !newD) sendInput(mDirectionRight, false);
+
+        if (!oldW && newW) sendInput(mDirectionForward, true);
+        if (!oldS && newS) sendInput(mDirectionBackward, true);
+        if (!oldA && newA) sendInput(mDirectionLeft, true);
+        if (!oldD && newD) sendInput(mDirectionRight, true);
     }
 
 }

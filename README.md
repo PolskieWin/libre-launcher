@@ -1,111 +1,73 @@
-<H1 align="center">Copper Launcher</H1>
+<h1 align="center">Libre Launcher</h1>
 
-<a href="./README_RU.md">Readme на русском</a>
+<p align="center">
+  <b>A lightweight, high-performance Minecraft: Java Edition launcher for Android</b><br>
+  <i>Forked from Copper Launcher, powered by Rust native controls and full Minecraft 26.3 & 26.4 support.</i>
+</p>
 
-<img src="./app_mojo/src/main/assets/mojo.png" align="left" width="150" height="150" alt="Copper logo">
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-Android-brightgreen" alt="Platform">
+  <img src="https://img.shields.io/badge/engine-Rust%20%2B%20Java%20%2F%20C-orange" alt="Engine">
+  <img src="https://img.shields.io/badge/license-GPLv3-blue" alt="License">
+  <img src="https://img.shields.io/badge/Minecraft-rd--132211%20to%2026.4-green" alt="Minecraft Versions">
+</p>
 
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/CopperLauncher/Copper-Android)
-![GitHub Downloads](https://img.shields.io/github/downloads/CopperLauncher/Copper-Android/total)
-![Platform](https://img.shields.io/badge/platform-Android-green)
-![Min SDK](https://img.shields.io/badge/minSdk-26-blue)
-![Android CI](https://github.com/CopperLauncher/Copper-Android/workflows/Android%20CI/badge.svg)
-![Crowdin](https://badges.crowdin.net/pojavlauncher/localized.svg)
-[![Discord](https://img.shields.io/discord/1355213558631366897?color=5865F2&logo=discord&logoColor=white&label=&style=flat)](https://discord.gg/j8GTQv3YvY)
-[![CurseForge](https://img.shields.io/badge/curseforge-maxjubayeryt-orange?logo=curseforge)](https://www.curseforge.com/members/maxjubayeryt/projects)
-[![Modrinth](https://img.shields.io/badge/modrinth-maxjubayeryt-green?logo=modrinth)](https://modrinth.com/user/maxjubayeryt)
+---
 
-* Copper is a launcher, based on [PojavLauncher](https://github.com/PojavLauncherTeam/PojavLauncher) & [MojoLauncher](https://github.com/MojoLauncher/MojoLauncher), that allows you to play Minecraft: Java Edition on your Android device!
+## 🚀 Key Improvements in Libre Launcher
 
-* It can run almost every version of Minecraft, allowing you to use .jar only installers to install modloaders such as [Forge](https://files.minecraftforge.net/) and [Fabric](http://fabricmc.net/) and mods like [OptiFine](https://optifine.net).
+- **🦀 Rust Native Controls (`libre_controls`)**:
+  - Rebuilt virtual touch & motion tracking pipeline in Rust.
+  - Zero heap allocation during gameplay — eliminates garbage collection lag spikes.
+  - Non-interrupted sprint transitions when turning with virtual joystick (diagonal-to-cardinal key debounce).
+  - Exponential Moving Average (EMA) aim smoothing to remove touchscreen jitter.
+- **🎮 Minecraft 26.3 & 26.4 Ready**:
+  - Full support for 2026 calendar versioning (`26.1`, `26.2`, `26.3`, `26.4`, and `26w...` snapshots).
+  - Fixed NeoForge 4-part version resolution (`26.x.y.z`) preventing version parsing crashes.
+  - Snapshot comparator contract fix in `ComparableVersionString` preventing TimSort crash bugs.
+  - Smart automatic JRE runtime fallback (Java 21/25 LTS for modern 26.x versions).
+- **⚡ Advanced Custom Driver & Renderer Management**:
+  - Direct access to Custom Vulkan Drivers (Turnip / Freedreno) in Video Settings without arbitrary UI hiding.
+  - Full renderer suite: GL4ES, Mesa Zink (OpenGL over Vulkan), OpenLTW, ANGLE, VirGL, and plugin renderers.
+- **🪶 Lightweight & Debloated**:
+  - Stripped unnecessary binder IPC logcat chatter during touch inputs.
+  - Cleaned up obsolete legacy logging tags.
+  - Optimized View touch event propagation to minimize Android UI traversal overhead.
 
-## Navigation
-- [Introduction](#introduction)
-- [Getting Copper](#getting-mojolauncher)
-- [Building](#building) 
-- [Current roadmap](#current-roadmap) 
-- [License](#license) 
-- [Contributing](#contributing) 
-- [Credits & Third party components and their licenses](#credits--third-party-components-and-their-licenses-if-available)
+---
 
-## Introduction 
-* Copper is a Minecraft: Java Edition launcher for Android based on [PojavLauncher](https://github.com/PojavLauncherTeam/PojavLauncher) & [MojoLauncher](https://github.com/MojoLauncher/MojoLauncher)
-* This launcher can launch almost all available Minecraft versions ranging from rd-132211 to 26.x snapshots (including Combat Test versions). 
-* Modding via Forge and Fabric are also supported. 
+## 🛠️ Building
 
-## Getting Copper
+### Android APK Build via Gradle
 
-You can get Copper via four methods:
+```bash
+# Clone the repository with submodules
+git clone --recurse-submodules https://github.com/PolskieWin/libre-launcher.git
+cd libre-launcher
 
-1. You can get the prebuilt app from the [releases section](https://github.com/CopperLauncher/Copper-android/releases/).
-
-2. You can get it from Google Play by clicking on this badge:
-[![Google Play](https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png)](https://play.google.com/store/apps/details?id=com.maxjubayeryt.copper)
-
-3. You can get early builds from [Github Actions](https://github.com/CopperLauncher/Copper-android/actions).
-
-4. You can [build](#building) from source.
-## Building   
-* Build the launcher (it will automatically download all required components)
+# Build Debug APK
+./gradlew :app_mojo:assembleFullDebug
 ```
-./gradlew :app_mojo:assembleDebug
+
+The resulting APK will be located at:
+`app_mojo/build/outputs/apk/full/debug/app_mojo-full-debug.apk`
+
+### Building the Rust Controls Library
+
+```bash
+cd libre_controls
+cargo build --release
+cargo test
 ```
-If you are building on Windows:
-* Replace `./gradlew` with `.\gradlew.bat`
-* Make sure `mojoexec`, `sdl`, `glfw` are symlinked into `app_mojo/src/main/jni/`
 
-## Current roadmap
-- [x] Instance system in favor of profiles
-- [x] Out-of-the box 1.21.5 support
-- [x] mrpack/CurseForge zip import
-- [x] LTW: enable compute shader/image extensions
-- [x] Add Mod/Content manager & browser
-- [x] Add option to share logs to mclo.gs
-- [x] Make the launcher fully m3
-- [x] MS skin manager
-- [ ] Ely.by skin manager (idk how ely.by api works but I will try)
-- [ ] LTW: resolve issues with Create
-- [ ] LTW: switch to a color-renderable format for framebuffers
-- [ ] Modpack management tool
-- [ ] MMC-compatible instance import
-- [ ] Vintage Story support
-- [ ] Implement common native library standard
+---
 
-## Known Issues
-- Some physical mice may have very slow mouse speed
-- On Holy GL4ES, large texture atlases may be distorted (resulting in stretched/blocky textures in modpacks)
-- Probably more, that's why we have a bug tracker ;) 
+## 📜 Credits & Lineage
 
-## License
-- Copper is licensed under [GNU LGPLv3](https://github.com/CopperLauncher/Copper-android/blob/v3_openjdk/LICENSE).
+Libre Launcher is built upon the incredible work of the open-source Minecraft on mobile community:
+- **[Copper Launcher](https://github.com/CopperLauncher/Copper-Android)** by MaxJubayerYT
+- **[MojoLauncher](https://github.com/MojoLauncher/MojoLauncher)**
+- **[Amethyst Launcher](https://github.com/AngelAuraMC/Amethyst-Android)**
+- **[PojavLauncher](https://github.com/PojavLauncherTeam/PojavLauncher)**
 
-## Contributing
-Contributions are welcome! We appreciate any type of contribution, not only code. For example, you can help the wiki shape up. You can help the [translation](https://mojolauncher.ru/translate/translator.html) too!
-
-
-Any code change to this repository should be submitted as a pull request. The description should explain what the code does and give steps to execute it.
-
-## Third party components, licenses and sources (when applicable)
-- [PojavLauncher](https://github.com/PojavLauncherTeam/PojavLauncher): [GNU LGPLv3 License](https://github.com/PojavLauncherTeam/PojavLauncher/blob/v3_openjdk/LICENSE)
-- [MojoLauncher](https://github.com/MojoLauncher/MojoLauncher): [GNU LGPLv3 License](https://github.com/MojoLauncher/MojoLauncher/blob/v3_openjdk/LICENSE)
-- [Pojav-Reborn](https://github.com/TeamPojavLauncher/PojavLauncher): [GNU LGPLv3 License](https://github.com/TeamPojavLauncher/PojavLauncher/blob/v3_openjdk/LICENSE)
-- [PGW](https://github.com/Vera-Firefly/Pojav-Glow-Worm): [GPL-3 License](https://github.com/Vera-Firefly/Pojav-Glow-Worm/blob/main_v3/LICENSE)
-- Android Support Libraries: [Apache License 2.0](https://android.googlesource.com/platform/prebuilts/maven_repo/android/+/master/NOTICE.txt).
-- [Holy GL4ES](https://github.com/artdeell/gl4es_extra_extra/): [MIT License](https://github.com/ptitSeb/gl4es/blob/master/LICENSE).<br>
-- [OpenJDK](https://github.com/PojavLauncherTeam/openjdk-multiarch-jdk8u): [GNU GPLv2 License](https://openjdk.java.net/legal/gplv2+ce.html).<br>
-- [MobileGlues](https://github.com/MobileGL-Dev/MobileGlues): [LGPL-2.1 License](https://github.com/MobileGL-Dev/MobileGlues/blob/main/LICENSE)
-- [SFPEW](https://github.com/MobileGL-Dev/SimpleFPEWrapper): [GNU LGPLv3 License](https://github.com/MobileGL-Dev/SimpleFPEWrapper/blob/main/LICENSE)
-- [GLFW](https://github.com/MojoLauncher/glfw): [zlib license](https://github.com/MojoLauncher/glfw/blob/glfw34/LICENSE.md)
-- [SDL](https://github.com/MojoLauncher/MojoSDL): [zlib license](https://github.com/MojoLauncher/MojoSDL/blob/main/LICENSE.txt)
-- [LWJGL2-GLFW](https://github.com/MojoLauncher/lwjgl2-glfw): 3-Clause BSD license
-- [LWJGL3](https://github.com/LWJGL/lwjgl3): [BSD-3 License](https://github.com/LWJGL/lwjgl3/blob/master/LICENSE.md).
-- [mojoexec](https://github.com/MojoLauncher/mojoexec): [MIT License](https://github.com/MojoLauncher/mojoexec/blob/master/LICENSE)
-- [Mesa 3D Graphics Library](https://gitlab.freedesktop.org/mesa/mesa): [MIT License](https://docs.mesa3d.org/license.html).
-- [pro-grade](https://github.com/pro-grade/pro-grade) (Java sandboxing security manager): [Apache License 2.0](https://github.com/pro-grade/pro-grade/blob/master/LICENSE.txt).
-- [Authlib-Injector](https://github.com/yushijinhun/authlib-injector) (Used for authorisation via ely.by): [AGPL-3.0](https://github.com/yushijinhun/authlib-injector/blob/develop/LICENSE).
-- [alsoft](https://github.com/kcat/openal-soft/) (Audio output library): [GNU Library General Public License](https://github.com/kcat/openal-soft/blob/master/COPYING) and [Modified PFFFT](https://github.com/kcat/openal-soft/blob/master/LICENSE-pffft).
-- [oboe](https://github.com/google/oboe): [Apache License 2.0](https://github.com/google/oboe/blob/main/LICENSE).
-- Thanks to [Mineskin](https://mineskin.eu/) for providing Minecraft avatars.
-
-## Special thanks
-- Thanks to [MojoLauncher](https://github.com/MojoLauncher/MojoLauncher/) for the android icons, Made by [Yarpopcat08](https://github.com/Yarpopcat08).
-- Thanks to [whynelo](https://github.com/whynelo) for the new copper icons.
+Licensed under the **GNU General Public License v3.0**.

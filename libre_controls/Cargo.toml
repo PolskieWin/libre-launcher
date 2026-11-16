@@ -1,0 +1,18 @@
+[package]
+name = "libre_controls"
+version = "1.0.0"
+edition = "2021"
+authors = ["PolskieWin", "Libre Launcher Team"]
+description = "Ultra-fast, zero-allocation native input and controls engine for Libre Launcher"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

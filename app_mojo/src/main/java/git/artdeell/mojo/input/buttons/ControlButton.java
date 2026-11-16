@@ -188,7 +188,7 @@ public class ControlButton extends TextView implements ControlInterface {
                 return false;
         }
 
-        return super.onTouchEvent(event);
+        return true;
     }
 
 
@@ -213,7 +213,6 @@ public class ControlButton extends TextView implements ControlInterface {
                 int modifiers = CallbackBridge.getCurrentMods();
                 PLATFORM.sendKeyEvent(keycode, isDown ? 1 : 0, modifiers);
             }else{
-                Log.i("punjabilauncher", "sendSpecialKey("+keycode+","+isDown+")");
                 sendSpecialKey(keycode, isDown);
             }
         }

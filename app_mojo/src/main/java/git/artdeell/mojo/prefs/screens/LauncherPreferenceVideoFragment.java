@@ -103,8 +103,13 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
         boolean gplay = BuildConfig.BUILD_TYPE.equals("gplay");
         boolean isAdreno = GpuUtils.getGlInfo().isAdreno();
         boolean hasSupport = DriverManager.isSupportedByDevice();
-        customVk.setVisible(hasSupport && (!gplay || isAdreno));
+        customVk.setVisible(hasSupport);
         customVk.setChecked(LauncherPreferences.PREF_ZINK_PREFER_SYSTEM_DRIVER);
+        customVk.setOnPreferenceChangeListener((p, newValue) -> {
+            LauncherPreferences.PREF_ZINK_PREFER_SYSTEM_DRIVER = Boolean.TRUE.equals(newValue);
+            updateDriversPref();
+            return true;
+        });
 
         computeVisibility();
     }
@@ -145,16 +150,18 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
 
         Preference preference = requirePreference("manageDrivers");
         boolean hasSupport = DriverManager.isSupportedByDevice();
-        boolean gplay = BuildConfig.BUILD_TYPE.equals("gplay");
-        if(LauncherPreferences.PREF_ZINK_PREFER_SYSTEM_DRIVER || gplay || !hasSupport){
+        if (!hasSupport) {
             preference.setVisible(false);
             return;
         }
         Driver driver = DriverManager.getPreferredDriver();
-        if(driver instanceof BuiltinDriver)
+        if (LauncherPreferences.PREF_ZINK_PREFER_SYSTEM_DRIVER) {
+            preference.setSummary(getString(R.string.preference_vulkan_driver_system_title) + " (Active)");
+        } else if (driver instanceof BuiltinDriver) {
             preference.setSummary(BuiltinDriver.deviceHasDriver() ? R.string.driver_default_name : R.string.driver_config_pref_subtitle);
-        else
+        } else {
             preference.setSummary(driver.getName());
+        }
         preference.setVisible(true);
     }
 }

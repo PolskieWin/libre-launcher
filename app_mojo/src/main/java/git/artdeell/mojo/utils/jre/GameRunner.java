@@ -240,7 +240,16 @@ public class GameRunner {
         }
 
         int requiredJavaVersion = 8;
-        if(versionInfo.javaVersion != null) requiredJavaVersion = versionInfo.javaVersion.majorVersion;
+        if(versionInfo.javaVersion != null) {
+            requiredJavaVersion = versionInfo.javaVersion.majorVersion;
+        } else if (versionInfo.id != null) {
+            String id = versionInfo.id.toLowerCase();
+            if (id.startsWith("26.") || id.startsWith("26w") || id.startsWith("25.") || id.startsWith("25w") || id.startsWith("24.") || id.startsWith("24w") || id.startsWith("1.21") || id.startsWith("1.20.5") || id.startsWith("1.20.6")) {
+                requiredJavaVersion = 21;
+            } else if (id.startsWith("1.18") || id.startsWith("1.19") || id.startsWith("1.20")) {
+                requiredJavaVersion = 17;
+            }
+        }
 
         Runtime runtime = MultiRTUtils.forceReread(pickRuntime(instance, requiredJavaVersion));
 

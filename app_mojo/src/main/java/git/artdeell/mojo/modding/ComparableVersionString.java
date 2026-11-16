@@ -22,12 +22,16 @@ public class ComparableVersionString implements Comparable<ComparableVersionStri
 
     @Override
     public int compareTo(ComparableVersionString str) {
-        if(!this.isValid) return str.getProper().compareTo(this.original);
+        if (!this.isValid && !str.isValid) {
+            return this.original.compareTo(str.original);
+        }
+        if (!this.isValid) return -1;
+        if (!str.isValid) return 1;
 
-        if(this.major != str.major) return Integer.compare(this.major, str.major);
-        if(this.minor != str.minor) return Integer.compare(this.minor, str.minor);
-        if(this.patch != str.patch) return Integer.compare(this.patch, str.patch);
-        return 0;
+        if (this.major != str.major) return Integer.compare(this.major, str.major);
+        if (this.minor != str.minor) return Integer.compare(this.minor, str.minor);
+        if (this.patch != str.patch) return Integer.compare(this.patch, str.patch);
+        return this.original.compareTo(str.original);
     }
 
     public String getOriginal() {

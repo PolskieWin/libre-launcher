@@ -31,9 +31,8 @@ public class InGameEventProcessor extends TouchEventProcessor {
                 break;
             case MotionEvent.ACTION_MOVE:
                 mTracker.trackEvent(motionEvent);
-                float[] motionVector = mTracker.getMotionVector();
-                float deltaX = (float) (motionVector[0] * mSensitivity);
-                float deltaY = (float) (motionVector[1] * mSensitivity);
+                float deltaX = (float) (mTracker.getDeltaX() * mSensitivity);
+                float deltaY = (float) (mTracker.getDeltaY() * mSensitivity);
                 mLeftClickGesture.setMotion(deltaX, deltaY);
                 mRightClickGesture.setMotion(deltaX, deltaY);
                 applyMoveVector(deltaX, deltaY);

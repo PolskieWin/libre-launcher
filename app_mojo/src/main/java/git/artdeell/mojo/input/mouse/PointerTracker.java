@@ -23,8 +23,7 @@ public class PointerTracker {
 
     public int trackEvent(MotionEvent motionEvent) {
         int trackedPointerIndex = motionEvent.findPointerIndex(mTrackedPointerId);
-        int pointerCount = motionEvent.getPointerCount();
-        if(trackedPointerIndex == -1 || mPointerCount != pointerCount || mColdStart) {
+        if(trackedPointerIndex == -1 || mColdStart) {
             startTracking(motionEvent);
             trackedPointerIndex = 0;
         }
@@ -35,6 +34,14 @@ public class PointerTracker {
         mLastX = trackedX;
         mLastY = trackedY;
         return trackedPointerIndex;
+    }
+
+    public float getDeltaX() {
+        return mMotionVector[0];
+    }
+
+    public float getDeltaY() {
+        return mMotionVector[1];
     }
 
     public float[] getMotionVector() {
