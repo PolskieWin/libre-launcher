@@ -30,6 +30,7 @@ public class Account {
     public AuthType authType = AuthType.MICROSOFT;
     public boolean isMicrosoft = true;
     public String refreshToken = "0";
+    public String msaRefreshToken;
     public String xuid;
     public long expiresAt;
     private transient Bitmap mFaceCache;
@@ -108,6 +109,11 @@ public class Account {
             Account account = JSONUtils.readFromFile(mSaveLocation, Account.class);
             if(account == null) return null;
             account.mSaveLocation = mSaveLocation;
+            if (account.refreshToken == null || account.refreshToken.equals("0")) {
+                if (account.msaRefreshToken != null && !account.msaRefreshToken.equals("0")) {
+                    account.refreshToken = account.msaRefreshToken;
+                }
+            }
             if (account.authType == AuthType.MICROSOFT || account.isMicrosoft) {
                 account.authType = AuthType.MICROSOFT;
                 account.isMicrosoft = true;

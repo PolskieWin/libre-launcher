@@ -68,8 +68,12 @@ public class Accounts {
 		if (acc.username == null) {
 			acc.username = "0";
 		}
-		if (acc.refreshToken == null) {
-			acc.refreshToken = "0";
+		if (acc.refreshToken == null || acc.refreshToken.equals("0")) {
+			if (acc.msaRefreshToken != null && !acc.msaRefreshToken.equals("0")) {
+				acc.refreshToken = acc.msaRefreshToken;
+			} else {
+				acc.refreshToken = "0";
+			}
 		}
 		if (acc.authType == null) {
 			acc.authType = acc.isMicrosoft ? AuthType.MICROSOFT : AuthType.LOCAL;
