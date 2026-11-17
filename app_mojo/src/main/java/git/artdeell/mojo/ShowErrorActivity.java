@@ -2,6 +2,7 @@ package git.artdeell.mojo;
 
 import android.app.Activity;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,7 +15,7 @@ import git.artdeell.mojo.utils.NotificationUtils;
 
 import java.io.Serializable;
 
-public class ShowErrorActivity extends Activity {
+public class ShowErrorActivity extends AppCompatActivity {
 
     private static final String ERROR_ACTIVITY_REMOTE_TASK = "remoteTask";
 

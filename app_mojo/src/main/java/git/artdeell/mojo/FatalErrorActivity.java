@@ -29,7 +29,7 @@ public class FatalErrorActivity extends AppCompatActivity {
 			"Crash stack trace saved to " + strSavePath + "." :
 			"Storage permission is required to save crash stack trace!";
 		
-		new MaterialAlertDialogBuilder(this)
+		new MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_Copper_MaterialAlertDialog)
 			.setTitle(R.string.error_fatal)
 			.setMessage(errHeader + "\n\n" + stackTrace)
 			.setPositiveButton(android.R.string.ok, (p1, p2) -> finish())
@@ -40,6 +40,7 @@ public class FatalErrorActivity extends AppCompatActivity {
 
 				finish();
 			})
+			.setOnDismissListener(d -> finish())
 			.setCancelable(false)
 			.show();
 	}

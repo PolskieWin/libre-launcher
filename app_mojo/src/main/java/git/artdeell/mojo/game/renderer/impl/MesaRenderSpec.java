@@ -34,7 +34,7 @@ public class MesaRenderSpec implements RenderSpec {
         envMap.put("MESA_NO_ERROR", "1");
     }
     protected boolean hasMesa() {
-        return SDK_INT >= 29 && new File(Tools.NATIVE_LIB_DIR, this.library()).exists();
+        return Tools.NATIVE_LIB_DIR != null && new File(Tools.NATIVE_LIB_DIR, this.library()).exists();
     }
     public boolean compatibleDevice(Context context) {
         return hasMesa() && GpuUtils.checkChromebook(context.getPackageManager());

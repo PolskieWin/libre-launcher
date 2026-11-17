@@ -33,14 +33,13 @@ jobs:
           path: app_mojo/libs
 
       - name: Get Mesa
-        uses: dawidd6/action-download-artifact@v6
-        continue-on-error: true
-        with:
-          repo: CopperLauncher/Mesa-AAR-Builder
-          workflow: build-aar.yml
-          workflow_conclusion: success
-          name: mesa.aar
-          path: app_mojo/libs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p app_mojo/libs
+          if [ ! -f app_mojo/libs/mesa.aar ]; then
+            gh run download --repo CopperLauncher/Mesa-AAR-Builder --name mesa.aar --dir app_mojo/libs || true
+          fi
 
       - uses: gradle/actions/setup-gradle@v4
         with:

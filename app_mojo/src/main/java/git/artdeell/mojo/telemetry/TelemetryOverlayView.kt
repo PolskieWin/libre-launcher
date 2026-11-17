@@ -48,6 +48,7 @@ class TelemetryOverlayView @JvmOverloads constructor(
     }
 
     init {
+        visibility = View.GONE
         orientation = HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         isFocusable = false
@@ -173,7 +174,6 @@ class TelemetryOverlayView @JvmOverloads constructor(
     }
 
     fun stop() {
-        if (!isRunning) return
         isRunning = false
         visibility = View.GONE
         Choreographer.getInstance().removeFrameCallback(this)

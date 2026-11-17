@@ -400,7 +400,7 @@ public final class Tools {
 
         Runnable runnable = () -> {
             final String errMsg = showMore ? printToString(e) : rolledMessage != null ? rolledMessage : e.getMessage();
-            AlertDialog.Builder builder = new MaterialAlertDialogBuilder(ctx)
+            AlertDialog.Builder builder = new MaterialAlertDialogBuilder(ctx, R.style.ThemeOverlay_Copper_MaterialAlertDialog)
                     .setTitle(titleId)
                     .setMessage(errMsg)
                     .setPositiveButton(android.R.string.ok, (p1, p2) -> {

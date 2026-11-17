@@ -23,7 +23,7 @@ public final class BuiltinDriver implements Driver {
     }
 
     public static boolean deviceHasDriver(){
-        // In the future we may include more drivers so this should be extended then
-        return GpuUtils.getGlInfo().isAdreno() && new File(Tools.NATIVE_LIB_DIR, DRIVER_LIB).exists();
+        if (Tools.NATIVE_LIB_DIR == null) return false;
+        return new File(Tools.NATIVE_LIB_DIR, DRIVER_LIB).exists();
     }
 }
