@@ -141,6 +141,22 @@ jobs:
             out/LibreLauncher-debug-noruntime.apk
             out/*.md5
 
+      - name: Release Tagged APK
+        if: (github.repository_owner == 'PolskieWin' || github.repository_owner == 'CopperLauncher') && startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          name: Libre Launcher ${{ github.ref_name }}
+          prerelease: false
+          tag_name: ${{ github.ref_name }}
+          body: |
+            Libre Launcher ${{ github.ref_name }} release.
+            Commit hash: ${{ github.sha }}
+          files: |
+            out/LibreLauncher-release.apk
+            out/LibreLauncher-debug-full.apk
+            out/LibreLauncher-debug-noruntime.apk
+            out/*.md5
+
       - name: Upload onto the Google Play testing track
         continue-on-error: true
         if: github.repository_owner == 'CopperLauncher' && github.ref == 'refs/heads/v3_openjdk'
