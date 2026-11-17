@@ -1,6 +1,7 @@
 <h1 align="center">Libre Launcher</h1>
 
 <p align="center">
+  <img src="./app_mojo/src/main/ic_launcher-playstore.png" width="128" height="128" alt="Libre Launcher logo"><br>
   <b>A lightweight, high-performance Minecraft: Java Edition launcher for Android</b><br>
   <i>Forked from Copper Launcher, powered by Rust native controls and full Minecraft 26.3 & 26.4 support.</i>
 </p>

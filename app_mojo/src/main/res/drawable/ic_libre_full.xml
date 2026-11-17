@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Dark Navy Rounded Squircle Background -->
+    <path
+        android:fillColor="#10141D"
+        android:pathData="M24,4 L84,4 C95.04,4 104,12.96 104,24 L104,84 C104,95.04 95.04,104 84,104 L24,104 C12.96,104 4,95.04 4,84 L4,24 C4,12.96 12.96,4 24,4 Z" />
+
+    <!-- Subtle Cyan Border -->
+    <path
+        android:strokeColor="#3300E5FF"
+        android:strokeWidth="1.5"
+        android:pathData="M24,4 L84,4 C95.04,4 104,12.96 104,24 L104,84 C104,95.04 95.04,104 84,104 L24,104 C12.96,104 4,95.04 4,84 L4,24 C4,12.96 12.96,4 24,4 Z" />
+
+    <!-- Background Glow -->
+    <path
+        android:fillColor="#1800E5FF"
+        android:pathData="M54,20 C72,20 86,34 86,54 C86,74 72,88 54,88 C36,88 22,74 22,54 C22,34 36,20 54,20 Z" />
+
+    <!-- Isometric Cube - Top Face -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M54,26 L78,39 L54,52 L30,39 Z" />
+
+    <!-- Isometric Cube - Left Face -->
+    <path
+        android:fillColor="#0091EA"
+        android:pathData="M30,39 L54,52 L54,78 L30,65 Z" />
+
+    <!-- Isometric Cube - Right Face -->
+    <path
+        android:fillColor="#01579B"
+        android:pathData="M54,52 L78,39 L78,65 L54,78 Z" />
+
+    <!-- Stylized "L" (Libre) Monogram -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M49,36 L55,33 L55,62 L63,58 L63,65 L49,72 Z" />
+
+    <!-- Accent Emerald Spark -->
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M76,30 L80,32 L78,36 L74,34 Z" />
+</vector>
