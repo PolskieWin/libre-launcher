@@ -18,6 +18,7 @@ public enum HomeTileType {
     INSTALL_JAR(R.string.main_install_jar_file, R.drawable.ic_px_java_run, 4, 1, false, true),
     SHARE_LOGS(R.string.main_share_logs, R.drawable.ic_px_sharelog, 4, 1, false, true),
     INSTANCE(R.string.home_tile_instance, R.drawable.ic_px_play, 6, 2, false, false),
+    TIME_PLAYED(R.string.home_tile_time_played, R.drawable.ic_px_mg_author, 6, 2, false, true),
     TEXT(R.string.home_tile_text, R.drawable.ic_px_drag_handle, 6, 1, true, false),
     SEPARATOR(R.string.home_tile_separator, R.drawable.ic_px_drag_handle, HomeTileStore.COLUMNS, 1, true, false);
 

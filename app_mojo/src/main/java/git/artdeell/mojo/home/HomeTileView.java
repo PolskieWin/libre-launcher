@@ -31,8 +31,11 @@ import androidx.core.graphics.drawable.DrawableCompat;
 
 import git.artdeell.mojo.R;
 import git.artdeell.mojo.Tools;
+import git.artdeell.mojo.authenticator.accounts.Account;
+import git.artdeell.mojo.authenticator.accounts.Accounts;
 import git.artdeell.mojo.instances.Instance;
 import git.artdeell.mojo.instances.InstanceIconProvider;
+import git.artdeell.mojo.utils.PlayTimeTracker;
 import git.artdeell.mojo.utils.ThemeColors;
 
 /**
@@ -83,8 +86,44 @@ final class HomeTileView extends ViewGroup {
         if (type == HomeTileType.SEPARATOR) buildSeparator();
         else if (type == HomeTileType.TEXT) buildText();
         else if (type == HomeTileType.INSTANCE) buildInstance();
+        else if (type == HomeTileType.TIME_PLAYED) buildTimePlayed();
         else buildAction();
         applyStyle();
+    }
+
+    private void buildTimePlayed() {
+        setClickable(true);
+        setFocusable(true);
+        mIcon = newIcon();
+        mTitle = newText(13, true);
+        mSubtitle = newText(11, false);
+        mSubtitle.setTextColor(ThemeColors.get(this, com.google.android.material.R.attr.colorOnSurfaceVariant));
+        addView(mIcon);
+        addView(mTitle);
+        addView(mSubtitle);
+        bindTimePlayed();
+    }
+
+    void bindTimePlayed() {
+        if (mType != HomeTileType.TIME_PLAYED) return;
+        try {
+            Account account = Accounts.getCurrent();
+            Bitmap skinFace = account != null ? account.getSkinFace() : null;
+            if (skinFace != null && !skinFace.isRecycled()) {
+                mIcon.setImageBitmap(skinFace);
+            } else {
+                mIcon.setImageResource(R.drawable.ic_px_mg_author);
+            }
+            String username = account != null && Tools.isValidString(account.username) ? account.username : "Player";
+            mTitle.setText(username);
+            String playTime = PlayTimeTracker.getFormattedTotalTime(getContext());
+            mSubtitle.setText(playTime);
+            setContentDescription(username + " - " + playTime);
+        } catch (Throwable t) {
+            mTitle.setText("Libre");
+            mSubtitle.setText(PlayTimeTracker.getFormattedTotalTime(getContext()));
+        }
+        requestLayout();
     }
 
     private int dp(float value) {
@@ -254,6 +293,7 @@ final class HomeTileView extends ViewGroup {
         if (mType == HomeTileType.SEPARATOR) planSeparator(w, h);
         else if (mType == HomeTileType.TEXT) planText(w, h);
         else if (mType == HomeTileType.INSTANCE) planInstance(w, h);
+        else if (mType == HomeTileType.TIME_PLAYED) planTimePlayed(w, h);
         else planAction(w, h);
         measureTo(mIcon, mIconRect);
         measureTo(mTitle, mTitleRect);
@@ -405,6 +445,52 @@ final class HomeTileView extends ViewGroup {
             mPlayRect = rect(w / 2 + spacing, y, button, button);
         } else {
             mPlayRect = rect((w - button) / 2, y, button, button);
+        }
+    }
+
+    private void planTimePlayed(int w, int h) {
+        int pad = dp(8);
+        int titleHeight = mTitle.getLineHeight();
+        int subtitleHeight = mSubtitle != null ? mSubtitle.getLineHeight() : 0;
+        boolean horizontal = w >= h * 1.5f && h < dp(120);
+        if (horizontal) {
+            int icon = clamp(h - dp(12), dp(24), dp(44));
+            int gap = dp(8);
+            mIconRect = rect(pad, (h - icon) / 2, icon, icon);
+            int left = pad + icon + gap;
+            int textWidth = Math.max(0, w - pad - left);
+            if (textWidth >= dp(40)) {
+                boolean subtitle = h >= dp(44);
+                int group = titleHeight + (subtitle ? subtitleHeight : 0);
+                int top = (h - group) / 2;
+                mTitleRect = rect(left, top, textWidth, titleHeight);
+                if (subtitle && mSubtitle != null) mSubtitleRect = rect(left, top + titleHeight, textWidth, subtitleHeight);
+                setTextStyle(mTitle, 1, Gravity.START | Gravity.CENTER_VERTICAL);
+                if (mSubtitle != null) setTextStyle(mSubtitle, 1, Gravity.START | Gravity.CENTER_VERTICAL);
+            }
+            return;
+        }
+
+        // Stacked
+        int icon = dp(32), gap = dp(4), padV = dp(6);
+        int totalH = 2 * padV + icon + gap + titleHeight + subtitleHeight;
+        if (h >= totalH) {
+            int top = (h - totalH) / 2;
+            mIconRect = rect((w - icon) / 2, top, icon, icon);
+            mTitleRect = rect(pad, top + icon + gap, w - 2 * pad, titleHeight);
+            if (mSubtitle != null) mSubtitleRect = rect(pad, top + icon + gap + titleHeight, w - 2 * pad, subtitleHeight);
+            setTextStyle(mTitle, 1, Gravity.CENTER_HORIZONTAL);
+            if (mSubtitle != null) setTextStyle(mSubtitle, 1, Gravity.CENTER_HORIZONTAL);
+        } else {
+            int smallH = icon + gap + titleHeight;
+            if (h >= smallH) {
+                int top = (h - smallH) / 2;
+                mIconRect = rect((w - icon) / 2, top, icon, icon);
+                mTitleRect = rect(pad, top + icon + gap, w - 2 * pad, titleHeight);
+                setTextStyle(mTitle, 1, Gravity.CENTER_HORIZONTAL);
+            } else {
+                mIconRect = rect((w - icon) / 2, (h - icon) / 2, icon, icon);
+            }
         }
     }
 

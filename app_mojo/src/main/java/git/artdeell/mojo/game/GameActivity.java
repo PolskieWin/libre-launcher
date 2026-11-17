@@ -80,6 +80,7 @@ import git.artdeell.mojo.services.GameService;
 import git.artdeell.mojo.tasks.AsyncAssetManager;
 import git.artdeell.mojo.utils.JREUtils;
 import git.artdeell.mojo.utils.MCOptionUtils;
+import git.artdeell.mojo.utils.PlayTimeTracker;
 import git.artdeell.mojo.authenticator.accounts.Account;
 import git.artdeell.mojo.game.renderer.impl.GLESRenderSpec;
 import git.artdeell.mojo.utils.jre.GameRunner;
@@ -109,6 +110,15 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
     private GameRenderer mGameRenderer;
     private TelemetryOverlayView mTelemetryOverlayView;
     private HibernateAfkManager mHibernateAfkManager;
+
+    private final Handler mPlayTimeHandler = new Handler(Looper.getMainLooper());
+    private final Runnable mPlayTimeFlushRunnable = new Runnable() {
+        @Override
+        public void run() {
+            PlayTimeTracker.flushCurrentSession(GameActivity.this, instance != null ? instance.getKey() : null);
+            mPlayTimeHandler.postDelayed(this, 60000);
+        }
+    };
 
     Instance instance;
     Account account;
@@ -421,12 +431,17 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         if(mTelemetryOverlayView != null && LauncherPreferences.PREF_PERF_OVERLAY) {
             mTelemetryOverlayView.start();
         }
+        PlayTimeTracker.onGameResume(this, instance != null ? instance.getKey() : null);
+        mPlayTimeHandler.removeCallbacks(mPlayTimeFlushRunnable);
+        mPlayTimeHandler.postDelayed(mPlayTimeFlushRunnable, 60000);
         PLATFORM.setHovered(true);
     }
 
     @Override
     protected void onPause() {
         ContextExecutor.clearActivity();
+        mPlayTimeHandler.removeCallbacks(mPlayTimeFlushRunnable);
+        PlayTimeTracker.onGamePause(this, instance != null ? instance.getKey() : null);
         mGyroControl.disable();
         // Avoid going through the JNI each time.
         if (Platform.isGrabbing()){
@@ -460,6 +475,8 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mPlayTimeHandler.removeCallbacks(mPlayTimeFlushRunnable);
+        PlayTimeTracker.onGamePause(this, instance != null ? instance.getKey() : null);
         ContextExecutor.clearActivity();
         FileDialogBridge.cancelAll();
     }

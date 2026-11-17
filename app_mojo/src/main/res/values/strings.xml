@@ -942,4 +942,13 @@
     <string name="preference_bg_overlay_summary">How much of a solid color covers the wallpaper on the other screens. 0 shows it untouched, raise it if the text is hard to read. The home screen is never covered.</string>
     <string name="preference_tiles_infinite_title">Infinite tiles</string>
     <string name="preference_tiles_infinite_summary">On: both sides always have an empty row below the tiles, so you can keep adding tiles and scroll to them. Off: tiles can only go where there is room on the screen or between the ones that are there.</string>
+
+    <!-- Custom Widgets & Play Time -->
+    <string name="home_tile_time_played">Play Time &amp; Skin</string>
+    <string name="widget_time_played_name">Libre: Time Played &amp; Skin</string>
+    <string name="widget_time_played_desc">Shows your player skin and total time played in Libre Launcher</string>
+    <string name="widget_quick_instance_name">Libre: Quick Instance</string>
+    <string name="widget_quick_instance_desc">Launch into your selected Minecraft instance with one tap</string>
+    <string name="widget_time_played_label">Total Play Time</string>
+    <string name="widget_launch">Play</string>
 </resources>

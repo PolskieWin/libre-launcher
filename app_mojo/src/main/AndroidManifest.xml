@@ -141,6 +141,30 @@
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="This application is intended to run a 3rd-party piece of software which cannot be managed using the activity's saved instance state. This service is used for background persistence of this piece of software."/>
         </service>
+
+        <receiver
+            android:name=".widgets.TimePlayedSkinWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_time_played_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_time_played_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.QuickInstanceWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_quick_instance_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_instance_info" />
+        </receiver>
     </application>
     <queries>
         <intent>

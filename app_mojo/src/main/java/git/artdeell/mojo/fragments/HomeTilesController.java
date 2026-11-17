@@ -245,6 +245,10 @@ public final class HomeTilesController {
             case INSTANCE:
                 if (selectInstance(tile)) refreshInstances();
                 break;
+            case TIME_PLAYED:
+                Tools.swapFragment(mHost.requireActivity(), git.artdeell.mojo.skins.SkinEditorFragment.class,
+                        git.artdeell.mojo.skins.SkinEditorFragment.TAG, null);
+                break;
             default:
                 break;
         }

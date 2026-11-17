@@ -248,7 +248,10 @@ public class HomeTileBoard extends ViewGroup implements HomeTileView.Callbacks {
         mSelectedKey = selectedKey;
         for (HomeTile tile : mTiles) {
             HomeTileView view = mViews.get(tile);
-            if (view != null && HomeTileType.INSTANCE.name().equals(tile.type)) applyInstance(tile, view);
+            if (view != null) {
+                if (HomeTileType.INSTANCE.name().equals(tile.type)) applyInstance(tile, view);
+                else if (HomeTileType.TIME_PLAYED.name().equals(tile.type)) view.bindTimePlayed();
+            }
         }
     }
 
