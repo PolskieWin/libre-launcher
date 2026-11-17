@@ -50,7 +50,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/refresh"
+            android:contentDescription="@string/files_refresh"
             android:src="@drawable/ic_refresh"
             android:tint="?attr/colorOnSurfaceVariant" />
 
