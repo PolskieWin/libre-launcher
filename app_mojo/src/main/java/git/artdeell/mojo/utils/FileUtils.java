@@ -87,4 +87,22 @@ public class FileUtils {
     public static String escapeFileName(String name){
         return name.trim().replaceAll("[\\\\/:*?\"<>| \\t\\n]", "_");
     }
+
+    /**
+     * Recursively delete a file or directory.
+     * @param targetFile file or directory to delete
+     * @return true if successfully deleted
+     */
+    public static boolean deleteDirectory(File targetFile) {
+        if (targetFile == null || !targetFile.exists()) return true;
+        if (targetFile.isDirectory()) {
+            File[] children = targetFile.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteDirectory(child);
+                }
+            }
+        }
+        return targetFile.delete();
+    }
 }
