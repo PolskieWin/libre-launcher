@@ -1,7 +1,9 @@
 package git.artdeell.mojo.dialogs;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
+import android.os.Bundle;
 import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -21,6 +24,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import git.artdeell.mojo.R;
 import git.artdeell.mojo.Tools;
+import git.artdeell.mojo.fragments.FileExplorerFragment;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,6 +46,15 @@ public class BuiltinFileManagerDialog {
             return;
         }
 
+        FragmentActivity activity = getFragmentActivity(context);
+        if (activity != null) {
+            Bundle bundle = new Bundle();
+            bundle.putString(FileExplorerFragment.EXTRA_INITIAL_PATH, initialDirectory.getAbsolutePath());
+            bundle.putString(FileExplorerFragment.EXTRA_ROOT_PATH, initialDirectory.getAbsolutePath());
+            Tools.swapFragmentFullScreen(activity, FileExplorerFragment.class, FileExplorerFragment.TAG, bundle);
+            return;
+        }
+
         FileBrowserView browserView = new FileBrowserView(context, initialDirectory);
         AlertDialog dialog = new MaterialAlertDialogBuilder(context)
                 .setTitle(context.getString(R.string.mcl_button_open_directory))
@@ -51,6 +64,16 @@ public class BuiltinFileManagerDialog {
 
         browserView.setDialog(dialog);
         dialog.show();
+    }
+
+    private static FragmentActivity getFragmentActivity(Context context) {
+        while (context instanceof ContextWrapper) {
+            if (context instanceof FragmentActivity) {
+                return (FragmentActivity) context;
+            }
+            context = ((ContextWrapper) context).getBaseContext();
+        }
+        return null;
     }
 
     private static class FileBrowserView extends RecyclerView {

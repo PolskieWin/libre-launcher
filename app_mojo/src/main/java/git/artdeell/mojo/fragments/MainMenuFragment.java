@@ -621,7 +621,10 @@ public class MainMenuFragment extends Fragment {
         }
         File gameDirectory = instance.getGameDirectory();
         if(FileUtils.ensureDirectorySilently(gameDirectory)) {
-            git.artdeell.mojo.dialogs.BuiltinFileManagerDialog.show(context, gameDirectory);
+            Bundle bundle = new Bundle();
+            bundle.putString(FileExplorerFragment.EXTRA_INITIAL_PATH, gameDirectory.getAbsolutePath());
+            bundle.putString(FileExplorerFragment.EXTRA_ROOT_PATH, gameDirectory.getAbsolutePath());
+            Tools.swapFragmentFullScreen(requireActivity(), FileExplorerFragment.class, FileExplorerFragment.TAG, bundle);
         }else {
             Toast.makeText(context, R.string.gamedir_open_failed, Toast.LENGTH_LONG).show();
         }

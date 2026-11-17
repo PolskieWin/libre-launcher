@@ -17,7 +17,6 @@ import git.artdeell.mojo.utils.lifecycle.ContextExecutor;
 import git.artdeell.mojo.prefs.LauncherPreferences;
 import git.artdeell.mojo.tasks.AsyncAssetManager;
 import git.artdeell.mojo.utils.FileUtils;
-import git.artdeell.mojo.utils.LocaleUtils;
 import git.artdeell.mojo.utils.ThemeManager;
 
 import java.io.File;
@@ -110,12 +109,10 @@ public class MojoApplication extends Application {
 	@Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        LocaleUtils.setLocale(this);
     }
 
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        LocaleUtils.setLocale(this);
     }
 }

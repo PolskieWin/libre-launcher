@@ -951,4 +951,23 @@
     <string name="widget_quick_instance_desc">Launch into your selected Minecraft instance with one tap</string>
     <string name="widget_time_played_label">Total Play Time</string>
     <string name="widget_launch">Play</string>
+
+    <!-- Built-in File Explorer -->
+    <string name="files_title">Files</string>
+    <string name="files_empty">This folder is empty</string>
+    <string name="files_new_folder">New folder</string>
+    <string name="files_new_folder_hint">Folder name</string>
+    <string name="files_open_system">Open in system files</string>
+    <string name="files_rename">Rename</string>
+    <string name="files_rename_hint">New name</string>
+    <string name="files_delete_confirm">Delete %1$s?</string>
+    <string name="files_items_count">%1$d items</string>
+    <string name="files_quick_root">Root</string>
+    <string name="files_quick_mods">Mods</string>
+    <string name="files_quick_resourcepacks">Resource Packs</string>
+    <string name="files_quick_saves">Saves</string>
+    <string name="files_quick_screenshots">Screenshots</string>
+    <string name="files_quick_logs">Logs</string>
+    <string name="files_quick_config">Config</string>
+    <string name="files_view_file">File Viewer</string>
 </resources>
