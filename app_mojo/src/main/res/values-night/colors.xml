@@ -37,4 +37,16 @@
     <color name="md_surface_container_highest">#2F231B</color>
     <color name="md_scrim">#000000</color>
     <color name="md_shadow">#000000</color>
+
+    <!-- Widget Theme (Libre Copper Palette) -->
+    <color name="widget_card_bg">#211811</color>
+    <color name="widget_card_stroke">#4E3723</color>
+    <color name="widget_avatar_bg">#2F231B</color>
+    <color name="widget_avatar_stroke">#53453B</color>
+    <color name="widget_btn_bg">#714A27</color>
+    <color name="widget_btn_stroke">#F2BC90</color>
+    <color name="widget_btn_icon">#FFDDC4</color>
+    <color name="widget_text_primary">#F7E2D3</color>
+    <color name="widget_text_secondary">#BAA89B</color>
+    <color name="widget_accent">#F2BC90</color>
 </resources>

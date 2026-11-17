@@ -63,7 +63,7 @@ public class TimePlayedSkinWidgetProvider extends AppWidgetProvider {
         if (skinFace != null && !skinFace.isRecycled()) {
             views.setImageViewBitmap(R.id.widget_skin_avatar, skinFace);
         } else {
-            views.setImageViewResource(R.id.widget_skin_avatar, R.drawable.ic_px_mg_author);
+            views.setImageViewResource(R.id.widget_skin_avatar, R.drawable.ic_widget_author);
         }
 
         String timePlayed = PlayTimeTracker.getFormattedTotalTime(context);

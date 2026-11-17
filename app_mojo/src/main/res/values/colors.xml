@@ -42,4 +42,16 @@
 
     <!-- Mod manager / content browser -->
     <color name="mod_version_incompatible">#F7A325</color>
+
+    <!-- Widget Theme (Libre Copper Palette) -->
+    <color name="widget_card_bg">#FFF1E9</color>
+    <color name="widget_card_stroke">#D8C4B6</color>
+    <color name="widget_avatar_bg">#F4DFD0</color>
+    <color name="widget_avatar_stroke">#C1AEA1</color>
+    <color name="widget_btn_bg">#855426</color>
+    <color name="widget_btn_stroke">#63370B</color>
+    <color name="widget_btn_icon">#FFF7F4</color>
+    <color name="widget_text_primary">#3C3026</color>
+    <color name="widget_text_secondary">#6B5C51</color>
+    <color name="widget_accent">#855426</color>
 </resources>
