@@ -9,7 +9,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-Android-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/engine-Rust%20%2B%20Java%20%2F%20C-orange" alt="Engine">
-  <img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
+  <img src="https://img.shields.io/badge/license-LGPLv3-blue" alt="License">
   <img src="https://img.shields.io/badge/Minecraft-rd--132211%20to%2026.4-green" alt="Minecraft Versions">
   <a href="https://discord.gg/gdcm"><img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
 </p>
@@ -72,4 +72,4 @@ Libre Launcher is built upon the incredible work of the open-source Minecraft on
 - **[Amethyst Launcher](https://github.com/AngelAuraMC/Amethyst-Android)**
 - **[PojavLauncher](https://github.com/PojavLauncherTeam/PojavLauncher)**
 
-Licensed under the **MIT License**.
+Licensed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**.
