@@ -283,16 +283,16 @@ public class EditControlSideDialog extends SideDialogView {
 
         mAdapter.addAll(mSpecialArray);
         mAdapter.addAll(KeycodeUtils.generateKeyName());
-        mAdapter.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
+        mAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item_m3);
 
         for (Spinner spinner : mKeycodeSpinners) {
             spinner.setAdapter(mAdapter);
         }
 
         // Orientation spinner
-        ArrayAdapter<ControlDrawerData.Orientation> adapter = new ArrayAdapter<>(mDialogContent.getContext(), android.R.layout.simple_spinner_item);
+        ArrayAdapter<ControlDrawerData.Orientation> adapter = new ArrayAdapter<>(mDialogContent.getContext(), R.layout.spinner_item_m3);
         adapter.addAll(ControlDrawerData.getOrientations());
-        adapter.setDropDownViewResource(android.R.layout.simple_list_item_single_choice);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_m3);
 
         mOrientationSpinner.setAdapter(adapter);
     }

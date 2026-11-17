@@ -28,6 +28,9 @@
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:layout_alignParentRight="true"
+			android:padding="8dp"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?attr/colorOnSurfaceVariant"
 			android:text="@string/hint_control_mapping"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintTop_toBottomOf="@id/drawer_button" />
@@ -43,10 +46,15 @@
 
 	<ListView
 		android:id="@+id/customctrl_navigation_view"
-		android:layout_width="200dp"
+		android:layout_width="250dp"
 		android:layout_height="match_parent"
 		android:layout_gravity="right"
-		android:background="?attr/colorBackgroundFloating"
+		android:background="?attr/colorSurface"
+		android:divider="@android:color/transparent"
+		android:dividerHeight="8dp"
+		android:paddingHorizontal="10dp"
+		android:paddingVertical="12dp"
+		android:clipToPadding="false"
 		android:fitsSystemWindows="false" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

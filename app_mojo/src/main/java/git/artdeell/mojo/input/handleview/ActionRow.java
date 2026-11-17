@@ -56,15 +56,19 @@ public class ActionRow extends LinearLayout {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 getResources().getDimensionPixelOffset(R.dimen._40sdp)
         ));
+        setBackgroundResource(R.drawable.background_control_editor);
+        int pad = (int) (4 * getResources().getDisplayMetrics().density);
+        setPadding(pad, pad, pad, pad);
 
         actionButtons[0] = new DeleteButton(getContext());
         actionButtons[1] = new CloneButton(getContext());
         actionButtons[2] = new AddSubButton(getContext());
 
-        // This is not pretty code, don't do this.
         for(ActionButtonInterface buttonInterface: actionButtons){
             View button = ((View)(buttonInterface));
-            addView(button, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1F));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1F);
+            lp.setMargins(pad, 0, pad, 0);
+            addView(button, lp);
         }
 
         setElevation(5F);

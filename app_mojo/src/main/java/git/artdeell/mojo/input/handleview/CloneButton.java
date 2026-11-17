@@ -19,6 +19,9 @@ public class CloneButton extends Button implements ActionButtonInterface {
         setOnClickListener(this);
         setAllCaps(true);
         setText(R.string.global_clone);
+        setBackgroundResource(R.drawable.bg_drawer_item);
+        setTextColor(git.artdeell.mojo.utils.ThemeColors.get(getContext(), com.google.android.material.R.attr.colorOnSurface));
+        setTextSize(12);
     }
 
     private ControlInterface mCurrentlySelectedButton = null;
@@ -35,6 +38,7 @@ public class CloneButton extends Button implements ActionButtonInterface {
 
     @Override
     public void onClick() {
+        performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
         if(mCurrentlySelectedButton == null) return;
 
         mCurrentlySelectedButton.cloneButton();

@@ -21,8 +21,11 @@ public class DrawerPullButton extends View {
 
     private void init(){
         mDrawable = VectorDrawableCompat.create(getContext().getResources(), R.drawable.ic_sharp_settings_24, null);
-        setAlpha(0.33f);
-        mBackgroundPaint.setColor(Color.BLACK);
+        if (mDrawable != null) {
+            mDrawable.setTint(git.artdeell.mojo.utils.ThemeColors.get(getContext(), com.google.android.material.R.attr.colorOnSurface));
+        }
+        setAlpha(0.75f);
+        mBackgroundPaint.setColor(git.artdeell.mojo.utils.ThemeColors.get(getContext(), com.google.android.material.R.attr.colorSurfaceContainerHighest));
     }
 
     @Override

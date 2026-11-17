@@ -77,6 +77,11 @@ public class FileListView extends LinearLayout
         setOrientation(VERTICAL);
 
         mainLv = new ListView(context);
+        mainLv.setDivider(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        int pad = (int) (6 * context.getResources().getDisplayMetrics().density);
+        mainLv.setDividerHeight(pad);
+        mainLv.setPadding(pad, pad, pad, pad);
+        mainLv.setClipToPadding(false);
 
         mainLv.setOnItemClickListener((p1, p2, p3, p4) -> {
             // TODO: Implement this method

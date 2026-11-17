@@ -20,6 +20,9 @@ public class AddSubButton extends Button implements ActionButtonInterface {
     public void init() {
         setText(R.string.customctrl_addsubbutton);
         setOnClickListener(this);
+        setBackgroundResource(R.drawable.bg_drawer_item);
+        setTextColor(git.artdeell.mojo.utils.ThemeColors.get(getContext(), com.google.android.material.R.attr.colorOnSurface));
+        setTextSize(12);
     }
 
     private ControlInterface mCurrentlySelectedButton = null;
@@ -36,6 +39,7 @@ public class AddSubButton extends Button implements ActionButtonInterface {
 
     @Override
     public void onClick() {
+        performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
         if(mCurrentlySelectedButton instanceof ControlDrawer){
             ((ControlDrawer)mCurrentlySelectedButton).getControlLayoutParent().addSubButton(
                     (ControlDrawer)mCurrentlySelectedButton,

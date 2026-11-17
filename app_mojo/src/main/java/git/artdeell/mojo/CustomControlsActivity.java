@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
@@ -45,11 +46,15 @@ public class CustomControlsActivity extends BaseActivity implements EditorExitab
 		mDrawerNavigationView = findViewById(R.id.customctrl_navigation_view);
 		View mPullDrawerButton = findViewById(R.id.drawer_button);
 
-		mPullDrawerButton.setOnClickListener(v -> mDrawerLayout.openDrawer(mDrawerNavigationView));
+		mPullDrawerButton.setOnClickListener(v -> {
+			v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+			mDrawerLayout.openDrawer(mDrawerNavigationView);
+		});
 		mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
 
-		mDrawerNavigationView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,getResources().getStringArray(R.array.menu_customcontrol_customactivity)));
+		mDrawerNavigationView.setAdapter(new ArrayAdapter<>(this, R.layout.item_drawer_menu, getResources().getStringArray(R.array.menu_customcontrol_customactivity)));
 		mDrawerNavigationView.setOnItemClickListener((parent, view, position, id) -> {
+			view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
 			switch(position) {
 				case 0: mControlLayout.addControlButton(new ControlData("New")); break;
 				case 1: mControlLayout.addDrawer(new ControlDrawerData()); break;

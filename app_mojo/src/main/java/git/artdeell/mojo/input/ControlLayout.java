@@ -537,10 +537,18 @@ public class ControlLayout extends FrameLayout {
 		final EditText edit = new EditText(context);
 		edit.setSingleLine();
 		edit.setText(mLayoutFileName);
+		edit.setBackgroundResource(R.drawable.bg_input_field);
+		edit.setTextColor(git.artdeell.mojo.utils.ThemeColors.get(context, com.google.android.material.R.attr.colorOnSurface));
+		edit.setHintTextColor(git.artdeell.mojo.utils.ThemeColors.get(context, com.google.android.material.R.attr.colorOnSurfaceVariant));
 
-		AlertDialog.Builder builder = new MaterialAlertDialogBuilder(context);
+		FrameLayout container = new FrameLayout(context);
+		int px = (int) (20 * context.getResources().getDisplayMetrics().density);
+		container.setPadding(px, px / 2, px, 0);
+		container.addView(edit);
+
+		AlertDialog.Builder builder = new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_Copper_MaterialAlertDialog);
 		builder.setTitle(R.string.global_save);
-		builder.setView(edit);
+		builder.setView(container);
 		builder.setPositiveButton(android.R.string.ok, null);
 		builder.setNegativeButton(android.R.string.cancel, null);
 		if(editorExitable != null) builder.setNeutralButton(R.string.global_save_and_exit, null);
@@ -555,7 +563,7 @@ public class ControlLayout extends FrameLayout {
 	}
 
 	public void openLoadDialog() {
-		AlertDialog.Builder builder = new MaterialAlertDialogBuilder(getContext());
+		AlertDialog.Builder builder = new MaterialAlertDialogBuilder(getContext(), R.style.ThemeOverlay_Copper_MaterialAlertDialog);
 		builder.setTitle(R.string.global_load);
 		builder.setPositiveButton(android.R.string.cancel, null);
 
@@ -580,7 +588,7 @@ public class ControlLayout extends FrameLayout {
 	}
 
 	public void openSetDefaultDialog() {
-		AlertDialog.Builder builder = new MaterialAlertDialogBuilder(getContext());
+		AlertDialog.Builder builder = new MaterialAlertDialogBuilder(getContext(), R.style.ThemeOverlay_Copper_MaterialAlertDialog);
 		builder.setTitle(R.string.customctrl_selectdefault);
 		builder.setPositiveButton(android.R.string.cancel, null);
 
@@ -605,7 +613,7 @@ public class ControlLayout extends FrameLayout {
 	}
 
 	public void openExitDialog(EditorExitable exitListener) {
-		AlertDialog.Builder builder = new MaterialAlertDialogBuilder(getContext());
+		AlertDialog.Builder builder = new MaterialAlertDialogBuilder(getContext(), R.style.ThemeOverlay_Copper_MaterialAlertDialog);
 		builder.setTitle(R.string.customctrl_editor_exit_title);
 		builder.setMessage(R.string.customctrl_editor_exit_msg);
 		builder.setPositiveButton(R.string.global_yes, (d,w)->exitListener.exitEditor());

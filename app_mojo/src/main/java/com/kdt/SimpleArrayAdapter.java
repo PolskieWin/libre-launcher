@@ -11,6 +11,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import git.artdeell.mojo.R;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -57,7 +59,7 @@ public class SimpleArrayAdapter<T> extends BaseAdapter {
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         if(convertView == null){
-            convertView = LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_1, parent, false);
+            convertView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_simple_list_1, parent, false);
         }
 
         TextView v = (TextView) convertView;

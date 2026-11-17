@@ -101,7 +101,7 @@ public class FileListAdapter extends BaseAdapter {
         View row = convertView;
 
         if (row == null)
-            row = mInflater.inflate(android.R.layout.simple_list_item_1, parent, false);
+            row = mInflater.inflate(R.layout.item_file_list, parent, false);
 
         TextView view = (TextView) row;
 
