@@ -133,6 +133,7 @@ public class MicrosoftBackgroundLogin implements BackgroundLogin{
                 "client_id", "00000000402b5328",
                 isRefresh ? "refresh_token" : "code", code,
                 "grant_type", isRefresh ? "refresh_token" : "authorization_code",
+                "redirect_uri", "https://login.live.com/oauth20_desktop.srf",
                 "redirect_url", "https://login.live.com/oauth20_desktop.srf",
                 "scope", "service::user.auth.xboxlive.com::MBI_SSL"
         );

@@ -105,9 +105,16 @@ public abstract class WebViewCompletionFragment extends Fragment {
     /** Client to track when to sent the data to the launcher */
     class WebViewTrackClient extends WebViewClient {
 
+        private boolean isTargetUrl(String url) {
+            if (url == null) return false;
+            return url.startsWith(mTrackedUrl)
+                    || url.startsWith("https://login.live.com/oauth20_desktop.srf")
+                    || url.startsWith("ms-xal-00000000402b5328");
+        }
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            if(url.startsWith(mTrackedUrl)) {
+            if(isTargetUrl(url)) {
                 internalSignalCompletion(url);
                 return true;
             }
@@ -120,7 +127,7 @@ public abstract class WebViewCompletionFragment extends Fragment {
 
         @Override
         public void onPageFinished(WebView view, String url) {
-            if(url.startsWith(mTrackedUrl)) {
+            if(isTargetUrl(url)) {
                 internalSignalCompletion(url);
             }
         }
