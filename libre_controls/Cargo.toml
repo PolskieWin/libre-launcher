@@ -1,6 +1,6 @@
 [package]
 name = "libre_controls"
-version = "1.0.0"
+version = "1.3.0"
 edition = "2021"
 authors = ["PolskieWin", "Libre Launcher Team"]
 description = "Ultra-fast, zero-allocation native input and controls engine for Libre Launcher"
