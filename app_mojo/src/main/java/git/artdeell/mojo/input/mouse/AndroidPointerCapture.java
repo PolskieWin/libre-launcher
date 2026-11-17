@@ -26,6 +26,15 @@ public class AndroidPointerCapture implements ViewTreeObserver.OnWindowFocusChan
 
     private int mInputDeviceIdentifier;
     private boolean mDeviceSupportsRelativeAxis;
+    private int mPreviousButtonState = 0;
+
+    private static final int[] MONITORED_BUTTONS = {
+        MotionEvent.BUTTON_PRIMARY,
+        MotionEvent.BUTTON_SECONDARY,
+        MotionEvent.BUTTON_TERTIARY,
+        MotionEvent.BUTTON_BACK,
+        MotionEvent.BUTTON_FORWARD
+    };
 
     public AndroidPointerCapture(View touchpad, View hostView) {
         this.mTouchpadView = touchpad;
@@ -103,11 +112,13 @@ public class AndroidPointerCapture implements ViewTreeObserver.OnWindowFocusChan
             applyMotionVector(1);
         }
 
+        handleCapturedButtons(event);
+
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_MOVE:
+            case MotionEvent.ACTION_BUTTON_PRESS:
+            case MotionEvent.ACTION_BUTTON_RELEASE:
                 return true;
-            case MotionEvent.ACTION_BUTTON_PRESS: CallbackBridge.sendMouseButton(event.getActionButton(), true); return true;
-            case MotionEvent.ACTION_BUTTON_RELEASE: CallbackBridge.sendMouseButton(event.getActionButton(), false); return true;
             case MotionEvent.ACTION_SCROLL:
                 CallbackBridge.sendScroll(
                         event.getAxisValue(MotionEvent.AXIS_HSCROLL),
@@ -115,11 +126,52 @@ public class AndroidPointerCapture implements ViewTreeObserver.OnWindowFocusChan
                 );
                 return true;
             case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
                 mPointerTracker.cancelTracking();
+                releaseAllButtons();
                 return true;
             default:
                 return false;
         }
+    }
+
+    private void handleCapturedButtons(MotionEvent event) {
+        int currentButtons = event.getButtonState();
+        int diff = currentButtons ^ mPreviousButtonState;
+        if (diff != 0) {
+            for (int button : MONITORED_BUTTONS) {
+                if ((diff & button) != 0) {
+                    boolean isDown = (currentButtons & button) != 0;
+                    CallbackBridge.sendMouseButton(button, isDown);
+                }
+            }
+            mPreviousButtonState = currentButtons;
+        } else if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_PRESS) {
+            int actionButton = event.getActionButton();
+            if (actionButton != 0) {
+                CallbackBridge.sendMouseButton(actionButton, true);
+            }
+        } else if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_RELEASE) {
+            int actionButton = event.getActionButton();
+            if (actionButton != 0) {
+                CallbackBridge.sendMouseButton(actionButton, false);
+            }
+        }
+    }
+
+    public void releaseAllButtons() {
+        if (mPreviousButtonState != 0) {
+            for (int button : MONITORED_BUTTONS) {
+                if ((mPreviousButtonState & button) != 0) {
+                    CallbackBridge.sendMouseButton(button, false);
+                }
+            }
+            mPreviousButtonState = 0;
+        }
+    }
+
+    public void onCaptureLost() {
+        releaseAllButtons();
     }
 
     private void applyMotionVector(float speed) {
@@ -157,6 +209,7 @@ public class AndroidPointerCapture implements ViewTreeObserver.OnWindowFocusChan
     }
 
     public void detach() {
+        releaseAllButtons();
         mHostView.setOnCapturedPointerListener(null);
         mHostView.getViewTreeObserver().removeOnWindowFocusChangeListener(this);
         mHostView.setOnFocusChangeListener(null);
@@ -166,6 +219,9 @@ public class AndroidPointerCapture implements ViewTreeObserver.OnWindowFocusChan
     public void onFocusChange(View v, boolean hasFocus) {
         if(v != mHostView) return;
         if(hasFocus && mHostView.hasWindowFocus()) mHostView.requestPointerCapture();
-        if(!hasFocus) mHostView.releasePointerCapture();
+        if(!hasFocus) {
+            releaseAllButtons();
+            mHostView.releasePointerCapture();
+        }
     }
 }

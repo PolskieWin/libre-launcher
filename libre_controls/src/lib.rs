@@ -886,6 +886,173 @@ pub extern "C" fn libre_afk_get_sleep_duration_ms() -> u32 {
 }
 
 // -------------------------------------------------------------
+// TouchController Mod Bridge IPC
+// -------------------------------------------------------------
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LibreTouchEvent {
+    pub pointer_id: i32,
+    pub action: i32,
+    pub x: f32,
+    pub y: f32,
+    pub pressure: f32,
+    pub timestamp_ns: u64,
+}
+
+pub const TOUCH_BRIDGE_CAPACITY: usize = 128;
+
+pub struct TouchBridgeEngine {
+    buffer: [LibreTouchEvent; TOUCH_BRIDGE_CAPACITY],
+    head: usize,
+    tail: usize,
+    count: usize,
+    enabled: bool,
+}
+
+impl TouchBridgeEngine {
+    pub const fn new() -> Self {
+        Self {
+            buffer: [LibreTouchEvent {
+                pointer_id: 0,
+                action: 0,
+                x: 0.0,
+                y: 0.0,
+                pressure: 0.0,
+                timestamp_ns: 0,
+            }; TOUCH_BRIDGE_CAPACITY],
+            head: 0,
+            tail: 0,
+            count: 0,
+            enabled: true,
+        }
+    }
+
+    pub fn push(&mut self, event: LibreTouchEvent) {
+        if !self.enabled {
+            return;
+        }
+        self.buffer[self.tail] = event;
+        self.tail = (self.tail + 1) % TOUCH_BRIDGE_CAPACITY;
+        if self.count < TOUCH_BRIDGE_CAPACITY {
+            self.count += 1;
+        } else {
+            self.head = (self.head + 1) % TOUCH_BRIDGE_CAPACITY;
+        }
+    }
+
+    pub fn poll(&mut self) -> Option<LibreTouchEvent> {
+        if self.count == 0 {
+            None
+        } else {
+            let event = self.buffer[self.head];
+            self.head = (self.head + 1) % TOUCH_BRIDGE_CAPACITY;
+            self.count -= 1;
+            Some(event)
+        }
+    }
+
+    pub fn peek_count(&self) -> usize {
+        self.count
+    }
+
+    pub fn clear(&mut self) {
+        self.head = 0;
+        self.tail = 0;
+        self.count = 0;
+    }
+
+    pub fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+        if !enabled {
+            self.clear();
+        }
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+}
+
+static TOUCH_BRIDGE: Mutex<TouchBridgeEngine> = Mutex::new(TouchBridgeEngine::new());
+
+fn current_time_nanos() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos() as u64
+}
+
+#[no_mangle]
+pub extern "C" fn libre_touch_bridge_push(
+    pointer_id: i32,
+    action: i32,
+    x: f32,
+    y: f32,
+    pressure: f32,
+) {
+    let now = current_time_nanos();
+    if let Ok(mut bridge) = TOUCH_BRIDGE.lock() {
+        bridge.push(LibreTouchEvent {
+            pointer_id,
+            action,
+            x,
+            y,
+            pressure,
+            timestamp_ns: now,
+        });
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_touch_bridge_poll(out_event: *mut LibreTouchEvent) -> i32 {
+    if out_event.is_null() {
+        return 0;
+    }
+    if let Ok(mut bridge) = TOUCH_BRIDGE.lock() {
+        if let Some(event) = bridge.poll() {
+            unsafe {
+                *out_event = event;
+            }
+            return 1;
+        }
+    }
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn libre_touch_bridge_peek_count() -> u32 {
+    if let Ok(bridge) = TOUCH_BRIDGE.lock() {
+        bridge.peek_count() as u32
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_touch_bridge_clear() {
+    if let Ok(mut bridge) = TOUCH_BRIDGE.lock() {
+        bridge.clear();
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_touch_bridge_set_enabled(enabled: bool) {
+    if let Ok(mut bridge) = TOUCH_BRIDGE.lock() {
+        bridge.set_enabled(enabled);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_touch_bridge_is_enabled() -> bool {
+    if let Ok(bridge) = TOUCH_BRIDGE.lock() {
+        bridge.is_enabled()
+    } else {
+        false
+    }
+}
+
+// -------------------------------------------------------------
 // Unit Tests
 // -------------------------------------------------------------
 
@@ -1032,5 +1199,108 @@ mod tests {
         // Player touches screen or presses key -> immediately wake up
         afk.notify_input(1500);
         assert!(!afk.is_active());
+    }
+
+    #[test]
+    fn test_touch_bridge_push_and_poll() {
+        let mut bridge = TouchBridgeEngine::new();
+        assert_eq!(bridge.peek_count(), 0);
+        assert_eq!(bridge.poll(), None);
+
+        let event = LibreTouchEvent {
+            pointer_id: 1,
+            action: 0,
+            x: 120.0,
+            y: 240.0,
+            pressure: 0.8,
+            timestamp_ns: 123456789,
+        };
+        bridge.push(event);
+        assert_eq!(bridge.peek_count(), 1);
+
+        let polled = bridge.poll();
+        assert_eq!(polled, Some(event));
+        assert_eq!(bridge.peek_count(), 0);
+        assert_eq!(bridge.poll(), None);
+    }
+
+    #[test]
+    fn test_touch_bridge_ring_buffer_overwrite() {
+        let mut bridge = TouchBridgeEngine::new();
+        for i in 0..(TOUCH_BRIDGE_CAPACITY + 10) {
+            bridge.push(LibreTouchEvent {
+                pointer_id: i as i32,
+                action: 2,
+                x: i as f32,
+                y: i as f32,
+                pressure: 1.0,
+                timestamp_ns: i as u64,
+            });
+        }
+        assert_eq!(bridge.peek_count(), TOUCH_BRIDGE_CAPACITY);
+
+        // The oldest 10 events (0..9) should have been dropped; first out should be id 10
+        let first = bridge.poll().unwrap();
+        assert_eq!(first.pointer_id, 10);
+    }
+
+    #[test]
+    fn test_touch_bridge_enable_disable() {
+        let mut bridge = TouchBridgeEngine::new();
+        bridge.push(LibreTouchEvent {
+            pointer_id: 0,
+            action: 0,
+            x: 50.0,
+            y: 50.0,
+            pressure: 1.0,
+            timestamp_ns: 100,
+        });
+        assert_eq!(bridge.peek_count(), 1);
+
+        bridge.set_enabled(false);
+        assert!(!bridge.is_enabled());
+        assert_eq!(bridge.peek_count(), 0);
+
+        bridge.push(LibreTouchEvent {
+            pointer_id: 1,
+            action: 0,
+            x: 50.0,
+            y: 50.0,
+            pressure: 1.0,
+            timestamp_ns: 200,
+        });
+        assert_eq!(bridge.peek_count(), 0);
+
+        bridge.set_enabled(true);
+        assert!(bridge.is_enabled());
+    }
+
+    #[test]
+    fn test_touch_bridge_c_abi() {
+        libre_touch_bridge_set_enabled(true);
+        libre_touch_bridge_clear();
+        assert_eq!(libre_touch_bridge_peek_count(), 0);
+
+        libre_touch_bridge_push(2, 0, 100.0, 200.0, 0.5);
+        assert_eq!(libre_touch_bridge_peek_count(), 1);
+
+        let mut out = LibreTouchEvent {
+            pointer_id: 0,
+            action: 0,
+            x: 0.0,
+            y: 0.0,
+            pressure: 0.0,
+            timestamp_ns: 0,
+        };
+        let res = libre_touch_bridge_poll(&mut out);
+        assert_eq!(res, 1);
+        assert_eq!(out.pointer_id, 2);
+        assert_eq!(out.action, 0);
+        assert_eq!(out.x, 100.0);
+        assert_eq!(out.y, 200.0);
+        assert_eq!(out.pressure, 0.5);
+
+        assert_eq!(libre_touch_bridge_peek_count(), 0);
+        assert_eq!(libre_touch_bridge_poll(&mut out), 0);
     }
 }

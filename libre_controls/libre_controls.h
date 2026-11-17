@@ -114,6 +114,23 @@ bool libre_afk_is_active(void);
 void libre_afk_notify_input(void);
 uint32_t libre_afk_get_sleep_duration_ms(void);
 
+// TouchController Mod Bridge IPC
+typedef struct {
+    int32_t pointer_id;
+    int32_t action;
+    float x;
+    float y;
+    float pressure;
+    uint64_t timestamp_ns;
+} LibreTouchEvent;
+
+void libre_touch_bridge_push(int32_t pointer_id, int32_t action, float x, float y, float pressure);
+int32_t libre_touch_bridge_poll(LibreTouchEvent* out_event);
+uint32_t libre_touch_bridge_peek_count(void);
+void libre_touch_bridge_clear(void);
+void libre_touch_bridge_set_enabled(bool enabled);
+bool libre_touch_bridge_is_enabled(void);
+
 #ifdef __cplusplus
 }
 #endif

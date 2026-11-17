@@ -228,8 +228,12 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
                 && ( (event.getSource() & InputDevice.SOURCE_MOUSE_RELATIVE) == InputDevice.SOURCE_MOUSE_RELATIVE
                 ||   (event.getSource() & InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE)  ){
 
-            if(eventKeycode == KeyEvent.KEYCODE_BACK){
-                sendMouseButton(MotionEvent.BUTTON_SECONDARY, event.getAction() == KeyEvent.ACTION_DOWN);
+            if(eventKeycode == KeyEvent.KEYCODE_BACK || eventKeycode == KeyEvent.KEYCODE_NAVIGATE_PREVIOUS){
+                sendMouseButton(MotionEvent.BUTTON_BACK, event.getAction() == KeyEvent.ACTION_DOWN);
+                return true;
+            }
+            if(eventKeycode == KeyEvent.KEYCODE_FORWARD || eventKeycode == KeyEvent.KEYCODE_NAVIGATE_NEXT){
+                sendMouseButton(MotionEvent.BUTTON_FORWARD, event.getAction() == KeyEvent.ACTION_DOWN);
                 return true;
             }
         }
@@ -380,5 +384,13 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
     }
     public SurfaceProvider getSurfaceProvider() {
         return mSurfaceProvider;
+    }
+
+    @Override
+    public void onPointerCaptureChange(boolean hasCapture) {
+        super.onPointerCaptureChange(hasCapture);
+        if (!hasCapture && mPointerCapture != null) {
+            mPointerCapture.onCaptureLost();
+        }
     }
 }

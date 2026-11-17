@@ -673,6 +673,14 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
             return true;
         }
         LibreTelemetry.nativeNotifyInput();
+        if (!isInEditor && mLoadingScreen == null && (drawerLayout == null || !drawerLayout.isDrawerOpen(navDrawer))) {
+            for (int i = 0; i < ev.getPointerCount(); i++) {
+                if (ev.getToolType(i) != MotionEvent.TOOL_TYPE_MOUSE) {
+                    git.artdeell.mojo.input.TouchBridge.pushMotionEvent(ev);
+                    break;
+                }
+            }
+        }
         return super.dispatchTouchEvent(ev);
     }
 
@@ -690,6 +698,23 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
             }
             return super.dispatchKeyEvent(event);
         }
+
+        // Map raw USB/Bluetooth mouse side buttons (Mouse4 / Mouse5) directly without triggering back navigation
+        int eventSource = event.getSource();
+        boolean isMouse = (eventSource & InputDevice.SOURCE_MOUSE) != 0
+                || (eventSource & InputDevice.SOURCE_MOUSE_RELATIVE) != 0
+                || (event.getDevice() != null && (event.getDevice().getSources() & InputDevice.SOURCE_MOUSE) != 0);
+        if (isMouse) {
+            boolean isDown = event.getAction() == KeyEvent.ACTION_DOWN;
+            if (event.getKeyCode() == KeyEvent.KEYCODE_BACK || event.getKeyCode() == KeyEvent.KEYCODE_NAVIGATE_PREVIOUS) {
+                CallbackBridge.sendMouseButton(MotionEvent.BUTTON_BACK, isDown);
+                return true;
+            } else if (event.getKeyCode() == KeyEvent.KEYCODE_FORWARD || event.getKeyCode() == KeyEvent.KEYCODE_NAVIGATE_NEXT) {
+                CallbackBridge.sendMouseButton(MotionEvent.BUTTON_FORWARD, isDown);
+                return true;
+            }
+        }
+
         boolean handleEvent;
         if(!(handleEvent = launcherGLView.processKeyEvent(event))) {
             if (event.getKeyCode() == KeyEvent.KEYCODE_BACK && !touchCharInput.isEnabled()) {

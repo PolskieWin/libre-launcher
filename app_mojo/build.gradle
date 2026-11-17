@@ -13,7 +13,7 @@ static def getDateSeconds() {
     if (System.getenv("GITHUB_ACTIONS") == "true") {
         return Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER"))
     } else {
-        return 172007
+        return 172010
     }
 }
 
@@ -26,7 +26,7 @@ def getVersionName = {
     }else {
         def branchName = currentBranch.getName()
         def commitAbbreviation = latestCommit.abbreviatedId
-        return "libre-1.60-${dateToday}-${commitAbbreviation}-${branchName}"
+        return "libre-1.70-${dateToday}-${commitAbbreviation}-${branchName}"
     }
 }
 

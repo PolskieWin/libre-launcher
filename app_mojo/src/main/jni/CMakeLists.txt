@@ -51,6 +51,7 @@ add_library(mojort SHARED
         minibridge.c
         affinity.c
         telemetry_afk.c
+        touch_bridge.c
         libremobile/libremobile.cpp
 )
 
