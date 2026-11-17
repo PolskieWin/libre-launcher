@@ -52,6 +52,7 @@ import git.artdeell.mojo.instances.Instance;
 import git.artdeell.mojo.instances.InstanceInstaller;
 import git.artdeell.mojo.instances.InstanceShortcut;
 import git.artdeell.mojo.instances.Instances;
+import git.artdeell.mojo.modding.PrebootScanner;
 import git.artdeell.mojo.utils.lifecycle.ContextAwareDoneListener;
 import git.artdeell.mojo.utils.lifecycle.ContextExecutor;
 import git.artdeell.mojo.modding.modpacks.imagecache.IconCacheJanitor;
@@ -168,14 +169,24 @@ public class LauncherActivity extends BaseActivity {
             ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
             return false;
         }
-        String normalizedVersionId = MoJsonExtras.normalizeVersionId(selectedInstance.versionId);
-        JVersionList.Version mcVersion = MoJsonExtras.getListedVersion(normalizedVersionId);
-        new MoJsonDownloader().start(
-                this.getAssets(),
-                mcVersion,
-                normalizedVersionId,
-                new ContextAwareDoneListener(this, normalizedVersionId)
-        );
+
+        Runnable proceedWithLaunch = () -> {
+            String normalizedVersionId = MoJsonExtras.normalizeVersionId(selectedInstance.versionId);
+            JVersionList.Version mcVersion = MoJsonExtras.getListedVersion(normalizedVersionId);
+            new MoJsonDownloader().start(
+                    this.getAssets(),
+                    mcVersion,
+                    normalizedVersionId,
+                    new ContextAwareDoneListener(this, normalizedVersionId)
+            );
+        };
+
+        PrebootScanner.ScanReport scanReport = PrebootScanner.scanInstance(selectedInstance);
+        if (scanReport.hasIssues) {
+            PrebootScanner.showWarningDialog(this, selectedInstance, scanReport, proceedWithLaunch);
+        } else {
+            proceedWithLaunch.run();
+        }
         return false;
     };
 
@@ -336,6 +347,15 @@ public class LauncherActivity extends BaseActivity {
         mProgressLayout.observe(ProgressLayout.DATA_MIGRATION);
 
         if(launchFromShortcut) {
+            mFragmentView.postDelayed(() -> ExtraCore.setValue(ExtraConstants.LAUNCH_GAME, true), SHORTCUT_LAUNCH_DELAY_MS);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (selectShortcutInstance(intent)) {
             mFragmentView.postDelayed(() -> ExtraCore.setValue(ExtraConstants.LAUNCH_GAME, true), SHORTCUT_LAUNCH_DELAY_MS);
         }
     }

@@ -27,13 +27,13 @@ public final class InstanceShortcut {
 
     private InstanceShortcut() {}
 
-    public static void create(@NonNull Context context, @Nullable Instance instance) {
+    public static void create(@NonNull Context context, @Nullable DisplayInstance instance) {
         String key = instance == null ? null : instance.getKey();
-        if(key == null) {
+        if (key == null) {
             Toast.makeText(context, R.string.error_no_version, Toast.LENGTH_SHORT).show();
             return;
         }
-        if(!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+        if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
             Toast.makeText(context, R.string.shortcut_not_supported_toast, Toast.LENGTH_LONG).show();
             return;
         }
@@ -41,11 +41,13 @@ public final class InstanceShortcut {
         Intent shortcutIntent = new Intent(context, TestStorageActivity.class);
         shortcutIntent.setAction(ACTION_LAUNCH_INSTANCE);
         shortcutIntent.putExtra(EXTRA_INSTANCE_KEY, key);
-        shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         String label = Tools.isValidString(instance.name) ? instance.name : key;
-        ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, key)
+        String desc = String.format(context.getString(R.string.pin_to_home_shortcut_desc), label);
+        ShortcutInfoCompat info = new ShortcutInfoCompat.Builder(context, "shortcut_" + key)
                 .setShortLabel(label)
+                .setLongLabel(desc)
                 .setIcon(IconCompat.createWithBitmap(renderIcon(context, instance)))
                 .setIntent(shortcutIntent)
                 .build();
@@ -54,7 +56,7 @@ public final class InstanceShortcut {
         Toast.makeText(context, R.string.shortcut_created_toast, Toast.LENGTH_SHORT).show();
     }
 
-    private static Bitmap renderIcon(Context context, Instance instance) {
+    private static Bitmap renderIcon(Context context, DisplayInstance instance) {
         Drawable drawable = InstanceIconProvider.fetchIcon(context.getResources(), instance);
         Bitmap bitmap = Bitmap.createBitmap(ICON_SIZE_PX, ICON_SIZE_PX, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);

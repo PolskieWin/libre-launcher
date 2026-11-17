@@ -1,7 +1,8 @@
 package git.artdeell.mojo.game.platform.dialog;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.content.ClipData;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -628,7 +629,7 @@ public class FileDialogBridge {
     private static void showMessageBox(Activity host, String title, String message,
                                        String dialogType, String iconType, int defaultButton,
                                        int[] result, CountDownLatch latch) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(host);
+        AlertDialog.Builder builder = new MaterialAlertDialogBuilder(host, R.style.ThemeOverlay_Copper_MaterialAlertDialog);
         if (title != null) builder.setTitle(title);
         if (message != null) builder.setMessage(message);
         int icon = messageBoxIcon(iconType);
@@ -686,9 +687,14 @@ public class FileDialogBridge {
     private static void showInputBox(Activity host, String title, String message,
                                      String defaultInput, boolean password,
                                      String[] result, CountDownLatch latch) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(host);
+        AlertDialog.Builder builder = new MaterialAlertDialogBuilder(host, R.style.ThemeOverlay_Copper_MaterialAlertDialog);
         if (title != null) builder.setTitle(title);
         if (message != null) builder.setMessage(message);
+
+        android.widget.FrameLayout container = new android.widget.FrameLayout(host);
+        int pad = (int) (18 * host.getResources().getDisplayMetrics().density);
+        container.setPadding(pad, pad / 2, pad, pad / 2);
+
         EditText input = new EditText(host);
         input.setInputType(password
                 ? InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -697,7 +703,8 @@ public class FileDialogBridge {
             input.setText(defaultInput);
             input.setSelection(defaultInput.length());
         }
-        builder.setView(input);
+        container.addView(input);
+        builder.setView(container);
         builder.setPositiveButton(android.R.string.ok, (d, w) -> {
             result[0] = input.getText().toString();
             latch.countDown();

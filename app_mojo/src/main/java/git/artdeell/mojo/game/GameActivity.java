@@ -410,6 +410,7 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
             }
             return null;
         });
+        mHibernateAfkManager.startThermalMonitoring();
 
         mTelemetryOverlayView = new TelemetryOverlayView(this);
         mTelemetryOverlayView.setOnHibernateToggle(() -> {
@@ -441,6 +442,7 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         super.onResume();
         ContextExecutor.setActivity(this);
         if(PREF_ENABLE_GYRO) mGyroControl.enable();
+        if (mHibernateAfkManager != null) mHibernateAfkManager.startThermalMonitoring();
         if(mTelemetryOverlayView != null && LauncherPreferences.PREF_PERF_OVERLAY) {
             mTelemetryOverlayView.start();
         }
@@ -466,8 +468,11 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         if (mTelemetryOverlayView != null) {
             mTelemetryOverlayView.stop();
         }
-        if (mHibernateAfkManager != null && mHibernateAfkManager.isAfk()) {
-            mHibernateAfkManager.exitAfk();
+        if (mHibernateAfkManager != null) {
+            mHibernateAfkManager.stopThermalMonitoring();
+            if (mHibernateAfkManager.isAfk()) {
+                mHibernateAfkManager.exitAfk();
+            }
         }
         PLATFORM.setHovered(false);
         super.onPause();

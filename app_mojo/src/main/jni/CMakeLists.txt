@@ -52,11 +52,12 @@ add_library(mojort SHARED
         affinity.c
         telemetry_afk.c
         touch_bridge.c
+        preboot_scanner.c
         libremobile/libremobile.cpp
 )
 
 target_include_directories(mojort PRIVATE .)
-target_link_libraries(mojort PRIVATE log mojoexec)
+target_link_libraries(mojort PRIVATE log mojoexec z)
 
 add_library(mojoawt SHARED
 		awt/awt.c

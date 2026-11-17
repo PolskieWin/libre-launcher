@@ -152,6 +152,15 @@ int32_t libre_modrinth_build_project_url(
 int32_t libre_modrinth_sha512(const uint8_t* data, size_t len, char* out_hex, size_t out_hex_len);
 bool libre_modrinth_verify_sha512(const uint8_t* data, size_t len, const char* expected_hex);
 
+// Pre-Boot Compatibility Scanner
+int32_t libre_preboot_scan_mods(
+    const char* mods_dir_path,
+    const char* current_renderer,
+    const char* device_abi,
+    char* out_json,
+    size_t out_json_max_len
+);
+
 #ifdef __cplusplus
 }
 #endif

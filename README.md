@@ -33,6 +33,18 @@ See [ROADMAP.md](ROADMAP.md) for full version milestones and development plans t
   - Fixed NeoForge 4-part version resolution (`26.x.y.z`) preventing version parsing crashes.
   - Snapshot comparator contract fix in `ComparableVersionString` preventing TimSort crash bugs.
   - Smart automatic JRE runtime fallback (Java 21/25 LTS for modern 26.x versions).
+- **Unified Rust Frame Pacing & Thermal-Aware Hibernate AFK**:
+  - Unified Rust native engine via JNI providing sub-millisecond input dispatch and lock-free ring-buffer frame pacing.
+  - Thermal governor reading Android battery temperatures and SoC thermal status to scale down FPS, surface resolution (0.85x–0.50x), and background polling when device heats up.
+  - OLED pure black Hibernate mode (5 FPS, 0.25x resolution) for minimal battery usage during AFK sessions.
+- **100% Material 3 Copper Architecture**:
+  - Consistent Material 3 theme across all launcher activities, dialogs, drawers, and in-game dialogs with zero legacy popups.
+- **Native Pre-Boot Mod Compatibility Scanner**:
+  - Fast native Rust/JNI analyzer scanning `fabric.mod.json`, `quilt.mod.json`, and bundled ELF native binaries before JVM launch.
+  - Automatically identifies duplicate mod IDs, missing dependencies, x86-only native libraries on ARM Android, and renderer conflicts (e.g., Sodium on GL4ES, VulkanMod without Turnip).
+  - Clean Material 3 warning dialog with one-tap automatic fix or launch anyway.
+- **Direct Pinned Home Screen Shortcuts**:
+  - Pin any Minecraft instance directly to the Android home screen for instant one-tap launching.
 - **Advanced Custom Driver & Renderer Management**:
   - Direct access to Custom Vulkan Drivers (Turnip / Freedreno) in Video Settings without arbitrary UI hiding.
   - Full renderer suite: GL4ES, Mesa Zink (OpenGL over Vulkan), OpenLTW, ANGLE, VirGL, and plugin renderers.

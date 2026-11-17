@@ -3,6 +3,7 @@
 
 pub mod telemetry;
 pub mod modrinth;
+pub mod scanner;
 
 use std::sync::Mutex;
 

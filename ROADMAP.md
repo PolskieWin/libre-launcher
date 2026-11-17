@@ -26,11 +26,9 @@ Architecture and feature roadmap for Libre Launcher.
 - **`mrpack` Streaming Installer**: Direct modpack installation with concurrent chunk downloading and SHA-512 cryptographic verification.
 - **Libre Mobile 26.4 Snapshot Engine**: Full Core GLSL 460 compatibility, mid-shader extension directives, and core GL extensions for modern 26.4 snapshots.
 
-### v1.90 — Compatibility Diagnostics & Direct Shortcuts
-- **Pre-Boot Mod Conflict Analyzer**: Fast static analysis scanning JAR manifests for incompatible mixins, duplicate libraries, or known renderer conflicts before JVM launch.
-- **Dynamic Launch Shortcuts**: Pin specific game instances directly to the Android home screen launcher.
-
-### v2.00 — Next-Gen Core & Full M3 Architecture
-- **Unified Rust Frame Pacing & Input Core**: Merged sub-millisecond touch sampling, Vulkan swapchain synchronization, and zero-jitter frame timing.
-- **Thermal-Aware Hibernate Profiles**: Adaptive governor throttling background work to mitigate thermal throttling during long sessions.
-- **100% Material 3 Copper Architecture**: Complete conversion of all remaining legacy dialogs, lists, and editors to unified Material 3 Copper styling.
+### v2.00 — Flagship Core & Full Material 3 Architecture
+- **Unified Rust Frame Pacing & Input Core**: Sub-millisecond touch sampling, low-latency ring buffer, zero-jitter frame timing, and unified JNI telemetry dispatch.
+- **Thermal-Aware Hibernate Profiles**: Dynamic governor reading Android battery temperatures and SoC thermal status to scale down FPS, surface resolution, and polling when the device heats up.
+- **100% Material 3 Copper Architecture**: Full audit eliminating all legacy dialogs and popups in favor of unified Material 3 Copper styling across the entire launcher.
+- **Pre-Boot Mod Conflict Analyzer**: Fast static analysis scanning JAR manifests (fabric.mod.json and quilt.mod.json) for duplicate mod IDs, missing dependencies, incompatible x86 native libraries, and Android renderer conflicts with a Material 3 one-tap fix dialog.
+- **Dynamic Launch Shortcuts**: Pin Minecraft instances directly to the Android home screen launcher to launch any instance with one tap.

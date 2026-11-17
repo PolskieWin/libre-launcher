@@ -34,6 +34,8 @@ import git.artdeell.mojo.instances.DisplayInstance;
 import git.artdeell.mojo.instances.Instances;
 import git.artdeell.mojo.instances.InstanceAdapter;
 import git.artdeell.mojo.instances.InstanceAdapterExtra;
+import git.artdeell.mojo.instances.InstanceShortcut;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.IOException;
 
@@ -166,6 +168,33 @@ public class mcVersionSpinner extends ExtendedTextView {
                 hidePopup(false);
                 performExtraAction((InstanceAdapterExtra) item);
             }
+        });
+
+        mListView.setOnItemLongClickListener((parent, view, position, id) -> {
+            Object item = mProfileAdapter.getItem(position);
+            if (item instanceof DisplayInstance) {
+                DisplayInstance displayInstance = (DisplayInstance) item;
+                hidePopup(false);
+                String displayName = Tools.isValidString(displayInstance.name) ? displayInstance.name : displayInstance.getKey();
+                new MaterialAlertDialogBuilder(getContext(), R.style.ThemeOverlay_Copper_MaterialAlertDialog)
+                        .setTitle(displayName)
+                        .setItems(new CharSequence[]{
+                                getContext().getString(R.string.pin_to_home_action),
+                                getContext().getString(R.string.edit_instance)
+                        }, (d, which) -> {
+                            if (which == 0) {
+                                InstanceShortcut.create(getContext(), displayInstance);
+                            } else if (which == 1) {
+                                setProfileSelection(position);
+                                if (getContext() instanceof FragmentActivity) {
+                                    openProfileEditor((FragmentActivity) getContext());
+                                }
+                            }
+                        })
+                        .show();
+                return true;
+            }
+            return false;
         });
 
         mPopupWindow = new PopupWindow(mListView, MATCH_PARENT, getContext().getResources().getDimensionPixelOffset(R.dimen._184sdp));

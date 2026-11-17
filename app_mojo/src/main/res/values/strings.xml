@@ -988,4 +988,13 @@
     <string name="mesa_shader_cache_cleared">Mesa shader cache cleared</string>
     <string name="ms_auth_required_launch">A valid Microsoft account is required to launch Minecraft.</string>
     <string name="ms_auth_required">Only Microsoft accounts are supported.</string>
+
+    <!-- Pre-Boot Compatibility Scanner & Shortcuts -->
+    <string name="preboot_warning_title">Mod Compatibility Warning</string>
+    <string name="preboot_warning_intro">Detected issues in your instance\'s mods folder before launch:</string>
+    <string name="preboot_fix_and_launch">Fix &amp; Launch</string>
+    <string name="preboot_launch_anyway">Launch Anyway</string>
+    <string name="preboot_fixes_applied">Applied compatibility fixes.</string>
+    <string name="pin_to_home_action">Pin to Home Screen</string>
+    <string name="pin_to_home_shortcut_desc">Launch %s directly with one tap</string>
 </resources>
