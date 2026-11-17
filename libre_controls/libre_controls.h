@@ -2,6 +2,8 @@
 #define LIBRE_CONTROLS_H
 
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,17 +20,59 @@ extern "C" {
 #define LIBRE_DIR_WEST        (1 << 6)
 #define LIBRE_DIR_NORTH_WEST  (1 << 7)
 
+// Aim Profiles
+#define LIBRE_AIM_LINEAR      0
+#define LIBRE_AIM_EXPONENTIAL 1
+#define LIBRE_AIM_SIGMOID     2
+
 typedef struct {
     float dx;
     float dy;
     int32_t status;
 } LibreMotionResult;
 
+typedef struct {
+    float dx;
+    float dy;
+} LibreAimResult;
+
+typedef struct {
+    int32_t id;
+    float left;
+    float top;
+    float right;
+    float bottom;
+} LibreRect;
+
+typedef struct {
+    int32_t id;
+    float center_x;
+    float center_y;
+    float radius;
+} LibreCircle;
+
+// Engine Lifecycle & Smoothing
 void libre_controls_init(void);
 void libre_controls_reset(void);
 void libre_controls_set_smoothing(float factor);
+
+// Touch & Motion Processing
 LibreMotionResult libre_controls_process_touch(int32_t pointer_id, int32_t action, float x, float y, float sensitivity);
 uint32_t libre_controls_process_joystick(int32_t angle, int32_t strength, int32_t deadzone);
+LibreAimResult libre_controls_process_aim(float dx, float dy, float sensitivity, int32_t profile, float accel_exponent);
+
+// Spatial Hit Testing (Zero Allocation)
+int32_t libre_controls_hit_test_rect(float x, float y, const LibreRect* rects, size_t count);
+int32_t libre_controls_hit_test_circle(float x, float y, const LibreCircle* circles, size_t count);
+
+// Fast KeyCode Conversion
+int32_t libre_controls_map_android_keycode(int32_t android_key);
+
+// Utilities & Math
+uint32_t libre_controls_crc32(const uint8_t* data, size_t len);
+uint32_t libre_controls_pack_argb(uint8_t a, uint8_t r, uint8_t g, uint8_t b);
+float libre_controls_dp_to_px(float dp, float density);
+float libre_controls_px_to_dp(float px, float density);
 
 #ifdef __cplusplus
 }
