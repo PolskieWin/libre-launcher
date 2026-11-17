@@ -167,8 +167,13 @@ public class AccountSpinner extends AppCompatSpinner implements LoginListener, A
         if(accounts.accounts.isEmpty()) {
             setSelection(0);
         } else {
-            setSelection(accounts.selectionIndex + 1);
-            refreshAccount(Objects.requireNonNull((Account) getSelectedItem()));
+            int targetIdx = accounts.selectionIndex >= 0 && accounts.selectionIndex < accounts.accounts.size()
+                    ? accounts.selectionIndex : 0;
+            setSelection(targetIdx + 1);
+            Account selected = accounts.accounts.get(targetIdx);
+            if(selected != null) {
+                refreshAccount(selected);
+            }
         }
     }
 

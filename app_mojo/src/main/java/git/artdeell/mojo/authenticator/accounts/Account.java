@@ -27,8 +27,8 @@ public class Account {
     public String accessToken = "0"; // access token
     public String profileId = "00000000-0000-0000-0000-000000000000"; // profile UUID, for obtaining skin
     public String username = "Steve";
-    public AuthType authType = AuthType.LOCAL;
-    public boolean isMicrosoft = false;
+    public AuthType authType = AuthType.MICROSOFT;
+    public boolean isMicrosoft = true;
     public String refreshToken = "0";
     public String xuid;
     public long expiresAt;
@@ -108,6 +108,10 @@ public class Account {
             Account account = JSONUtils.readFromFile(mSaveLocation, Account.class);
             if(account == null) return null;
             account.mSaveLocation = mSaveLocation;
+            if (account.authType == AuthType.MICROSOFT || account.isMicrosoft) {
+                account.authType = AuthType.MICROSOFT;
+                account.isMicrosoft = true;
+            }
             return account;
         }catch (IOException | JsonParseException e) {
             return null;

@@ -101,6 +101,7 @@ public class MicrosoftBackgroundLogin implements BackgroundLogin{
         acc.username = mcName;
         acc.profileId = mcUuid;
         acc.authType = AuthType.MICROSOFT;
+        acc.isMicrosoft = true;
         acc.refreshToken = msRefreshToken;
         acc.expiresAt = expiresAt;
         acc.updateSkinFace();

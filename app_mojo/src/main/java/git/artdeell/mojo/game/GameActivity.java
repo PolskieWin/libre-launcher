@@ -147,7 +147,11 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
             finish();
             return;
         }
-        if(account == null || account.authType != AuthType.MICROSOFT || !account.isMicrosoft || account.accessToken == null || account.accessToken.equals("0") || account.accessToken.isEmpty()) {
+        boolean hasToken = account != null && (
+                (account.accessToken != null && !account.accessToken.equals("0") && !account.accessToken.trim().isEmpty())
+                || (account.refreshToken != null && !account.refreshToken.equals("0") && !account.refreshToken.trim().isEmpty())
+        );
+        if(account == null || account.authType != AuthType.MICROSOFT || !account.isMicrosoft || !hasToken) {
             Toast.makeText(this, R.string.ms_auth_required_launch, Toast.LENGTH_LONG).show();
             finish();
             return;

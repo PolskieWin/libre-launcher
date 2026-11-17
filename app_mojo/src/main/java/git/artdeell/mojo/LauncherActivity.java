@@ -159,7 +159,11 @@ public class LauncherActivity extends BaseActivity {
         }
 
         Account currentAccount = Accounts.getCurrent();
-        if(currentAccount == null || currentAccount.authType != AuthType.MICROSOFT || !currentAccount.isMicrosoft || currentAccount.accessToken == null || currentAccount.accessToken.equals("0") || currentAccount.accessToken.isEmpty()){
+        boolean hasToken = currentAccount != null && (
+                (currentAccount.accessToken != null && !currentAccount.accessToken.equals("0") && !currentAccount.accessToken.trim().isEmpty())
+                || (currentAccount.refreshToken != null && !currentAccount.refreshToken.equals("0") && !currentAccount.refreshToken.trim().isEmpty())
+        );
+        if(currentAccount == null || currentAccount.authType != AuthType.MICROSOFT || !currentAccount.isMicrosoft || !hasToken){
             Toast.makeText(this, R.string.ms_auth_required_launch, Toast.LENGTH_LONG).show();
             ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
             return false;

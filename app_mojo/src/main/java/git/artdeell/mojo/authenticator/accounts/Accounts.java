@@ -71,10 +71,16 @@ public class Accounts {
 		if (acc.refreshToken == null) {
 			acc.refreshToken = "0";
 		}
-		if(acc.authType == null) {
+		if (acc.authType == null) {
 			acc.authType = acc.isMicrosoft ? AuthType.MICROSOFT : AuthType.LOCAL;
 		}
-		if (acc.authType != AuthType.MICROSOFT || !acc.isMicrosoft || acc.accessToken == null || acc.accessToken.equals("0") || acc.accessToken.trim().isEmpty()) {
+		if (acc.authType == AuthType.MICROSOFT || acc.isMicrosoft) {
+			acc.authType = AuthType.MICROSOFT;
+			acc.isMicrosoft = true;
+		}
+		boolean hasValidToken = (acc.accessToken != null && !acc.accessToken.equals("0") && !acc.accessToken.trim().isEmpty())
+				|| (acc.refreshToken != null && !acc.refreshToken.equals("0") && !acc.refreshToken.trim().isEmpty());
+		if (acc.authType != AuthType.MICROSOFT || !acc.isMicrosoft || !hasValidToken) {
 			return null;
 		}
 		return acc;
@@ -86,9 +92,25 @@ public class Accounts {
 
     public static Account getCurrent() {
 		String selectedAccount = getSelectedAccount();
-		Account account = loadAccount(new File(Tools.DIR_ACCOUNT_NEW, selectedAccount));
-		if (account != null && account.authType == AuthType.MICROSOFT && account.isMicrosoft && account.accessToken != null && !account.accessToken.equals("0") && !account.accessToken.trim().isEmpty()) {
-			return account;
+		if (selectedAccount != null && !selectedAccount.isEmpty()) {
+			Account account = loadAccount(new File(Tools.DIR_ACCOUNT_NEW, selectedAccount));
+			if (account != null && account.authType == AuthType.MICROSOFT && account.isMicrosoft) {
+				return account;
+			}
+		}
+		try {
+			Accounts loaded = load();
+			if (!loaded.accounts.isEmpty()) {
+				int idx = (loaded.selectionIndex >= 0 && loaded.selectionIndex < loaded.accounts.size())
+						? loaded.selectionIndex : 0;
+				Account fallback = loaded.accounts.get(idx);
+				if (fallback != null && fallback.authType == AuthType.MICROSOFT && fallback.isMicrosoft) {
+					setCurrent(fallback);
+					return fallback;
+				}
+			}
+		} catch (Exception e) {
+			Log.w("Accounts", "Failed to resolve fallback account", e);
 		}
 		return null;
     }
