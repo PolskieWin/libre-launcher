@@ -194,7 +194,7 @@ public class BuiltinFileManagerDialog {
                                 Formatter.formatFileSize(mContext, file.length()),
                                 file.getAbsolutePath()))
                         .setPositiveButton(android.R.string.ok, null)
-                        .setNeutralButton(R.string.preference_delete, (d, w) -> deleteFileConfirm(file))
+                        .setNeutralButton(R.string.delete, (d, w) -> deleteFileConfirm(file))
                         .show();
             }
         }
@@ -269,9 +269,9 @@ public class BuiltinFileManagerDialog {
 
         private void deleteFileConfirm(File file) {
             new MaterialAlertDialogBuilder(mContext)
-                    .setTitle(R.string.preference_delete)
+                    .setTitle(R.string.delete)
                     .setMessage("Are you sure you want to delete " + file.getName() + "?")
-                    .setPositiveButton(R.string.preference_delete, (dialog, which) -> {
+                    .setPositiveButton(R.string.delete, (dialog, which) -> {
                         deleteRecursive(file);
                         loadDirectory(mCurrentDirectory);
                     })
