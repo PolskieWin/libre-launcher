@@ -58,6 +58,9 @@
         <item name="copperDialogAnimations">@style/Animation.Copper.None</item>
         <item name="materialButtonStyle">@style/Widget.Copper.Button</item>
         <item name="imageButtonStyle">@style/Widget.Copper.ImageButton</item>
+        <item name="seekBarStyle">@style/Widget.Copper.SeekBar</item>
+        <item name="android:seekBarStyle">@style/Widget.Copper.SeekBar</item>
+        <item name="android:hapticFeedbackEnabled">true</item>
     </style>
 
     <!-- Theme of the small dialog-styled activities (fatal error, exit, etc.) -->
@@ -124,5 +127,14 @@
     <style name="ThemeOverlay.Copper.Dialog.Alert" parent="ThemeOverlay.Material3.Dialog.Alert">
         <item name="android:windowBackground">@drawable/bg_dialog_rounded</item>
         <item name="android:windowAnimationStyle">?attr/copperDialogAnimations</item>
+    </style>
+
+    <!-- Modern slider with vertical bar thumb and rounded track -->
+    <style name="Widget.Copper.SeekBar" parent="Widget.AppCompat.SeekBar">
+        <item name="android:progressDrawable">@drawable/seekbar_track_bar</item>
+        <item name="android:thumb">@drawable/thumb_slider_bar</item>
+        <item name="android:splitTrack">false</item>
+        <item name="android:maxHeight">28dp</item>
+        <item name="android:minHeight">28dp</item>
     </style>
 </resources>

@@ -47,4 +47,10 @@ public class LauncherMenuButton extends ExtendedButton {
         getExtendedViewData().setSizeCompounds(sizes);
         postProcessDrawables();
     }
+
+    @Override
+    public boolean performClick() {
+        performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+        return super.performClick();
+    }
 }

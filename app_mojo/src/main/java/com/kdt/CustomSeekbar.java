@@ -34,6 +34,7 @@ public class CustomSeekbar extends SeekBar {
             progress = applyIncrement(progress);
 
             if (progress != previousProgress) {
+                performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
                 if (mListener != null) {
                     previousProgress = progress;
                     mListener.onProgressChanged(seekBar, progress, fromUser);
@@ -127,6 +128,10 @@ public class CustomSeekbar extends SeekBar {
     }
 
     public void setup(@Nullable AttributeSet attrs) {
+        setSplitTrack(false);
+        setThumb(androidx.core.content.ContextCompat.getDrawable(getContext(), R.drawable.thumb_slider_bar));
+        setProgressDrawable(androidx.core.content.ContextCompat.getDrawable(getContext(), R.drawable.seekbar_track_bar));
+
         try (TypedArray attributes = getContext().obtainStyledAttributes(attrs, R.styleable.CustomSeekbar)) {
             setIncrement(attributes.getInt(R.styleable.CustomSeekbar_seekBarIncrement, 1));
             int min = attributes.getInt(R.styleable.CustomSeekbar_android_min, 0);

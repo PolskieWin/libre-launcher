@@ -28,7 +28,6 @@ class TelemetryOverlayView @JvmOverloads constructor(
     private val btnHibernate: TextView
 
     var onHibernateToggle: (() -> Unit)? = null
-    var onAutoHibernateTriggered: (() -> Unit)? = null
 
     private var isRunning = false
     private var lastFrameTimeNanos: Long = 0
@@ -195,10 +194,6 @@ class TelemetryOverlayView @JvmOverloads constructor(
         val thermalStr = if (snap.thermalHeadroom > 0f) {
             val percent = (snap.thermalHeadroom * 100).toInt()
             if (snap.thermalHeadroom >= 0.95f) {
-                // Auto-hibernate trigger on extreme thermal headroom
-                if (!snap.isHibernate) {
-                    onAutoHibernateTriggered?.invoke()
-                }
                 "${percent}% HIGH"
             } else if (snap.thermalHeadroom >= 0.80f) {
                 "${percent}% WARN"

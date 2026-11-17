@@ -80,11 +80,19 @@ public class CustomSeekBarPreference extends SeekBarPreference {
         mTextView = (TextView) view.findViewById(R.id.seekbar_value);
         mTextView.setTextAlignment(View.TEXT_ALIGNMENT_TEXT_START);
         SeekBar seekBar = (SeekBar) view.findViewById(R.id.seekbar);
+        if (seekBar != null) {
+            seekBar.setSplitTrack(false);
+            seekBar.setThumb(androidx.core.content.ContextCompat.getDrawable(seekBar.getContext(), R.drawable.thumb_slider_bar));
+            seekBar.setProgressDrawable(androidx.core.content.ContextCompat.getDrawable(seekBar.getContext(), R.drawable.seekbar_track_bar));
+        }
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    seekBar.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+                }
                 progress += mMin;
                 progress = progress / getSeekBarIncrement();
                 progress = progress * getSeekBarIncrement();

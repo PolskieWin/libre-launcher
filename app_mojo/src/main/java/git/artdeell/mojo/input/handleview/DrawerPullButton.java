@@ -36,6 +36,12 @@ public class DrawerPullButton extends View {
         canvas.restore();
     }
 
+    @Override
+    public boolean performClick() {
+        performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+        return super.performClick();
+    }
+
     // Move the button to the third quarter of the screen
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {

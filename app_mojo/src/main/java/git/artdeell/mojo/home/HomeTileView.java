@@ -193,6 +193,12 @@ final class HomeTileView extends ViewGroup {
         addView(mPlayButton);
     }
 
+    @Override
+    public boolean performClick() {
+        performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+        return super.performClick();
+    }
+
     private ImageView newIcon() {
         ImageView icon = new ImageView(getContext());
         icon.setScaleType(ImageView.ScaleType.FIT_CENTER);

@@ -213,6 +213,9 @@ public final class HomeTilesController {
     private void perform(@NonNull HomeTile tile) {
         HomeTileType type = tile.getType();
         if (type == null || mHost.getContext() == null) return;
+        if (mHost.getView() != null) {
+            mHost.getView().performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+        }
         Context context = mHost.requireContext();
         switch (type) {
             case WIKI:

@@ -129,13 +129,6 @@ class HibernateAfkManager(
         }
     }
 
-    fun onThermalThresholdExceeded() {
-        if (!isAfkActive) {
-            enterAfk()
-            Toast.makeText(activity, "Thermal Headroom > 95%! Auto-Hibernate Activated", Toast.LENGTH_LONG).show()
-        }
-    }
-
     private fun createAfkOverlayView(): View {
         val layout = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL

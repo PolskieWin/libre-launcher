@@ -305,6 +305,9 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
             gameActionArrayAdapter = new ArrayAdapter<>(this,
                     R.layout.item_drawer_menu, getResources().getStringArray(R.array.menu_ingame));
             gameActionClickListener = (parent, view, position, id) -> {
+                if (view != null) {
+                    view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+                }
                 switch(position) {
                      case 0: dialogForceClose(GameActivity.this); break;
                      case 1: openLogOutput(); break;
@@ -401,10 +404,6 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         mTelemetryOverlayView = new TelemetryOverlayView(this);
         mTelemetryOverlayView.setOnHibernateToggle(() -> {
             mHibernateAfkManager.toggleAfk();
-            return null;
-        });
-        mTelemetryOverlayView.setOnAutoHibernateTriggered(() -> {
-            mHibernateAfkManager.onThermalThresholdExceeded();
             return null;
         });
 

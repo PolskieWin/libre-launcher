@@ -267,6 +267,12 @@ public class AccountSpinner extends AppCompatSpinner implements LoginListener, A
     }
 
     @Override
+    public boolean performClick() {
+        performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+        return super.performClick();
+    }
+
+    @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
         float bottom = getHeight() - mLoginBarPaint.getStrokeWidth()/2;
