@@ -4,8 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:minHeight="48dp"
-    android:layout_marginHorizontal="8dp"
-    android:layout_marginVertical="3dp"
     android:background="@drawable/bg_drawer_item"
     android:gravity="center_vertical"
     android:paddingHorizontal="16dp"

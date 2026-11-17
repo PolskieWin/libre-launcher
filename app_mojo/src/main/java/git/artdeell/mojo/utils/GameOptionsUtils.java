@@ -49,6 +49,16 @@ public class GameOptionsUtils {
         else if(fullscreen.equals("1")) MCOptionUtils.set("fullscreen","0");
     }
 
+    private static void fixDebugScale() {
+        String guiScale = MCOptionUtils.get("guiScale");
+        if (guiScale == null || guiScale.equals("0") || guiScale.equals("1")) {
+            guiScale = "4";
+            MCOptionUtils.set("guiScale", guiScale);
+        }
+        MCOptionUtils.set("debugGuiScale", guiScale);
+        MCOptionUtils.set("debugScale", guiScale);
+    }
+
     public static void fixOptions(boolean isLtw) {
         try {
             MCOptionUtils.load();
@@ -59,6 +69,7 @@ public class GameOptionsUtils {
         if(isLtw) fixDeathCloud();
         disableFullscreen();
         disableNarrator();
+        fixDebugScale();
 
         try {
             MCOptionUtils.save();

@@ -6,7 +6,9 @@ saturation:0.0
 renderDistance:2
 simulationDistance:5
 renderClouds:"fast"
-guiScale:3
+guiScale:4
+debugGuiScale:4
+debugScale:4
 particles:1
 bobView:false
 anaglyph3d:false

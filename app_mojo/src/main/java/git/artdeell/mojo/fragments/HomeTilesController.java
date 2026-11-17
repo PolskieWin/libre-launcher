@@ -216,7 +216,7 @@ public final class HomeTilesController {
         Context context = mHost.requireContext();
         switch (type) {
             case WIKI:
-                Tools.openURL(mHost.requireActivity(), Tools.URL_HOME);
+                Tools.showWikiDialog(context);
                 break;
             case DISCORD:
                 Tools.openURL(mHost.requireActivity(), context.getString(R.string.social_media_invite));

@@ -97,14 +97,14 @@ public final class Tools {
     public static final String MAVEN_CENTRAL = "https://maven-central-eu.storage-download.googleapis.com/maven2/";
     public  static final float BYTE_TO_MB = 1024 * 1024;
     public static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
-    public static String APP_NAME = "MojoLauncher";
+    public static String APP_NAME = "LibreLauncher";
 
     public static final Gson GLOBAL_GSON = new GsonBuilder()
             .registerTypeAdapter(MavenName.class, new MavenNameAdapter())
             .setPrettyPrinting()
             .create();
 
-    public static final String URL_HOME = "https://mojolauncher.ru";
+    public static final String URL_HOME = "https://github.com/PolskieWin/libre-launcher";
     public static String NATIVE_LIB_DIR;
     public static String DIR_DATA; //Initialized later to get context
     public static File DIR_CACHE;
@@ -492,6 +492,23 @@ public final class Tools {
         } catch (ActivityNotFoundException e) {
             Tools.showError(act, e);
         }
+    }
+
+    public static void showWikiDialog(Context context) {
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.wiki_dialog_title)
+                .setMessage(R.string.wiki_dialog_content)
+                .setPositiveButton(android.R.string.ok, null)
+                .setNeutralButton(R.string.wiki_dialog_repo, (d, w) -> {
+                    try {
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(URL_HOME));
+                        browserIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(browserIntent);
+                    } catch (ActivityNotFoundException e) {
+                        showError(context, e);
+                    }
+                })
+                .show();
     }
 
     public static void preProcessLibrary(DependentLibrary libItem) {

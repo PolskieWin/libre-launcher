@@ -558,7 +558,7 @@ public class MainMenuFragment extends Fragment {
         AnimationManager.staggerIn(staggerParent);
 
         if (mNewsButton != null) {
-            mNewsButton.setOnClickListener(v -> Tools.openURL(requireActivity(), Tools.URL_HOME));
+            mNewsButton.setOnClickListener(v -> Tools.showWikiDialog(requireContext()));
             mNewsButton.setOnLongClickListener((v)->{
                 Tools.swapFragment(requireActivity(), GamepadMapperFragment.class, GamepadMapperFragment.TAG, null);
                 return true;

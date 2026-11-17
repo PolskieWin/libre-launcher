@@ -39,6 +39,15 @@ public class CallbackBridge {
         PLATFORM.sendKeyEvent(keyCode, false, getCurrentMods());
     }
 
+    public static void sendKeyCombo(int key1, int key2) {
+        PLATFORM.sendKeyEvent(key1, true, getCurrentMods());
+        PLATFORM.sendKeyEvent(key2, true, getCurrentMods());
+        sChoreographer.postFrameCallbackDelayed(l -> {
+            PLATFORM.sendKeyEvent(key2, false, getCurrentMods());
+            PLATFORM.sendKeyEvent(key1, false, getCurrentMods());
+        }, 50);
+    }
+
     public static void sendMouseButton(int button, boolean status) {
         CallbackBridge.sendMouseKeycode(button, CallbackBridge.getCurrentMods(), status);
     }

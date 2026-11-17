@@ -972,4 +972,13 @@
     <string name="files_view_file">File Viewer</string>
     <string name="files_refresh">Refresh</string>
     <string name="refresh">Refresh</string>
+
+    <!-- Wiki and fork history -->
+    <string name="wiki_dialog_title">Libre Launcher Wiki &amp; History</string>
+    <string name="wiki_dialog_content">Libre Launcher is an open-source, community-driven launcher for Minecraft: Java Edition on Android.\n\n• Lineage &amp; Fork History:\nLibre Launcher originated as an independent fork of Copper Launcher (carrying forward the lineage of MojoLauncher and PojavLauncher). It was built to provide a modern, completely libre, and tracker-free launcher tailored for mobile devices.\n\n• Built for Performance:\n- Native Rust controls engine (libre_controls) for zero-latency touch and gamepads.\n- Universal Mobile GPU Renderer specifications dynamically optimized for Qualcomm Adreno, ARM Mali/Immortalis, and Samsung Xclipse / AMD RDNA.\n- Clean Material 3 copper theme with round cards.\n\n• Open Source Freedom:\nLicensed under the GNU Lesser General Public License (LGPL v3.0). Free forever, without telemetry or donation promotions.</string>
+    <string name="wiki_dialog_repo">GitHub Repo</string>
+
+    <!-- In-game debug & gamemode actions -->
+    <string name="menu_gamemode_switcher">Gamemode (F3+F4)</string>
+    <string name="menu_debug_options">Debug &amp; Scale (F3+F6)</string>
 </resources>

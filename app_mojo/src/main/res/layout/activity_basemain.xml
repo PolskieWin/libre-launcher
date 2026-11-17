@@ -70,22 +70,25 @@
 			android:id="@+id/main_loading_screen"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:background="#BB000000"
-			android:visibility="visible"
-			>
+			android:background="#99140E0A"
+			android:visibility="visible">
 
 			<LinearLayout
-				android:layout_width="match_parent"
+				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:layout_marginBottom="16dp"
 				android:layout_gravity="center"
 				android:gravity="center"
+				android:background="@drawable/bg_dialog_rounded"
+				android:elevation="8dp"
+				android:paddingHorizontal="32dp"
+				android:paddingVertical="24dp"
 				android:orientation="vertical">
 
 				<ProgressBar
 					android:id="@+id/main_loading_screen_progress"
-					android:layout_width="24dp"
-					android:layout_height="24dp"
+					android:layout_width="36dp"
+					android:layout_height="36dp"
+					android:layout_marginBottom="12dp"
 					android:indeterminate="true" />
 
 				<TextView
@@ -93,16 +96,18 @@
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
 					android:text="@string/loading_screen_title"
-					android:textColor="@android:color/white"
-					android:textSize="16sp" />
+					android:textAppearance="?attr/textAppearanceTitleMedium"
+					android:textColor="?attr/colorOnSurface"
+					android:textStyle="bold" />
 
 				<TextView
 					android:id="@+id/main_loading_screen_warning"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
+					android:layout_marginTop="4dp"
 					android:text="@string/loading_screen_warning"
-					android:textColor="@android:color/darker_gray"
-					android:textSize="12sp" />
+					android:textAppearance="?attr/textAppearanceBodySmall"
+					android:textColor="?attr/colorOnSurfaceVariant" />
 			</LinearLayout>
 		</FrameLayout>
 
@@ -116,13 +121,14 @@
 	</FrameLayout>
 
 	<ListView
-		android:layout_width="240dp"
+		android:layout_width="250dp"
 		android:layout_height="match_parent"
 		android:layout_gravity="right"
 		android:background="?attr/colorSurface"
-		android:divider="@null"
-		android:dividerHeight="0dp"
-		android:paddingVertical="8dp"
+		android:divider="@android:color/transparent"
+		android:dividerHeight="8dp"
+		android:paddingHorizontal="10dp"
+		android:paddingVertical="12dp"
 		android:clipToPadding="false"
 		android:fitsSystemWindows="false"
 		android:id="@+id/main_navigation_view"/>

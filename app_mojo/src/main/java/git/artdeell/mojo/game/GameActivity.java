@@ -309,10 +309,12 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
                      case 0: dialogForceClose(GameActivity.this); break;
                      case 1: openLogOutput(); break;
                      case 2: dialogSendCustomKey(); break;
-                     case 3: openQuickSettings(); break;
-                     case 4: openCustomControls(); break;
-                     case 5: togglePerformanceOverlay(); break;
-                     case 6: toggleHibernateAfk(); break;
+                     case 3: CallbackBridge.sendKeyCombo(KeyEvent.KEYCODE_F3, KeyEvent.KEYCODE_F4); break;
+                     case 4: CallbackBridge.sendKeyCombo(KeyEvent.KEYCODE_F3, KeyEvent.KEYCODE_F6); break;
+                     case 5: openQuickSettings(); break;
+                     case 6: openCustomControls(); break;
+                     case 7: togglePerformanceOverlay(); break;
+                     case 8: toggleHibernateAfk(); break;
                 }
                 drawerLayout.closeDrawers();
             };
@@ -545,9 +547,32 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
     }
 
     private void dialogSendCustomKey() {
+        String[] baseKeys = KeycodeUtils.generateKeyName();
+        String[] debugCombos = {
+            "F3 + F4 (Gamemode Switcher)",
+            "F3 + F6 (Debug Options & Scale)",
+            "F3 + B (Hitboxes)",
+            "F3 + G (Chunk Borders)",
+            "F3 + H (Tooltips)",
+            "F3 (Debug Screen)"
+        };
+        String[] allItems = new String[debugCombos.length + baseKeys.length];
+        System.arraycopy(debugCombos, 0, allItems, 0, debugCombos.length);
+        System.arraycopy(baseKeys, 0, allItems, debugCombos.length, baseKeys.length);
+
         AlertDialog.Builder dialog = new MaterialAlertDialogBuilder(this);
         dialog.setTitle(R.string.control_customkey);
-        dialog.setItems(KeycodeUtils.generateKeyName(), (dInterface, position) -> KeycodeUtils.execKeyIndex(position));
+        dialog.setItems(allItems, (dInterface, position) -> {
+            switch (position) {
+                case 0: CallbackBridge.sendKeyCombo(KeyEvent.KEYCODE_F3, KeyEvent.KEYCODE_F4); break;
+                case 1: CallbackBridge.sendKeyCombo(KeyEvent.KEYCODE_F3, KeyEvent.KEYCODE_F6); break;
+                case 2: CallbackBridge.sendKeyCombo(KeyEvent.KEYCODE_F3, KeyEvent.KEYCODE_B); break;
+                case 3: CallbackBridge.sendKeyCombo(KeyEvent.KEYCODE_F3, KeyEvent.KEYCODE_G); break;
+                case 4: CallbackBridge.sendKeyCombo(KeyEvent.KEYCODE_F3, KeyEvent.KEYCODE_H); break;
+                case 5: CallbackBridge.sendKeyPress(KeyEvent.KEYCODE_F3); break;
+                default: KeycodeUtils.execKeyIndex(position - debugCombos.length); break;
+            }
+        });
         dialog.show();
     }
 
