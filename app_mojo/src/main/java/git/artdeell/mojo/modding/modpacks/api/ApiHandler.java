@@ -52,7 +52,7 @@ public class ApiHandler {
     }
 
     //Make a get request and return the response as a raw string;
-    private static final String USER_AGENT = "CopperLauncher/Copper-Android (https://github.com/CopperLauncher/Copper-Android)";
+    private static final String USER_AGENT = "LibreLauncher/Libre-Android (https://github.com/PolskieWin/libre-launcher)";
     private static final int CONNECT_TIMEOUT_MS = 10_000;
     private static final int READ_TIMEOUT_MS = 15_000;
 
