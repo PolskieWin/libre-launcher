@@ -106,7 +106,7 @@
                 android:focusable="true"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="📁 Root"
+                android:text="@string/files_quick_root"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -120,7 +120,7 @@
                 android:focusable="true"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="📦 Mods"
+                android:text="@string/files_quick_mods"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -134,7 +134,7 @@
                 android:focusable="true"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="🎨 Resourcepacks"
+                android:text="@string/files_quick_resourcepacks"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -148,7 +148,7 @@
                 android:focusable="true"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="🗺 Saves"
+                android:text="@string/files_quick_saves"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -162,7 +162,7 @@
                 android:focusable="true"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="📸 Screenshots"
+                android:text="@string/files_quick_screenshots"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -176,7 +176,7 @@
                 android:focusable="true"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="📄 Logs"
+                android:text="@string/files_quick_logs"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -190,7 +190,7 @@
                 android:focusable="true"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="⚙ Config"
+                android:text="@string/files_quick_config"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="?attr/colorOnSurface" />
         </LinearLayout>

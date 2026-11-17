@@ -16,29 +16,29 @@
 
 ---
 
-## 🚀 Key Improvements in Libre Launcher
+## Key Improvements in Libre Launcher
 
-- **🦀 Rust Native Controls (`libre_controls`)**:
+- **Rust Native Controls (`libre_controls`)**:
   - Rebuilt virtual touch & motion tracking pipeline in Rust.
   - Zero heap allocation during gameplay — eliminates garbage collection lag spikes.
   - Non-interrupted sprint transitions when turning with virtual joystick (diagonal-to-cardinal key debounce).
   - Exponential Moving Average (EMA) aim smoothing to remove touchscreen jitter.
-- **🎮 Minecraft 26.3 & 26.4 Ready**:
+- **Minecraft 26.3 & 26.4 Ready**:
   - Full support for 2026 calendar versioning (`26.1`, `26.2`, `26.3`, `26.4`, and `26w...` snapshots).
   - Fixed NeoForge 4-part version resolution (`26.x.y.z`) preventing version parsing crashes.
   - Snapshot comparator contract fix in `ComparableVersionString` preventing TimSort crash bugs.
   - Smart automatic JRE runtime fallback (Java 21/25 LTS for modern 26.x versions).
-- **⚡ Advanced Custom Driver & Renderer Management**:
+- **Advanced Custom Driver & Renderer Management**:
   - Direct access to Custom Vulkan Drivers (Turnip / Freedreno) in Video Settings without arbitrary UI hiding.
   - Full renderer suite: GL4ES, Mesa Zink (OpenGL over Vulkan), OpenLTW, ANGLE, VirGL, and plugin renderers.
-- **🪶 Lightweight & Debloated**:
+- **Lightweight & Debloated**:
   - Stripped unnecessary binder IPC logcat chatter during touch inputs.
   - Cleaned up obsolete legacy logging tags.
   - Optimized View touch event propagation to minimize Android UI traversal overhead.
 
 ---
 
-## 🛠️ Building
+## Building
 
 ### Android APK Build via Gradle
 
@@ -64,7 +64,7 @@ cargo test
 
 ---
 
-## 📜 Credits & Lineage
+## Credits & Lineage
 
 Libre Launcher is built upon the incredible work of the open-source Minecraft on mobile community:
 - **[Copper Launcher](https://github.com/CopperLauncher/Copper-Android)** by MaxJubayerYT

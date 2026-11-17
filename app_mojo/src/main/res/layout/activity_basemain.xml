@@ -116,10 +116,14 @@
 	</FrameLayout>
 
 	<ListView
-		android:layout_width="200dp"
+		android:layout_width="240dp"
 		android:layout_height="match_parent"
 		android:layout_gravity="right"
-		android:background="?attr/colorBackgroundFloating"
+		android:background="?attr/colorSurface"
+		android:divider="@null"
+		android:dividerHeight="0dp"
+		android:paddingVertical="8dp"
+		android:clipToPadding="false"
 		android:fitsSystemWindows="false"
 		android:id="@+id/main_navigation_view"/>
 

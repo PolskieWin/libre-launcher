@@ -248,7 +248,7 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         });
 
         ingameControlsEditorArrayAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, getResources().getStringArray(R.array.menu_customcontrol));
+                R.layout.item_drawer_menu, getResources().getStringArray(R.array.menu_customcontrol));
         ingameControlsEditorListener = (parent, view, position, id) -> {
             switch(position) {
                 case 0: mControlLayout.addControlButton(new ControlData("New")); break;
@@ -303,7 +303,7 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
 
             // Menu
             gameActionArrayAdapter = new ArrayAdapter<>(this,
-                    android.R.layout.simple_list_item_1, getResources().getStringArray(R.array.menu_ingame));
+                    R.layout.item_drawer_menu, getResources().getStringArray(R.array.menu_ingame));
             gameActionClickListener = (parent, view, position, id) -> {
                 switch(position) {
                      case 0: dialogForceClose(GameActivity.this); break;

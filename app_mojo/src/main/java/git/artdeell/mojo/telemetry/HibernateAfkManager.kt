@@ -149,8 +149,10 @@ class HibernateAfkManager(
         }
 
         val tvIcon = TextView(activity).apply {
-            text = "🌙"
-            textSize = 48f
+            text = "AFK"
+            textSize = 32f
+            setTypeface(Typeface.DEFAULT_BOLD)
+            setTextColor(Color.parseColor("#F2BC90"))
             gravity = Gravity.CENTER
         }
 

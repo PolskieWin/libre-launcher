@@ -61,9 +61,9 @@ class TelemetryOverlayView @JvmOverloads constructor(
 
         // Floating pill design
         val bg = GradientDrawable().apply {
-            setColor(Color.parseColor("#E612141C"))
-            cornerRadius = Tools.dpToPx(20f)
-            setStroke(Tools.dpToPx(1.5f).toInt(), Color.parseColor("#33FFFFFF"))
+            setColor(Color.parseColor("#E61E1611"))
+            cornerRadius = Tools.dpToPx(18f)
+            setStroke(Tools.dpToPx(1.2f).toInt(), Color.parseColor("#4DF2BC90"))
         }
         background = bg
 
@@ -71,9 +71,9 @@ class TelemetryOverlayView @JvmOverloads constructor(
 
         // Drag handle indicator
         tvDragHandle = TextView(context).apply {
-            text = "⋮⋮ "
+            text = "::: "
             textSize = 12f
-            setTextColor(Color.parseColor("#80FFFFFF"))
+            setTextColor(Color.parseColor("#99F2BC90"))
             gravity = Gravity.CENTER
         }
 
@@ -81,24 +81,24 @@ class TelemetryOverlayView @JvmOverloads constructor(
         tvMetrics = TextView(context).apply {
             textSize = 11f
             setTypeface(monoTypeface, Typeface.BOLD)
-            setTextColor(Color.WHITE)
+            setTextColor(Color.parseColor("#F7E2D3"))
             text = "--.- FPS | 1% --.- | --- MB | --"
         }
 
         // One-tap Hibernate toggle button
         btnHibernate = TextView(context).apply {
-            text = " 💤 AFK "
+            text = " AFK "
             textSize = 10f
             setTypeface(monoTypeface, Typeface.BOLD)
-            setTextColor(Color.parseColor("#00E5FF"))
-            val btnPadH = Tools.dpToPx(6f).toInt()
+            setTextColor(Color.parseColor("#F2BC90"))
+            val btnPadH = Tools.dpToPx(8f).toInt()
             val btnPadV = Tools.dpToPx(3f).toInt()
             setPadding(btnPadH, btnPadV, btnPadH, btnPadV)
 
             val btnBg = GradientDrawable().apply {
-                setColor(Color.parseColor("#3300E5FF"))
-                cornerRadius = Tools.dpToPx(10f)
-                setStroke(Tools.dpToPx(1f).toInt(), Color.parseColor("#6600E5FF"))
+                setColor(Color.parseColor("#26F2BC90"))
+                cornerRadius = Tools.dpToPx(12f)
+                setStroke(Tools.dpToPx(1f).toInt(), Color.parseColor("#66F2BC90"))
             }
             background = btnBg
 
@@ -185,9 +185,9 @@ class TelemetryOverlayView @JvmOverloads constructor(
         val snap = LibreTelemetry.getSnapshot()
 
         val fpsColor = when {
-            snap.fps >= 55f -> "#4CAF50"
-            snap.fps >= 30f -> "#FFC107"
-            else -> "#F44336"
+            snap.fps >= 55f -> "#A5D6A7"
+            snap.fps >= 30f -> "#F2BC90"
+            else -> "#EF9A9A"
         }
         tvMetrics.setTextColor(Color.parseColor(fpsColor))
 
@@ -199,9 +199,9 @@ class TelemetryOverlayView @JvmOverloads constructor(
                 if (!snap.isHibernate) {
                     onAutoHibernateTriggered?.invoke()
                 }
-                "🔥${percent}%"
+                "${percent}% HIGH"
             } else if (snap.thermalHeadroom >= 0.80f) {
-                "⚠️${percent}%"
+                "${percent}% WARN"
             } else {
                 "${percent}%"
             }
@@ -215,16 +215,24 @@ class TelemetryOverlayView @JvmOverloads constructor(
                 "%.1f FPS | 1%% %.1f | %dMB | %s [AFK 5 FPS]",
                 snap.fps, snap.onePercentLow, snap.ramUsedMb, thermalStr
             )
-            btnHibernate.text = " ⚡ WAKE "
-            btnHibernate.setTextColor(Color.parseColor("#4CAF50"))
+            btnHibernate.text = " WAKE "
+            btnHibernate.setTextColor(Color.parseColor("#F7E2D3"))
+            (btnHibernate.background as? GradientDrawable)?.apply {
+                setColor(Color.parseColor("#4DF2BC90"))
+                setStroke(Tools.dpToPx(1f).toInt(), Color.parseColor("#F2BC90"))
+            }
         } else {
             tvMetrics.text = String.format(
                 Locale.ROOT,
                 "%.1f FPS | 1%% %.1f | %dMB | %s",
                 snap.fps, snap.onePercentLow, snap.ramUsedMb, thermalStr
             )
-            btnHibernate.text = " 💤 AFK "
-            btnHibernate.setTextColor(Color.parseColor("#00E5FF"))
+            btnHibernate.text = " AFK "
+            btnHibernate.setTextColor(Color.parseColor("#F2BC90"))
+            (btnHibernate.background as? GradientDrawable)?.apply {
+                setColor(Color.parseColor("#26F2BC90"))
+                setStroke(Tools.dpToPx(1f).toInt(), Color.parseColor("#66F2BC90"))
+            }
         }
     }
 }
