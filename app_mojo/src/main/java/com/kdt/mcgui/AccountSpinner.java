@@ -86,12 +86,7 @@ public class AccountSpinner extends AppCompatSpinner implements LoginListener, A
     private final ExtraListener<String> mMicrosoftLoginListener = new LoginExtraListener(AuthType.MICROSOFT);
     private final ExtraListener<String> mElyByLoginListener = new LoginExtraListener(AuthType.ELY_BY);
     private final ExtraListener<String[]> mMojangLoginListener = (key, value) -> {
-        try {
-            Account account = Accounts.create(acc-> acc.username = value[0]);
-            onLoginDone(account);
-        }catch (IOException e) {
-            onLoginError(e);
-        }
+        onLoginError(new IllegalStateException(getContext().getString(R.string.ms_auth_required)));
         return false;
     };
 

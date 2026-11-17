@@ -61,6 +61,12 @@ public class DriverManager {
         return driver;
     }
 
+    public static Driver getDriver(String hash) {
+        if(hash == null || "builtin".equals(hash)) return DEFAULT_DRIVER;
+        Driver driver = loadDriver(hash);
+        return driver != null ? driver : DEFAULT_DRIVER;
+    }
+
     /**
      * Checks if the provided driver is selected as the default/preferred
      * @param driver A driver to check

@@ -33,6 +33,7 @@ import git.artdeell.mojo.utils.JREUtils;
 import git.artdeell.mojo.utils.JSONUtils;
 import git.artdeell.mojo.utils.MCOptionUtils;
 import git.artdeell.mojo.utils.OldVersionsUtils;
+import git.artdeell.mojo.utils.SocUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -376,6 +377,13 @@ public class GameRunner {
         }
         javaArgList.add("-Dorg.lwjgl.opengl.libname=libGLMojo.so");
         javaArgList.add("-Dorg.lwjgl.freetype.libname="+ Tools.NATIVE_LIB_DIR+"/libfreetype.so");
+
+        File fakeProcDir = SocUtils.setupFakeProc(Tools.DIR_CACHE);
+        if (fakeProcDir != null) {
+            String fakeProcPath = fakeProcDir.getAbsolutePath();
+            javaArgList.add("-Doshi.util.proc.path=" + fakeProcPath);
+            javaArgList.add("-Doshi.os.linux.proc.path=" + fakeProcPath);
+        }
 
         activity.runOnUiThread(() -> Toast.makeText(activity, activity.getString(R.string.autoram_info_msg,LauncherPreferences.PREF_RAM_ALLOCATION), Toast.LENGTH_SHORT).show());
 

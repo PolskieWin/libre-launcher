@@ -25,6 +25,7 @@ public class Instance extends DisplayInstance {
     /** Id of the mod loader the instance was created with ("fabric", "legacy-fabric", "bta-babric"...), null when unknown */
     public String loader;
     public String renderer;
+    public String driver;
     public String jvmArgs;
     public int argsMode;
     public String selectedRuntime;
@@ -102,9 +103,25 @@ public class Instance extends DisplayInstance {
         icon = name;
     }
 
+    public boolean isSnapshot() {
+        if(versionId == null) return false;
+        if(VERSION_LATEST_SNAPSHOT.equals(versionId)) return true;
+        String v = versionId.toLowerCase();
+        return v.contains("snapshot") || v.contains("-pre") || v.contains("-rc") || v.matches(".*\\d{2}w\\d{2}[a-z].*");
+    }
+
     public String getLaunchRenderer() {
         if(Tools.isValidString(renderer)) return renderer;
+        if(isSnapshot()) return git.artdeell.mojo.game.renderer.def.Renderers.LIBRE_MOBILE_RENDERER;
         return LauncherPreferences.PREF_RENDERER;
+    }
+
+    public String getLaunchDriver() {
+        if(Tools.isValidString(driver)) {
+            if("builtin".equals(driver)) return null;
+            return driver;
+        }
+        return LauncherPreferences.PREF_VULKAN_DRIVER;
     }
 
     public String getLaunchArgs() {

@@ -74,6 +74,9 @@ public class Accounts {
 		if(acc.authType == null) {
 			acc.authType = acc.isMicrosoft ? AuthType.MICROSOFT : AuthType.LOCAL;
 		}
+		if (acc.authType != AuthType.MICROSOFT || !acc.isMicrosoft || acc.accessToken == null || acc.accessToken.equals("0") || acc.accessToken.trim().isEmpty()) {
+			return null;
+		}
 		return acc;
 	}
 
@@ -83,7 +86,11 @@ public class Accounts {
 
     public static Account getCurrent() {
 		String selectedAccount = getSelectedAccount();
-		return loadAccount(new File(Tools.DIR_ACCOUNT_NEW, selectedAccount));
+		Account account = loadAccount(new File(Tools.DIR_ACCOUNT_NEW, selectedAccount));
+		if (account != null && account.authType == AuthType.MICROSOFT && account.isMicrosoft && account.accessToken != null && !account.accessToken.equals("0") && !account.accessToken.trim().isEmpty()) {
+			return account;
+		}
+		return null;
     }
 
 	private static File pickAccountPath() {

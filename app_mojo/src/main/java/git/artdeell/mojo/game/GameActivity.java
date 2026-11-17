@@ -59,6 +59,7 @@ import git.artdeell.mojo.utils.GpuUtils;
 import git.artdeell.mojo.utils.KeycodeUtils;
 import git.artdeell.mojo.Logger;
 import git.artdeell.mojo.Tools;
+import git.artdeell.mojo.authenticator.AuthType;
 import git.artdeell.mojo.authenticator.accounts.Accounts;
 import git.artdeell.mojo.input.ControlButtonMenuListener;
 import git.artdeell.mojo.input.ControlData;
@@ -146,11 +147,16 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
             finish();
             return;
         }
+        if(account == null || account.authType != AuthType.MICROSOFT || !account.isMicrosoft || account.accessToken == null || account.accessToken.equals("0") || account.accessToken.isEmpty()) {
+            Toast.makeText(this, R.string.ms_auth_required_launch, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
         mGameRenderer = new GameRenderer(instance.getLaunchRenderer());
 
         boolean hasVulkanMod = GameRunner.hasVulkanMod(instance.getGameDirectory());
         if(!PREF_ZINK_PREFER_SYSTEM_DRIVER || hasVulkanMod) {
-            mGameRenderer.overrideVulkanDriver();
+            mGameRenderer.overrideVulkanDriver(instance.getLaunchDriver());
         }
         if(hasVulkanMod) {
             git.artdeell.mojoexec.MojoExec.preloadVulkan();

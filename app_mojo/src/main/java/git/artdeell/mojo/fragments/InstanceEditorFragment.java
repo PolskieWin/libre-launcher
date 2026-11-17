@@ -42,6 +42,9 @@ import git.artdeell.mojo.instances.InstanceIconProvider;
 import git.artdeell.mojo.instances.RoundedIconDrawable;
 import git.artdeell.mojo.utils.profiles.VersionSelectorDialog;
 import git.artdeell.mojo.utils.CropperUtils;
+import git.artdeell.mojo.vulkan.BuiltinDriver;
+import git.artdeell.mojo.vulkan.Driver;
+import git.artdeell.mojo.vulkan.DriverManager;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +57,8 @@ public class InstanceEditorFragment extends Fragment implements CropperUtils.Cro
     private Instance mInstance;
     private String mSelectedControlLayout;
     private Button mSaveButton, mDeleteButton, mControlSelectButton, mVersionSelectButton, mExportButton, mShortcutButton;
-    private Spinner mDefaultRuntime, mDefaultRenderer;
+    private Spinner mDefaultRuntime, mDefaultRenderer, mDefaultDriver;
+    private List<Driver> mDriversList;
     private EditText mDefaultName, mDefaultJvmArgument;
     private TextView mDefaultVersion, mDefaultControl;
     private ImageView mInstanceIcon;
@@ -240,6 +244,32 @@ public class InstanceEditorFragment extends Fragment implements CropperUtils.Cro
         }
         mDefaultRenderer.setSelection(rendererIndex);
 
+        if (mDefaultDriver != null) {
+            mDriversList = DriverManager.getDrivers();
+            List<String> driverNames = new ArrayList<>(mDriversList.size() + 1);
+            driverNames.add(context.getString(R.string.global_default));
+            for (Driver d : mDriversList) {
+                driverNames.add(d.getName());
+            }
+            mDefaultDriver.setAdapter(new ArrayAdapter<>(context, R.layout.item_simple_list_1, driverNames));
+
+            int driverIndex = 0;
+            if (instance.driver != null) {
+                if ("builtin".equals(instance.driver)) {
+                    driverIndex = 1;
+                } else {
+                    for (int i = 0; i < mDriversList.size(); i++) {
+                        Driver d = mDriversList.get(i);
+                        if (instance.driver.equals(d.getHash())) {
+                            driverIndex = i + 1;
+                            break;
+                        }
+                    }
+                }
+            }
+            mDefaultDriver.setSelection(driverIndex);
+        }
+
         mDefaultVersion.setText(instance.versionId);
         mDefaultJvmArgument.setText(nullToEmpty(instance.jvmArgs));
         mDefaultName.setText(nullToEmpty(instance.name));
@@ -251,6 +281,7 @@ public class InstanceEditorFragment extends Fragment implements CropperUtils.Cro
         mDefaultControl = view.findViewById(R.id.vprof_editor_ctrl_spinner);
         mDefaultRuntime = view.findViewById(R.id.vprof_editor_spinner_runtime);
         mDefaultRenderer = view.findViewById(R.id.vprof_editor_instance_renderer);
+        mDefaultDriver = view.findViewById(R.id.vprof_editor_instance_driver);
         mDefaultVersion = view.findViewById(R.id.vprof_editor_version_spinner);
 
         mDefaultName = view.findViewById(R.id.vprof_editor_instance_name);
@@ -282,6 +313,16 @@ public class InstanceEditorFragment extends Fragment implements CropperUtils.Cro
 
         if(mDefaultRenderer.getSelectedItemPosition() == mRenderNames.size()) mInstance.renderer = null;
         else mInstance.renderer = mRenderNames.get(mDefaultRenderer.getSelectedItemPosition());
+
+        if(mDefaultDriver != null) {
+            int pos = mDefaultDriver.getSelectedItemPosition();
+            if(pos <= 0 || mDriversList == null || pos > mDriversList.size()) {
+                mInstance.driver = null;
+            } else {
+                Driver d = mDriversList.get(pos - 1);
+                mInstance.driver = (d instanceof BuiltinDriver) ? "builtin" : d.getHash();
+            }
+        }
 
         try {
             if(mPendingStaticIcon != null) mInstance.useStaticIcon(mPendingStaticIcon);

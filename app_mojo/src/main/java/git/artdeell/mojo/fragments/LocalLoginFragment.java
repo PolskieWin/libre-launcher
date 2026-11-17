@@ -32,16 +32,8 @@ public class LocalLoginFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         mUsernameEditText = view.findViewById(R.id.login_edit_email);
         view.findViewById(R.id.login_button).setOnClickListener(v -> {
-            if(!checkEditText()) {
-                Context context = v.getContext();
-                Tools.dialog(context, context.getString(R.string.local_login_bad_username_title), context.getString(R.string.local_login_bad_username_text));
-                return;
-            }
-
-            ExtraCore.setValue(ExtraConstants.MOJANG_LOGIN_TODO, new String[]{
-                    mUsernameEditText.getText().toString(), "" });
-
-            Tools.swapToMainMenu(requireActivity());
+            Context context = v.getContext();
+            Tools.dialog(context, context.getString(R.string.global_error), context.getString(R.string.ms_auth_required));
         });
     }
 

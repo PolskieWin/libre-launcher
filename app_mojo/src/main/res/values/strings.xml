@@ -270,6 +270,7 @@
     <string name="global_delete">Delete</string>
     <string name="pedit_java_runtime">Java Runtime</string>
     <string name="pedit_renderer">Renderer</string>
+    <string name="pedit_driver">Driver</string>
     <string name="color_default_hex" translatable="false">FFFF0000</string>
     <string name="notif_channel_name">General</string>
     <string name="notif_channel_id" translatable="false">channel_id</string>
@@ -981,4 +982,9 @@
     <!-- In-game debug & gamemode actions -->
     <string name="menu_gamemode_switcher">Gamemode (F3+F4)</string>
     <string name="menu_debug_options">Debug &amp; Scale (F3+F6)</string>
+
+    <string name="mesa_clean_shader_cache">Clean Mesa Shader Cache</string>
+    <string name="mesa_shader_cache_cleared">Mesa shader cache cleared</string>
+    <string name="ms_auth_required_launch">A valid Microsoft account is required to launch Minecraft.</string>
+    <string name="ms_auth_required">Only Microsoft accounts are supported.</string>
 </resources>

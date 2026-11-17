@@ -5,6 +5,7 @@ import android.util.Log;
 
 import git.artdeell.mojo.R;
 import git.artdeell.mojo.Tools;
+import git.artdeell.mojo.prefs.LauncherPreferences;
 import git.artdeell.mojo.game.renderer.def.Renderers;
 import git.artdeell.mojo.utils.GpuUtils;
 import git.artdeell.mojoexec.MojoExec;
@@ -69,7 +70,12 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
 
         // GPU-Specific Performance Tuning
         if (isAdreno) {
-            envMap.put("TU_DEBUG", "sysmem");
+            StringBuilder tu = new StringBuilder();
+            if (LauncherPreferences.PREF_FREEDRENO_SYSMEM) tu.append("sysmem,");
+            if (LauncherPreferences.PREF_TU_DEBUG_NOBIN) tu.append("nobin,");
+            if (tu.length() == 0) tu.append("sysmem,");
+            tu.setLength(tu.length() - 1);
+            envMap.put("TU_DEBUG", tu.toString());
             envMap.put("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1");
         } else if (isMali) {
             envMap.put("ZINK_DEBUG", "compact");

@@ -175,11 +175,20 @@ public class GameRenderer {
      * Enable custom Vulkan driver (Turnip) usage
      */
     public void overrideVulkanDriver() {
-        // In most cases we load Turnip so use Turnip environment variables
-        if(LauncherPreferences.PREF_FREEDRENO_SYSMEM) environment.put("TU_DEBUG", "sysmem");
+        overrideVulkanDriver(null);
+    }
+
+    public void overrideVulkanDriver(String driverHash) {
+        StringBuilder tuDebug = new StringBuilder();
+        if(LauncherPreferences.PREF_FREEDRENO_SYSMEM) tuDebug.append("sysmem,");
+        if(LauncherPreferences.PREF_TU_DEBUG_NOBIN) tuDebug.append("nobin,");
+        if(tuDebug.length() > 0) {
+            tuDebug.setLength(tuDebug.length() - 1);
+            environment.put("TU_DEBUG", tuDebug.toString());
+        }
         if(LauncherPreferences.PREF_UBWC_WORKAROUND) environment.put("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1");
 
-        Driver driver = DriverManager.getPreferredDriver();
+        Driver driver = driverHash != null ? DriverManager.getDriver(driverHash) : DriverManager.getPreferredDriver();
         File root = DriverManager.getDriverRoot(driver);
         File config = new File(Tools.DIR_GAME_HOME, "qgl_config.txt");
         if(config.exists() && config.isFile()) MojoExec.setQglConfigPath(config.getAbsolutePath());

@@ -37,6 +37,8 @@ import androidx.fragment.app.FragmentManager;
 import com.kdt.mcgui.LauncherWallpaperView;
 import com.kdt.mcgui.ProgressLayout;
 
+import git.artdeell.mojo.authenticator.AuthType;
+import git.artdeell.mojo.authenticator.accounts.Account;
 import git.artdeell.mojo.authenticator.accounts.Accounts;
 import git.artdeell.mojo.extra.ExtraConstants;
 import git.artdeell.mojo.extra.ExtraCore;
@@ -109,7 +111,7 @@ public class LauncherActivity extends BaseActivity {
         // Allow starting the add account only from the main menu, should it be moved to fragment itself ?
         if(!(fragment instanceof MainMenuFragment)) return false;
 
-        Tools.swapFragment(this, SelectAuthFragment.class, SelectAuthFragment.TAG, null);
+        Tools.swapFragment(this, MicrosoftLoginFragment.class, MicrosoftLoginFragment.TAG, null);
         return false;
     };
 
@@ -156,8 +158,9 @@ public class LauncherActivity extends BaseActivity {
             return false;
         }
 
-        if(Accounts.getCurrent() == null){
-            Toast.makeText(this, R.string.no_saved_accounts, Toast.LENGTH_LONG).show();
+        Account currentAccount = Accounts.getCurrent();
+        if(currentAccount == null || currentAccount.authType != AuthType.MICROSOFT || !currentAccount.isMicrosoft || currentAccount.accessToken == null || currentAccount.accessToken.equals("0") || currentAccount.accessToken.isEmpty()){
+            Toast.makeText(this, R.string.ms_auth_required_launch, Toast.LENGTH_LONG).show();
             ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
             return false;
         }
