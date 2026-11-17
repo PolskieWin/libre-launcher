@@ -117,9 +117,7 @@ public class RTRecyclerViewAdapter extends PackageAdapter<RTRecyclerViewAdapter.
             mCurrentDownloadableRuntime = null;
             mCurrentPosition = pos;
             if(runtime.versionString != null && Tools.DEVICE_ARCHITECTURE == Architecture.archAsInt(runtime.arch)) {
-                mNameTextView.setText(runtime.name
-                        .replace(".tar.xz", "")
-                        .replace("-", " "));
+                mNameTextView.setText(MultiRTUtils.formatRuntimeDisplayName(runtime.name));
                 mExtraNameTextView.setText(runtime.versionString);
                 mExtraNameTextView.setTextColor(mDefaultColors);
 
@@ -138,7 +136,7 @@ public class RTRecyclerViewAdapter extends PackageAdapter<RTRecyclerViewAdapter.
             }else{
                 mExtraNameTextView.setText(mContext.getString(R.string.multirt_runtime_incompatiblearch, runtime.arch));
             }
-            mNameTextView.setText(runtime.name);
+            mNameTextView.setText(MultiRTUtils.formatRuntimeDisplayName(runtime.name));
             mExtraNameTextView.setTextColor(ThemeColors.error(mContext));
             mSetDefaultButton.setVisibility(View.GONE);
         }
@@ -148,9 +146,7 @@ public class RTRecyclerViewAdapter extends PackageAdapter<RTRecyclerViewAdapter.
             mCurrentDownloadableRuntime = runtime;
             mCurrentPosition = pos;
 
-            mNameTextView.setText(runtime.name
-                    .replace(".tar.xz", "")
-                    .replace("-", " "));
+            mNameTextView.setText(MultiRTUtils.formatRuntimeDisplayName(runtime.name));
 
             mExtraNameTextView.setText(R.string.global_not_installed);
             mExtraNameTextView.setTextColor(mDefaultColors);

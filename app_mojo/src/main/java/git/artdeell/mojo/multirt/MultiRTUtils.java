@@ -78,6 +78,21 @@ public class MultiRTUtils {
         return runtimesToDownload;
     }
 
+    public static String formatRuntimeDisplayName(String name) {
+        if (name == null) return "";
+        String clean = name.replace(".tar.xz", "").trim();
+        if ("Internal-21".equalsIgnoreCase(clean) || "Internal 21".equalsIgnoreCase(clean)) {
+            return "Custom JRE 21 (High-FPS Android)";
+        }
+        if ("Internal-25".equalsIgnoreCase(clean) || "Internal 25".equalsIgnoreCase(clean)) {
+            return "Custom JRE 25 (Next-Gen FPS Android)";
+        }
+        if ("Internal-17".equalsIgnoreCase(clean) || "Internal 17".equalsIgnoreCase(clean)) {
+            return "Custom JRE 17 (Optimized Android)";
+        }
+        return clean.replace("-", " ");
+    }
+
     public static String getExactJreName(int majorVersion) {
         List<Runtime> runtimes = getRuntimes();
         for(Runtime r : runtimes)

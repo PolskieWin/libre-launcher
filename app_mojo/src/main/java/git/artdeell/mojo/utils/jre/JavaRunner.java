@@ -124,14 +124,39 @@ public class JavaRunner {
                 "-Dlog4j2.formatMsgNoLookups=true", //Log4j RCE mitigation
                 "-Dfml.earlyprogresswindow=false", //Forge 1.14+ workaround
                 "-Dloader.disable_forked_guis=true",
-                "-Djdk.lang.Process.launchMechanism=FORK" // Default is POSIX_SPAWN which requires starting jspawnhelper, which doesn't work on Android
+                "-Djdk.lang.Process.launchMechanism=FORK", // Default is POSIX_SPAWN which requires starting jspawnhelper, which doesn't work on Android
+
+                // FPS & Low-Latency Garbage Collection Tuning for Android
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UseG1GC",
+                "-XX:G1NewSizePercent=20",
+                "-XX:G1ReservePercent=15",
+                "-XX:MaxGCPauseMillis=20",
+                "-XX:+ParallelRefProcEnabled",
+                "-XX:+AlwaysPreTouch",
+                "-XX:+UseStringDeduplication",
+                "-XX:CICompilerCount=2",
+                "-Dio.netty.allocator.type=unpooled",
+                "-Dio.netty.recycler.maxCapacityPerThread=0",
+                "-Dsun.rmi.dgc.server.gcInterval=2147483646"
         ));
         List<String> additionalArguments = new ArrayList<>();
+        boolean userHasGc = false;
+        for (String uarg : userArguments) {
+            if (uarg.contains("UseG1GC") || uarg.contains("UseZGC") || uarg.contains("UseSerialGC") || uarg.contains("UseParallelGC") || uarg.contains("UseShenandoahGC")) {
+                userHasGc = true;
+                break;
+            }
+        }
+
         for(String arg : overridableArguments) {
-            String strippedArg = arg.substring(0,arg.indexOf('='));
+            if (userHasGc && arg.startsWith("-XX:+UseG1GC")) {
+                continue;
+            }
+            String strippedArg = arg.contains("=") ? arg.substring(0, arg.indexOf('=')) : arg;
             boolean add = true;
             for(String uarg : userArguments) {
-                if(uarg.startsWith(strippedArg)) {
+                if(uarg.startsWith(strippedArg) || uarg.equals(arg)) {
                     add = false;
                     break;
                 }
@@ -315,6 +340,12 @@ public class JavaRunner {
         Logger.appendToLog("About to load JVM runtime " + runtime.name + " (Java " + runtime.javaVersion + ")");
 
         System.gc();
+
+        try {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY);
+        } catch (Throwable t) {
+            Log.w("JavaRunner", "Could not elevate thread priority", t);
+        }
 
         nativeLoadJVM(vmPath.getAbsolutePath(), javaArgsL, mainClass, appArgsL, hasJavaAgent);
     }

@@ -66,7 +66,7 @@ public class LauncherPreferences {
     public static boolean PREF_BUTTON_ALL_CAPS = true;
     public static boolean PREF_DUMP_SHADERS = false;
     public static float PREF_DEADZONE_SCALE = 1f;
-    public static boolean PREF_BIG_CORE_AFFINITY = false;
+    public static boolean PREF_BIG_CORE_AFFINITY = true;
     public static boolean PREF_ZINK_PREFER_SYSTEM_DRIVER = false;
     public static boolean PREF_VERIFY_MANIFEST = true;
     public static String PREF_DOWNLOAD_SOURCE = "default";
@@ -129,7 +129,7 @@ public class LauncherPreferences {
         PREF_BUTTON_ALL_CAPS = DEFAULT_PREF.getBoolean("buttonAllCaps", true);
         PREF_DUMP_SHADERS = DEFAULT_PREF.getBoolean("dump_shaders", false);
         PREF_DEADZONE_SCALE = ((float) DEFAULT_PREF.getInt("gamepad_deadzone_scale", 100))/100f;
-        PREF_BIG_CORE_AFFINITY = DEFAULT_PREF.getBoolean("bigCoreAffinity", false);
+        PREF_BIG_CORE_AFFINITY = DEFAULT_PREF.getBoolean("bigCoreAffinity", true);
         PREF_ZINK_PREFER_SYSTEM_DRIVER = DEFAULT_PREF.getBoolean("zinkPreferSystemDriver", !hasVulkanDrivers());
         PREF_DOWNLOAD_SOURCE = DEFAULT_PREF.getString("downloadSource", "default");
         PREF_VERIFY_MANIFEST = DEFAULT_PREF.getBoolean("verifyManifest", true);

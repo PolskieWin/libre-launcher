@@ -25,7 +25,13 @@ public class MesaRenderSpec implements RenderSpec {
         return "libEGL_mesa.so";
     }
     public void setupEnvironment(Context context, Map<String, String> envMap) {
-        envMap.put("MESA_GLSL_CACHE_DIR", Tools.DIR_CACHE.getAbsolutePath());
+        File cacheDir = Tools.DIR_CACHE;
+        if (cacheDir != null) {
+            envMap.put("MESA_GLSL_CACHE_DIR", cacheDir.getAbsolutePath());
+            envMap.put("MESA_SHADER_CACHE_DIR", cacheDir.getAbsolutePath());
+            envMap.put("MESA_SHADER_CACHE_MAX_SIZE", "512M");
+        }
+        envMap.put("MESA_NO_ERROR", "1");
     }
     protected boolean hasMesa() {
         return SDK_INT >= 29 && new File(Tools.NATIVE_LIB_DIR, this.library()).exists();
