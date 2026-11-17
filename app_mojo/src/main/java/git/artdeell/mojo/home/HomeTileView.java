@@ -350,6 +350,10 @@ final class HomeTileView extends ViewGroup {
         return Math.max(min, Math.min(max, value));
     }
 
+    private static float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     private static Rect rect(int left, int top, int width, int height) {
         return new Rect(left, top, left + width, top + height);
     }

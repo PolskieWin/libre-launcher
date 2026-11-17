@@ -113,7 +113,7 @@ public class TimePlayedSkinWidgetProvider extends AppWidgetProvider {
             views = new RemoteViews(map);
         } else {
             Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
-            int minHeight = options != null ? options.getInt(AppWidgetManager.EXTRA_APPWIDGET_MIN_HEIGHT, 0) : 0;
+            int minHeight = options != null ? options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0) : 0;
             int layoutId = minHeight >= 110 ? R.layout.widget_time_played_tall : R.layout.widget_time_played;
             views = buildRemoteViews(context, layoutId, currentAccount, pendingIntent);
         }
