@@ -15,11 +15,16 @@ import android.widget.Toast
 import git.artdeell.mojo.Tools
 import java.util.Locale
 
-class HibernateAfkManager(private val activity: Activity, private val rootContainer: ViewGroup) {
+class HibernateAfkManager(
+    private val activity: Activity,
+    private val rootContainer: ViewGroup
+) {
 
     private var afkOverlayView: View? = null
     private var afkStartTime = 0L
     private var isAfkActive = false
+
+    var onSurfaceDownscale: ((scaleFactor: Float) -> Unit)? = null
 
     private val timerRunnable = object : Runnable {
         override fun run() {
@@ -49,19 +54,26 @@ class HibernateAfkManager(private val activity: Activity, private val rootContai
         isAfkActive = true
         afkStartTime = SystemClock.elapsedRealtime()
 
-        // 1. Native throttle: 10 FPS, nice 10, relax affinity to efficiency cores
-        LibreTelemetry.nativeSetAfk(true, 10)
+        // 1. Rust frame pacing & nice priority throttle: 5 FPS (200ms frame budget)
+        LibreTelemetry.nativeSetHibernate(true, 5)
 
-        // 2. Dim screen brightness to minimum (0.01) to save OLED / display power
+        // 2. Downscale surface resolution to 0.25x to minimize GPU render load
+        try {
+            onSurfaceDownscale?.invoke(0.25f)
+        } catch (t: Throwable) {
+            // Ignore if surface cannot be downscaled
+        }
+
+        // 3. Dim screen brightness to minimum (0.01) to save AMOLED pixel power
         try {
             val lp = activity.window.attributes
             lp.screenBrightness = 0.01f
             activity.window.attributes = lp
         } catch (t: Throwable) {
-            // Ignore if window attributes cannot be set
+            // Ignore
         }
 
-        // 3. Show full-screen OLED black power-saver view
+        // 4. Show full-screen OLED black power-saver view
         val overlay = createAfkOverlayView()
         afkOverlayView = overlay
         rootContainer.addView(
@@ -73,7 +85,7 @@ class HibernateAfkManager(private val activity: Activity, private val rootContai
         )
 
         rootContainer.post(timerRunnable)
-        Toast.makeText(activity, "Hibernate AFK Mode Active (10 FPS)", Toast.LENGTH_SHORT).show()
+        Toast.makeText(activity, "Hibernate Mode Active (5 FPS • 0.25x Res)", Toast.LENGTH_SHORT).show()
     }
 
     fun exitAfk() {
@@ -81,10 +93,17 @@ class HibernateAfkManager(private val activity: Activity, private val rootContai
         isAfkActive = false
         rootContainer.removeCallbacks(timerRunnable)
 
-        // 1. Restore native full performance: prime cores, nice -10, uncapped FPS
-        LibreTelemetry.nativeSetAfk(false, 0)
+        // 1. Restore native full performance in Rust: uncapped FPS, prime cores, nice -10
+        LibreTelemetry.nativeSetHibernate(false, 60)
 
-        // 2. Restore normal display brightness
+        // 2. Restore 1.0x surface resolution
+        try {
+            onSurfaceDownscale?.invoke(1.0f)
+        } catch (t: Throwable) {
+            // Ignore
+        }
+
+        // 3. Restore normal display brightness
         try {
             val lp = activity.window.attributes
             lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
@@ -93,14 +112,28 @@ class HibernateAfkManager(private val activity: Activity, private val rootContai
             // Ignore
         }
 
-        // 3. Remove overlay view
+        // 4. Remove overlay view
         afkOverlayView?.let {
             rootContainer.removeView(it)
             afkOverlayView = null
         }
         afkTimerText = null
 
-        Toast.makeText(activity, "Resumed full performance", Toast.LENGTH_SHORT).show()
+        Toast.makeText(activity, "Resumed full performance (1.0x Res)", Toast.LENGTH_SHORT).show()
+    }
+
+    fun onPauseOrPip() {
+        // Optional auto-hibernate when backgrounded or entering PiP
+        if (!isAfkActive) {
+            enterAfk()
+        }
+    }
+
+    fun onThermalThresholdExceeded() {
+        if (!isAfkActive) {
+            enterAfk()
+            Toast.makeText(activity, "Thermal Headroom > 95%! Auto-Hibernate Activated", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun createAfkOverlayView(): View {
@@ -132,7 +165,7 @@ class HibernateAfkManager(private val activity: Activity, private val rootContai
         }
 
         val tvDesc = TextView(activity).apply {
-            text = "Rendering throttled to 10 FPS • CPU cores relaxed\nScreen dimmed to minimize power and heat"
+            text = "Render locked to 5 FPS (200ms) • Resolution 0.25x\nCPU cores relaxed • Screen dimmed"
             textSize = 12f
             setTextColor(Color.parseColor("#9E9E9E"))
             gravity = Gravity.CENTER

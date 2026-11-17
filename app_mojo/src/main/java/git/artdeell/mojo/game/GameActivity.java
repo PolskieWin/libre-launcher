@@ -48,7 +48,7 @@ import com.kdt.LoggerView;
 import android.view.Gravity;
 import android.widget.FrameLayout;
 import git.artdeell.mojo.telemetry.LibreTelemetry;
-import git.artdeell.mojo.telemetry.PerformanceOverlayView;
+import git.artdeell.mojo.telemetry.TelemetryOverlayView;
 import git.artdeell.mojo.telemetry.HibernateAfkManager;
 import git.artdeell.mojo.BaseActivity;
 import git.artdeell.mojo.CallbackBridge;
@@ -107,7 +107,7 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
     private HotbarView mHotbarView;
     private View mLoadingScreen;
     private GameRenderer mGameRenderer;
-    private PerformanceOverlayView mPerformanceOverlayView;
+    private TelemetryOverlayView mTelemetryOverlayView;
     private HibernateAfkManager mHibernateAfkManager;
 
     Instance instance;
@@ -369,8 +369,31 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
 
         FrameLayout contentFrame = findViewById(R.id.content_frame);
         mHibernateAfkManager = new HibernateAfkManager(this, contentFrame);
+        mHibernateAfkManager.setOnSurfaceDownscale(scale -> {
+            if (launcherGLView != null) {
+                float originalFactor = LauncherPreferences.PREF_SCALE_FACTOR;
+                float effectiveScale = scale < 1.0f ? (originalFactor * scale) : originalFactor;
+                int newW = Tools.getDisplayFriendlyRes(launcherGLView.getWidth(), effectiveScale);
+                int newH = Tools.getDisplayFriendlyRes(launcherGLView.getHeight(), effectiveScale);
+                if (newW > 0 && newH > 0) {
+                    CallbackBridge.windowWidth = newW;
+                    CallbackBridge.windowHeight = newH;
+                    git.artdeell.mojoexec.MojoExec.setDisplayParams(newW, newH, CallbackBridge.windowRate);
+                }
+            }
+            return null;
+        });
 
-        mPerformanceOverlayView = new PerformanceOverlayView(this);
+        mTelemetryOverlayView = new TelemetryOverlayView(this);
+        mTelemetryOverlayView.setOnHibernateToggle(() -> {
+            mHibernateAfkManager.toggleAfk();
+            return null;
+        });
+        mTelemetryOverlayView.setOnAutoHibernateTriggered(() -> {
+            mHibernateAfkManager.onThermalThresholdExceeded();
+            return null;
+        });
+
         FrameLayout.LayoutParams overlayParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -382,11 +405,11 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
                 0,
                 0
         );
-        contentFrame.addView(mPerformanceOverlayView, overlayParams);
+        contentFrame.addView(mTelemetryOverlayView, overlayParams);
         if(LauncherPreferences.PREF_PERF_OVERLAY) {
-            mPerformanceOverlayView.start();
+            mTelemetryOverlayView.start();
         } else {
-            mPerformanceOverlayView.stop();
+            mTelemetryOverlayView.stop();
         }
     }
 
@@ -395,8 +418,8 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         super.onResume();
         ContextExecutor.setActivity(this);
         if(PREF_ENABLE_GYRO) mGyroControl.enable();
-        if(mPerformanceOverlayView != null && LauncherPreferences.PREF_PERF_OVERLAY) {
-            mPerformanceOverlayView.start();
+        if(mTelemetryOverlayView != null && LauncherPreferences.PREF_PERF_OVERLAY) {
+            mTelemetryOverlayView.start();
         }
         PLATFORM.setHovered(true);
     }
@@ -412,8 +435,8 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         if(mQuickSettingSideDialog != null) {
             mQuickSettingSideDialog.cancel();
         }
-        if (mPerformanceOverlayView != null) {
-            mPerformanceOverlayView.stop();
+        if (mTelemetryOverlayView != null) {
+            mTelemetryOverlayView.stop();
         }
         if (mHibernateAfkManager != null && mHibernateAfkManager.isAfk()) {
             mHibernateAfkManager.exitAfk();
@@ -574,14 +597,14 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
     }
 
     private void togglePerformanceOverlay() {
-        if (mPerformanceOverlayView == null) return;
-        if (mPerformanceOverlayView.getVisibility() == View.VISIBLE) {
-            mPerformanceOverlayView.stop();
+        if (mTelemetryOverlayView == null) return;
+        if (mTelemetryOverlayView.getVisibility() == View.VISIBLE) {
+            mTelemetryOverlayView.stop();
             LauncherPreferences.DEFAULT_PREF.edit().putBoolean("perf_overlay", false).apply();
             LauncherPreferences.PREF_PERF_OVERLAY = false;
             Toast.makeText(this, "Performance Overlay Hidden", Toast.LENGTH_SHORT).show();
         } else {
-            mPerformanceOverlayView.start();
+            mTelemetryOverlayView.start();
             LauncherPreferences.DEFAULT_PREF.edit().putBoolean("perf_overlay", true).apply();
             LauncherPreferences.PREF_PERF_OVERLAY = true;
             Toast.makeText(this, "Performance Overlay Enabled", Toast.LENGTH_SHORT).show();

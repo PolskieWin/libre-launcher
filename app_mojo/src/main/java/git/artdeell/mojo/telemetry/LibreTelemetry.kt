@@ -4,15 +4,13 @@ import android.util.Log
 
 data class TelemetrySnapshot(
     val fps: Float,
-    val frameTimeMs: Float,
     val onePercentLow: Float,
-    val minFrameTimeMs: Float,
-    val maxFrameTimeMs: Float,
-    val cpuPercent: Float,
-    val frameCount: Long,
+    val frameTimeMs: Float,
+    val jitterMs: Float,
     val ramUsedMb: Int,
-    val ramTotalMb: Int,
-    val isAfk: Boolean
+    val thermalHeadroom: Float,
+    val isHibernate: Boolean,
+    val frameCount: Long
 )
 
 object LibreTelemetry {
@@ -26,20 +24,22 @@ object LibreTelemetry {
         }
     }
 
-    private val floatBuffer = FloatArray(6)
-    private val intBuffer = IntArray(4)
+    private val packedBuffer = LongArray(8)
 
     @JvmStatic
     external fun nativeRecordFrame(deltaMs: Float)
 
     @JvmStatic
-    external fun nativeGetTelemetry(outFloats: FloatArray, outInts: IntArray)
+    external fun nativeOnFramePresent(): Long
 
     @JvmStatic
-    external fun nativeSetAfk(active: Boolean, targetFps: Int)
+    external fun nativeComputeTelemetryPacked(outArray: LongArray): Int
 
     @JvmStatic
-    external fun nativeIsAfk(): Boolean
+    external fun nativeSetHibernate(enabled: Boolean, targetFps: Int)
+
+    @JvmStatic
+    external fun nativeIsHibernate(): Boolean
 
     @JvmStatic
     external fun nativeNotifyInput()
@@ -47,24 +47,31 @@ object LibreTelemetry {
     @JvmStatic
     external fun nativeThrottleSleep()
 
+    @JvmStatic
+    fun nativeSetAfk(active: Boolean, targetFps: Int) = nativeSetHibernate(active, targetFps)
+
+    @JvmStatic
+    fun nativeIsAfk(): Boolean = nativeIsHibernate()
+
     @Synchronized
     fun getSnapshot(): TelemetrySnapshot {
         try {
-            nativeGetTelemetry(floatBuffer, intBuffer)
-            return TelemetrySnapshot(
-                fps = floatBuffer[0],
-                frameTimeMs = floatBuffer[1],
-                onePercentLow = floatBuffer[2],
-                minFrameTimeMs = floatBuffer[3],
-                maxFrameTimeMs = floatBuffer[4],
-                cpuPercent = floatBuffer[5],
-                frameCount = intBuffer[0].toLong(),
-                ramUsedMb = intBuffer[1],
-                ramTotalMb = intBuffer[2],
-                isAfk = intBuffer[3] == 1
-            )
+            val count = nativeComputeTelemetryPacked(packedBuffer)
+            if (count >= 8) {
+                return TelemetrySnapshot(
+                    fps = packedBuffer[0] / 100f,
+                    onePercentLow = packedBuffer[1] / 100f,
+                    frameTimeMs = packedBuffer[2] / 100f,
+                    jitterMs = packedBuffer[3] / 100f,
+                    ramUsedMb = packedBuffer[4].toInt(),
+                    thermalHeadroom = packedBuffer[5] / 100f,
+                    isHibernate = packedBuffer[6] == 1L,
+                    frameCount = packedBuffer[7]
+                )
+            }
         } catch (t: Throwable) {
-            return TelemetrySnapshot(0f, 0f, 0f, 0f, 0f, 0f, 0L, 0, 0, false)
+            Log.w(TAG, "Failed to compute telemetry", t)
         }
+        return TelemetrySnapshot(0f, 0f, 0f, 0f, 0, 0f, false, 0L)
     }
 }

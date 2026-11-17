@@ -88,6 +88,23 @@ float libre_controls_dp_to_px(float dp, float density);
 float libre_controls_px_to_dp(float px, float density);
 
 // Telemetry & AFK Native Controls
+typedef struct {
+    float avg_fps;
+    float one_percent_low;
+    float latest_frame_time_ms;
+    float jitter_ms;
+    uint32_t ram_used_mb;
+    float thermal_headroom;
+    bool is_hibernate;
+    uint64_t total_frames;
+} LibreMetrics;
+
+uint64_t libre_on_frame_present(void);
+void libre_set_hibernate(bool enabled, uint32_t target_fps);
+bool libre_is_hibernate(void);
+LibreMetrics libre_compute_metrics(void);
+int32_t libre_compute_metrics_packed(int64_t* out_buffer, size_t max_len);
+
 void libre_telemetry_record_frame(float delta_ms);
 void libre_telemetry_get_snapshot(LibreTelemetrySnapshot* out);
 void libre_afk_enter(uint32_t target_fps);

@@ -1,6 +1,8 @@
 //! Libre Controls - High-performance Rust native engine for Libre Launcher
 //! Designed for zero heap allocation, low latency, and smooth aiming in Minecraft.
 
+pub mod telemetry;
+
 use std::sync::Mutex;
 
 const MAX_POINTERS: usize = 16;
