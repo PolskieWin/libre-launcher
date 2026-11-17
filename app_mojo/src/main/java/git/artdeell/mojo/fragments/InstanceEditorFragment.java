@@ -42,9 +42,9 @@ import git.artdeell.mojo.instances.InstanceIconProvider;
 import git.artdeell.mojo.instances.RoundedIconDrawable;
 import git.artdeell.mojo.utils.profiles.VersionSelectorDialog;
 import git.artdeell.mojo.utils.CropperUtils;
-import git.artdeell.mojo.vulkan.BuiltinDriver;
-import git.artdeell.mojo.vulkan.Driver;
 import git.artdeell.mojo.vulkan.DriverManager;
+import git.artdeell.mojo.vulkan.driver.BuiltinDriver;
+import git.artdeell.mojo.vulkan.driver.Driver;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -11,10 +11,15 @@
   <img src="https://img.shields.io/badge/engine-Rust%20%2B%20Java%20%2F%20C-orange" alt="Engine">
   <img src="https://img.shields.io/badge/license-LGPLv3-blue" alt="License">
   <img src="https://img.shields.io/badge/Minecraft-rd--132211%20to%2026.4-green" alt="Minecraft Versions">
+  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Roadmap-v1.50--v2.00-blueviolet" alt="Roadmap"></a>
   <a href="https://discord.gg/gdcm"><img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
 </p>
 
 ---
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for full version milestones and development plans through v2.00.
 
 ## Key Improvements in Libre Launcher
 
