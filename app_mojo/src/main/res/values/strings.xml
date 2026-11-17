@@ -997,4 +997,5 @@
     <string name="preboot_fixes_applied">Applied compatibility fixes.</string>
     <string name="pin_to_home_action">Pin to Home Screen</string>
     <string name="pin_to_home_shortcut_desc">Launch %s directly with one tap</string>
+    <string name="edit_instance">Edit instance</string>
 </resources>
