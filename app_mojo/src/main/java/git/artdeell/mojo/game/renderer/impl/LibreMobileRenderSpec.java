@@ -13,7 +13,8 @@ import java.io.File;
 import java.util.Map;
 
 /**
- * Libre Mobile - High-Performance Snapdragon & Adreno GPU Renderer
+ * Libre Mobile - High-Performance Universal Mobile GPU Renderer
+ * Engineered for Snapdragon (Adreno), MediaTek/Tensor (Mali/Immortalis), and Exynos (Xclipse).
  */
 public class LibreMobileRenderSpec extends MesaRenderSpec {
 
@@ -26,10 +27,11 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
     }
 
     public static native boolean nativeSetupSnapdragon();
+    public static native boolean nativeSetupMobile(boolean isAdreno, boolean isMali, boolean isXclipse);
 
     @Override
     public String name() {
-        return "Libre Mobile (Snapdragon)";
+        return "Libre Mobile";
     }
 
     @Override
@@ -46,39 +48,64 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
     public void setupEnvironment(Context context, Map<String, String> envMap) {
         super.setupEnvironment(context, envMap);
 
-        // Core 4.6 profile over Zink / Turnip
+        GpuUtils.GLInfo glInfo = GpuUtils.getGlInfo();
+        boolean isAdreno = glInfo.isAdreno();
+        boolean isMali = glInfo.isArm();
+        boolean isXclipse = glInfo.renderer != null && (glInfo.renderer.contains("Xclipse") || glInfo.renderer.contains("AMD"));
+
+        // Universal Core 4.6 profile over Zink
         envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
         envMap.put("MESA_GLSL_VERSION_OVERRIDE", "460");
         envMap.put("MESA_GL_VERSION_OVERRIDE", "4.6");
 
-        // Snapdragon Adreno Direct Optimizations
-        envMap.put("TU_DEBUG", "sysmem");
-        envMap.put("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1");
+        // Universal Mobile Enhancements
         envMap.put("mesa_glthread", "true");
         envMap.put("MESA_NO_ERROR", "1");
         envMap.put("LIBGL_NOERROR", "1");
+        envMap.put("ZINK_DESCRIPTORS", "lazy");
+        envMap.put("allow_higher_compat_version", "true");
+        envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
+        envMap.put("MESA_EXTENSION_OVERRIDE", "+GL_EXT_texture_filter_anisotropic +GL_ARB_buffer_storage");
 
-        // 1GB Persistent Shader Cache
+        // GPU-Specific Performance Tuning
+        if (isAdreno) {
+            envMap.put("TU_DEBUG", "sysmem");
+            envMap.put("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1");
+        } else if (isMali) {
+            envMap.put("ZINK_DEBUG", "compact");
+            envMap.put("PAN_MESA_DEBUG", "gl3");
+        } else if (isXclipse) {
+            envMap.put("RADV_DEBUG", "nocompact");
+        }
+
+        // 2GB High-Performance Persistent Shader Cache
         File cacheDir = Tools.DIR_CACHE;
         if (cacheDir != null) {
-            envMap.put("MESA_GLSL_CACHE_DIR", cacheDir.getAbsolutePath());
-            envMap.put("MESA_SHADER_CACHE_DIR", cacheDir.getAbsolutePath());
-            envMap.put("MESA_SHADER_CACHE_MAX_SIZE", "1024M");
+            File shaderDir = new File(cacheDir, "libre_shaders");
+            if (!shaderDir.exists()) shaderDir.mkdirs();
+            envMap.put("MESA_GLSL_CACHE_DIR", shaderDir.getAbsolutePath());
+            envMap.put("MESA_SHADER_CACHE_DIR", shaderDir.getAbsolutePath());
+            envMap.put("MESA_SHADER_CACHE_MAX_SIZE", "2048M");
+            envMap.put("MESA_GLSL_CACHE_MAX_SIZE", "2048M");
         }
     }
 
     @Override
     public boolean compatibleDevice(Context context) {
-        // Optimized for Snapdragon / Adreno GPUs, compatible with all Vulkan devices
+        // High-performance Vulkan renderer compatible with all mobile Vulkan GPUs
         return hasMesa() && GpuUtils.checkVulkanSupport(context.getPackageManager());
     }
 
     @Override
     public boolean setupRenderer() {
         try {
-            nativeSetupSnapdragon();
+            GpuUtils.GLInfo glInfo = GpuUtils.getGlInfo();
+            boolean isAdreno = glInfo.isAdreno();
+            boolean isMali = glInfo.isArm();
+            boolean isXclipse = glInfo.renderer != null && (glInfo.renderer.contains("Xclipse") || glInfo.renderer.contains("AMD"));
+            nativeSetupMobile(isAdreno, isMali, isXclipse);
         } catch (Throwable t) {
-            Log.w("LibreMobile", "Could not apply native Snapdragon tweaks", t);
+            Log.w("LibreMobile", "Could not apply native mobile tweaks", t);
         }
         MojoExec.preloadVulkan();
         return super.setupRenderer();
