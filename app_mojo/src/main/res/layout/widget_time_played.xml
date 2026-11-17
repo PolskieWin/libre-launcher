@@ -55,5 +55,16 @@
             android:textColor="@color/widget_accent"
             android:textSize="18sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_last_played"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="11sp"
+            android:visibility="gone" />
     </LinearLayout>
 </RelativeLayout>

@@ -59,13 +59,14 @@ final class HomeTileView extends ViewGroup {
     private ImageView mIcon;
     private TextView mTitle;
     private TextView mSubtitle;
+    private TextView mExtra;
     private ImageButton mEditButton;
     private ImageButton mPlayButton;
     private View mLineA;
     private View mLineB;
 
     // Where each child goes, null hides it. Filled by plan() while measuring
-    private Rect mIconRect, mTitleRect, mSubtitleRect, mEditRect, mPlayRect, mLineARect, mLineBRect;
+    private Rect mIconRect, mTitleRect, mSubtitleRect, mExtraRect, mEditRect, mPlayRect, mLineARect, mLineBRect;
 
     private TileBackground mBackground;
     private boolean mEditing;
@@ -98,9 +99,12 @@ final class HomeTileView extends ViewGroup {
         mTitle = newText(13, true);
         mSubtitle = newText(11, false);
         mSubtitle.setTextColor(ThemeColors.get(this, com.google.android.material.R.attr.colorOnSurfaceVariant));
+        mExtra = newText(10, false);
+        mExtra.setTextColor(ThemeColors.get(this, com.google.android.material.R.attr.colorOnSurfaceVariant));
         addView(mIcon);
         addView(mTitle);
         addView(mSubtitle);
+        addView(mExtra);
         bindTimePlayed();
     }
 
@@ -118,10 +122,15 @@ final class HomeTileView extends ViewGroup {
             mTitle.setText(username);
             String playTime = PlayTimeTracker.getFormattedTotalTime(getContext());
             mSubtitle.setText(playTime);
-            setContentDescription(username + " - " + playTime);
+            String lastSummary = PlayTimeTracker.getLastPlayedSummary(getContext());
+            if (mExtra != null) {
+                mExtra.setText(lastSummary != null ? lastSummary : "");
+            }
+            setContentDescription(username + " - " + playTime + (lastSummary != null ? " - " + lastSummary : ""));
         } catch (Throwable t) {
             mTitle.setText("Libre");
             mSubtitle.setText(PlayTimeTracker.getFormattedTotalTime(getContext()));
+            if (mExtra != null) mExtra.setText("");
         }
         requestLayout();
     }
@@ -295,7 +304,7 @@ final class HomeTileView extends ViewGroup {
         int w = MeasureSpec.getSize(widthMeasureSpec);
         int h = MeasureSpec.getSize(heightMeasureSpec);
         setMeasuredDimension(w, h);
-        mIconRect = mTitleRect = mSubtitleRect = mEditRect = mPlayRect = mLineARect = mLineBRect = null;
+        mIconRect = mTitleRect = mSubtitleRect = mExtraRect = mEditRect = mPlayRect = mLineARect = mLineBRect = null;
         if (mType == HomeTileType.SEPARATOR) planSeparator(w, h);
         else if (mType == HomeTileType.TEXT) planText(w, h);
         else if (mType == HomeTileType.INSTANCE) planInstance(w, h);
@@ -304,6 +313,7 @@ final class HomeTileView extends ViewGroup {
         measureTo(mIcon, mIconRect);
         measureTo(mTitle, mTitleRect);
         measureTo(mSubtitle, mSubtitleRect);
+        measureTo(mExtra, mExtraRect);
         measureTo(mEditButton, mEditRect);
         measureTo(mPlayButton, mPlayRect);
         measureTo(mLineA, mLineARect);
@@ -324,6 +334,7 @@ final class HomeTileView extends ViewGroup {
         place(mIcon, mIconRect);
         place(mTitle, mTitleRect);
         place(mSubtitle, mSubtitleRect);
+        place(mExtra, mExtraRect);
         place(mEditButton, mEditRect);
         place(mPlayButton, mPlayRect);
         place(mLineA, mLineARect);
@@ -456,47 +467,94 @@ final class HomeTileView extends ViewGroup {
 
     private void planTimePlayed(int w, int h) {
         int pad = dp(8);
-        int titleHeight = mTitle.getLineHeight();
-        int subtitleHeight = mSubtitle != null ? mSubtitle.getLineHeight() : 0;
-        boolean horizontal = w >= h * 1.5f && h < dp(120);
+        boolean horizontal = w >= h * 1.35f;
+
         if (horizontal) {
-            int icon = clamp(h - dp(12), dp(24), dp(44));
-            int gap = dp(8);
+            float scale = clamp((float) h / dp(80), 0.85f, 1.8f);
+            float titleSp = clamp(13f * scale, 12f, 20f);
+            float subtitleSp = clamp(11f * scale, 10f, 16f);
+            float extraSp = clamp(9.5f * scale, 9f, 13f);
+            mTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, titleSp);
+            if (mSubtitle != null) mSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, subtitleSp);
+            if (mExtra != null) mExtra.setTextSize(TypedValue.COMPLEX_UNIT_SP, extraSp);
+
+            int titleHeight = mTitle.getLineHeight();
+            int subtitleHeight = mSubtitle != null ? mSubtitle.getLineHeight() : 0;
+            int extraHeight = mExtra != null ? mExtra.getLineHeight() : 0;
+
+            int maxIcon = Math.min(dp(96), Math.min(w / 3, h - dp(12)));
+            int icon = clamp(h - dp(16), dp(28), Math.max(dp(28), maxIcon));
             mIconRect = rect(pad, (h - icon) / 2, icon, icon);
-            int left = pad + icon + gap;
+
+            int left = pad + icon + dp(8);
             int textWidth = Math.max(0, w - pad - left);
             if (textWidth >= dp(40)) {
-                boolean subtitle = h >= dp(44);
-                int group = titleHeight + (subtitle ? subtitleHeight : 0);
-                int top = (h - group) / 2;
+                boolean hasSubtitle = h >= dp(44);
+                boolean hasExtra = mExtra != null && mExtra.getText().length() > 0 && h >= dp(84);
+                int group = titleHeight + (hasSubtitle ? subtitleHeight : 0) + (hasExtra ? extraHeight : 0);
+                int gap = (hasExtra && hasSubtitle) ? dp(3) : dp(2);
+                int totalH = group + ((hasSubtitle ? 1 : 0) + (hasExtra ? 1 : 0)) * gap;
+                int top = Math.max(dp(4), (h - totalH) / 2);
+
                 mTitleRect = rect(left, top, textWidth, titleHeight);
-                if (subtitle && mSubtitle != null) mSubtitleRect = rect(left, top + titleHeight, textWidth, subtitleHeight);
+                int currentY = top + titleHeight + gap;
+                if (hasSubtitle && mSubtitle != null) {
+                    mSubtitleRect = rect(left, currentY, textWidth, subtitleHeight);
+                    currentY += subtitleHeight + gap;
+                }
+                if (hasExtra && mExtra != null) {
+                    mExtraRect = rect(left, currentY, textWidth, extraHeight);
+                }
                 setTextStyle(mTitle, 1, Gravity.START | Gravity.CENTER_VERTICAL);
                 if (mSubtitle != null) setTextStyle(mSubtitle, 1, Gravity.START | Gravity.CENTER_VERTICAL);
+                if (mExtra != null) setTextStyle(mExtra, 1, Gravity.START | Gravity.CENTER_VERTICAL);
             }
             return;
         }
 
-        // Stacked
-        int icon = dp(32), gap = dp(4), padV = dp(6);
-        int totalH = 2 * padV + icon + gap + titleHeight + subtitleHeight;
-        if (h >= totalH) {
-            int top = (h - totalH) / 2;
-            mIconRect = rect((w - icon) / 2, top, icon, icon);
-            mTitleRect = rect(pad, top + icon + gap, w - 2 * pad, titleHeight);
-            if (mSubtitle != null) mSubtitleRect = rect(pad, top + icon + gap + titleHeight, w - 2 * pad, subtitleHeight);
-            setTextStyle(mTitle, 1, Gravity.CENTER_HORIZONTAL);
-            if (mSubtitle != null) setTextStyle(mSubtitle, 1, Gravity.CENTER_HORIZONTAL);
-        } else {
-            int smallH = icon + gap + titleHeight;
-            if (h >= smallH) {
-                int top = (h - smallH) / 2;
-                mIconRect = rect((w - icon) / 2, top, icon, icon);
-                mTitleRect = rect(pad, top + icon + gap, w - 2 * pad, titleHeight);
-                setTextStyle(mTitle, 1, Gravity.CENTER_HORIZONTAL);
-            } else {
-                mIconRect = rect((w - icon) / 2, (h - icon) / 2, icon, icon);
-            }
+        // Stacked (vertical) layout: dynamically scale icon and typography to eliminate dead space
+        int availW = Math.max(dp(20), w - 2 * pad);
+        float scale = clamp(Math.min((float) availW / dp(120), (float) (h - 2 * pad) / dp(130)), 0.85f, 1.8f);
+        float titleSp = clamp(13f * scale, 12f, 21f);
+        float subtitleSp = clamp(11f * scale, 10f, 17f);
+        float extraSp = clamp(9.5f * scale, 9f, 13f);
+        mTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, titleSp);
+        if (mSubtitle != null) mSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, subtitleSp);
+        if (mExtra != null) mExtra.setTextSize(TypedValue.COMPLEX_UNIT_SP, extraSp);
+
+        int titleHeight = mTitle.getLineHeight();
+        int subtitleHeight = mSubtitle != null ? mSubtitle.getLineHeight() : 0;
+        int extraHeight = mExtra != null ? mExtra.getLineHeight() : 0;
+        boolean hasExtra = mExtra != null && mExtra.getText().length() > 0 && h >= dp(135);
+        boolean hasSubtitle = h >= dp(65);
+
+        int icon = clamp(Math.round(h * 0.38f), dp(32), Math.min(availW, dp(100)));
+        int textTotal = titleHeight + (hasSubtitle ? subtitleHeight : 0) + (hasExtra ? extraHeight : 0);
+        int elements = 1 + 1 + (hasSubtitle ? 1 : 0) + (hasExtra ? 1 : 0);
+
+        int remaining = h - 2 * pad - (icon + textTotal);
+        if (remaining < 0) {
+            icon = Math.max(dp(26), icon + remaining);
+            remaining = h - 2 * pad - (icon + textTotal);
+        }
+
+        int gap = clamp(remaining / elements, dp(2), dp(14));
+        int totalGroup = icon + textTotal + (elements - 1) * gap;
+        int top = Math.max(pad, (h - totalGroup) / 2);
+
+        mIconRect = rect((w - icon) / 2, top, icon, icon);
+        int y = top + icon + gap;
+        mTitleRect = rect(pad, y, availW, titleHeight);
+        setTextStyle(mTitle, 1, Gravity.CENTER_HORIZONTAL);
+        if (hasSubtitle && mSubtitle != null) {
+            y += titleHeight + gap;
+            mSubtitleRect = rect(pad, y, availW, subtitleHeight);
+            setTextStyle(mSubtitle, 1, Gravity.CENTER_HORIZONTAL);
+        }
+        if (hasExtra && mExtra != null) {
+            y += subtitleHeight + gap;
+            mExtraRect = rect(pad, y, availW, extraHeight);
+            setTextStyle(mExtra, 1, Gravity.CENTER_HORIZONTAL);
         }
     }
 

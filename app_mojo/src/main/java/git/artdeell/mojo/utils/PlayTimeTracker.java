@@ -11,6 +11,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import git.artdeell.mojo.Tools;
+import git.artdeell.mojo.instances.Instance;
+import git.artdeell.mojo.instances.Instances;
 import git.artdeell.mojo.widgets.QuickInstanceWidgetProvider;
 import git.artdeell.mojo.widgets.TimePlayedSkinWidgetProvider;
 
@@ -27,6 +29,9 @@ public final class PlayTimeTracker {
     public static class PlayTimeData implements Serializable {
         public long totalSeconds = 0;
         public Map<String, Long> instanceSeconds = new HashMap<>();
+        public String lastPlayedInstanceKey = null;
+        public long lastPlayedTimestamp = 0;
+        public long lastSessionSeconds = 0;
     }
 
     private static PlayTimeData sCachedData = null;
@@ -126,7 +131,10 @@ public final class PlayTimeTracker {
             if (instanceKey != null && !instanceKey.isEmpty()) {
                 Long current = data.instanceSeconds.get(instanceKey);
                 data.instanceSeconds.put(instanceKey, (current != null ? current : 0L) + seconds);
+                data.lastPlayedInstanceKey = instanceKey;
             }
+            data.lastPlayedTimestamp = System.currentTimeMillis();
+            data.lastSessionSeconds = seconds;
             saveData(context, data);
         }
         notifyWidgets(context);
@@ -164,6 +172,28 @@ public final class PlayTimeTracker {
 
     public static String getFormattedInstanceTime(@NonNull Context context, @Nullable String instanceKey) {
         return formatDuration(getInstanceSeconds(context, instanceKey));
+    }
+
+    @Nullable
+    public static String getLastPlayedSummary(@NonNull Context context) {
+        PlayTimeData data = getData(context);
+        if (data.lastPlayedInstanceKey == null || data.lastPlayedInstanceKey.isEmpty()) {
+            return null;
+        }
+        String name = null;
+        try {
+            Instance inst = Instances.loadInstance(data.lastPlayedInstanceKey);
+            if (inst != null && Tools.isValidString(inst.name)) {
+                name = inst.name;
+            }
+        } catch (Throwable ignored) {}
+        if (name == null || name.isEmpty()) {
+            name = data.lastPlayedInstanceKey;
+        }
+        if (data.lastSessionSeconds > 0) {
+            return name + " • " + formatDuration(data.lastSessionSeconds);
+        }
+        return name;
     }
 
     public static void notifyWidgets(@NonNull Context context) {
