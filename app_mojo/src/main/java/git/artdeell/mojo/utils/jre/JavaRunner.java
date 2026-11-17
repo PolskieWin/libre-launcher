@@ -126,6 +126,11 @@ public class JavaRunner {
                 "-Dloader.disable_forked_guis=true",
                 "-Djdk.lang.Process.launchMechanism=FORK", // Default is POSIX_SPAWN which requires starting jspawnhelper, which doesn't work on Android
 
+                // Sodium & VulkanMod Compatibility & Performance flags
+                "-Dvulkanmod.renderdoc=false",
+                "-Dsodium.workarounds.all=true",
+                "-Dsodium.checks.issue2486=false",
+
                 // FPS & Low-Latency Garbage Collection Tuning for Android
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseG1GC",
@@ -230,6 +235,7 @@ public class JavaRunner {
             Os.setenv("JAVA_HOME", jreHome.getAbsolutePath(), true);
             Os.setenv("HOME", Tools.DIR_GAME_HOME, true);
             Os.setenv("TMPDIR", Tools.DIR_CACHE.getAbsolutePath(), true);
+            Os.setenv("POJAV_NATIVE_LIB_DIR", NATIVE_LIB_DIR, true);
         }catch (ErrnoException e) {
             throw new RuntimeException(e);
         }

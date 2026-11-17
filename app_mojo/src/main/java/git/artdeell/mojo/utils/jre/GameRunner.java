@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import git.artdeell.mojo.R;
@@ -56,15 +57,39 @@ public class GameRunner {
      * @param gameDir current game directory
      * @return whether sodium or a sodium-based mod is installed
      */
-    private static boolean hasSodium(File gameDir) {
+    public static boolean hasSodium(File gameDir) {
         File modsDir = new File(gameDir, "mods");
+        if(!modsDir.exists() || !modsDir.isDirectory()) return false;
         File[] mods = modsDir.listFiles(file -> file.isFile() && file.getName().endsWith(".jar"));
         if(mods == null) return false;
         for(File file : mods) {
-            String name = file.getName();
+            String name = file.getName().toLowerCase(Locale.ROOT);
             if(name.contains("sodium") ||
                     name.contains("embeddium") ||
-                    name.contains("rubidium")) return true;
+                    name.contains("rubidium") ||
+                    name.contains("xenon") ||
+                    name.contains("magnesium") ||
+                    name.contains("iris") ||
+                    name.contains("oculus") ||
+                    name.contains("radium") ||
+                    name.contains("indium")) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if VulkanMod is installed
+     * @param gameDir current game directory
+     * @return whether VulkanMod is installed
+     */
+    public static boolean hasVulkanMod(File gameDir) {
+        File modsDir = new File(gameDir, "mods");
+        if(!modsDir.exists() || !modsDir.isDirectory()) return false;
+        File[] mods = modsDir.listFiles(file -> file.isFile() && file.getName().endsWith(".jar"));
+        if(mods == null) return false;
+        for(File file : mods) {
+            String name = file.getName().toLowerCase(Locale.ROOT);
+            if(name.contains("vulkanmod") || name.contains("vulkan-mod")) return true;
         }
         return false;
     }
@@ -76,10 +101,11 @@ public class GameRunner {
      */
     public static boolean hasAngelica(File gameDir) {
         File modsDir = new File(gameDir, "mods");
+        if(!modsDir.exists() || !modsDir.isDirectory()) return false;
         File[] mods = modsDir.listFiles(file -> file.isFile() && file.getName().endsWith(".jar"));
         if(mods == null) return false;
         for(File file : mods) {
-            String name = file.getName();
+            String name = file.getName().toLowerCase(Locale.ROOT);
             if(name.contains("angelica")) return true;
         }
         return false;
@@ -108,7 +134,7 @@ public class GameRunner {
 
     private static boolean checkRenderDistance(JVersionList.Version version, File gamedir) throws ParseException {
         if(!affectedByRenderDistanceIssue(version)) return false;
-        if(hasSodium(gamedir)) return false;
+        if(hasSodium(gamedir) || hasVulkanMod(gamedir)) return false;
         try {
             MCOptionUtils.load();
         }catch (Exception e) {
@@ -201,8 +227,9 @@ public class GameRunner {
         RenderSpec renderer = gameRenderer.getCurrentRenderer();
 
         if(!versionInfo.disableRendererChecks) {
+            boolean hasVm = hasVulkanMod(gamedir);
             // Switch renderer to GL4ES when running a compat context version on LTW
-            if(isCompatContext(versionInfo) && !hasAngelica(gamedir) && renderer instanceof GLESRenderSpec.LTWRenderSpec) {
+            if(!hasVm && isCompatContext(versionInfo) && !hasAngelica(gamedir) && renderer instanceof GLESRenderSpec.LTWRenderSpec) {
                 switchRendererIfSupported(true, GameRenderer.getKnownRenderer(Renderers.GL4ES_RENDERER), gameRenderer, instance, activity, 0);
             }
 
@@ -210,12 +237,28 @@ public class GameRunner {
             RenderSpec ltw = GameRenderer.getKnownRenderer(Renderers.LTW_RENDERER);
             boolean ltwSupported = ltw != null && ltw.compatibleDevice(activity);
             // Block Sodium from running with GL4ES on 1.17+
-            if(!isCompatContext(versionInfo) && isGl4es && hasSodium(gamedir)) {
-                switchRendererIfSupported(ltwSupported, ltw, gameRenderer, instance, activity, R.string.compat_sodium_not_supported);
+            if(!hasVm && !isCompatContext(versionInfo) && isGl4es && hasSodium(gamedir)) {
+                if (ltwSupported) {
+                    switchRendererIfSupported(true, ltw, gameRenderer, instance, activity, 0);
+                } else {
+                    RenderSpec mg = GameRenderer.getKnownRenderer(Renderers.MOBILEGLUES_RENDERER);
+                    boolean mgSupported = mg != null && mg.compatibleDevice(activity);
+                    if (mgSupported) {
+                        switchRendererIfSupported(true, mg, gameRenderer, instance, activity, 0);
+                    } else {
+                        RenderSpec zink = GameRenderer.getKnownRenderer(Renderers.ZINK_RENDERER);
+                        boolean zinkSupported = zink != null && zink.compatibleDevice(activity);
+                        if (zinkSupported) {
+                            switchRendererIfSupported(true, zink, gameRenderer, instance, activity, 0);
+                        } else {
+                            switchRendererIfSupported(false, ltw, gameRenderer, instance, activity, R.string.compat_sodium_not_supported);
+                        }
+                    }
+                }
             }
 
             // Switch renderer to LTW when running 1.21.5
-            if(!isGl4esCompatible(versionInfo) && isGl4es) {
+            if(!hasVm && !isGl4esCompatible(versionInfo) && isGl4es) {
                 switchRendererIfSupported(ltwSupported, ltw, gameRenderer, instance, activity, R.string.compat_version_not_supported);
             }
         }

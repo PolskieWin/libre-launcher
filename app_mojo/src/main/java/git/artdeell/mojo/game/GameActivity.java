@@ -129,8 +129,12 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         }
         mGameRenderer = new GameRenderer(instance.getLaunchRenderer());
 
-        if(!PREF_ZINK_PREFER_SYSTEM_DRIVER) {
+        boolean hasVulkanMod = GameRunner.hasVulkanMod(instance.getGameDirectory());
+        if(!PREF_ZINK_PREFER_SYSTEM_DRIVER || hasVulkanMod) {
             mGameRenderer.overrideVulkanDriver();
+        }
+        if(hasVulkanMod) {
+            git.artdeell.mojoexec.MojoExec.preloadVulkan();
         }
 
         AsyncAssetManager.extractDefaultSettings(this, instance.getGameDirectory());

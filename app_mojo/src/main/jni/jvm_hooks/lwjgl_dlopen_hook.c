@@ -9,6 +9,7 @@
 #include <dlfcn.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define TAG __FILE_NAME__
 #include <log.h>
@@ -26,13 +27,13 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
                      jint jmode) {
     const char* filename = (const char*) filename_ptr;
 
-    // Oveeride vulkan loading to let us load vulkan ourselves
-    if(strstr(filename, "libvulkan.so") == filename) {
-        printf("LWJGL linkerhook: replacing load for libvulkan.so with custom driver\n");
+    // Override vulkan loading to let us load vulkan ourselves
+    if(strstr(filename, "libvulkan.so") != NULL || strcmp(filename, "vulkan") == 0) {
+        printf("LWJGL linkerhook: replacing load for %s with custom driver\n", filename);
         return (jlong) mojoexec_acq_vulkan_handle();
     }
     // Load renderer using egl_acquire
-    if(strstr(filename, "libGLMojo.so") == filename) {
+    if(strstr(filename, "libGLMojo.so") != NULL) {
         printf("LWJGL linkerhook: replacing OpenGL with renderspec driver\n");
         return (jlong) mojoexec_acq_egl_handle();
     }
@@ -45,7 +46,16 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
     // This method fixes the issue by being in libpojavexec, and thus being in the classloader namespace
 
     int mode = (int)jmode;
-    return (jlong) dlopen(filename, mode);
+    void* handle = dlopen(filename, mode);
+    if(handle == NULL && filename != NULL && filename[0] != '/') {
+        char pathBuf[512];
+        const char* nativeLibDir = getenv("POJAV_NATIVE_LIB_DIR");
+        if(nativeLibDir != NULL) {
+            snprintf(pathBuf, sizeof(pathBuf), "%s/%s", nativeLibDir, filename);
+            handle = dlopen(pathBuf, mode);
+        }
+    }
+    return (jlong) handle;
 }
 
 /**
