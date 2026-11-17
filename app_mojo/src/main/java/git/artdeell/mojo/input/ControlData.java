@@ -38,8 +38,12 @@ public class ControlData {
     private static WeakReference<ArrayMap<String, String>> conversionMap = new WeakReference<>(null);
 
     static {
-        buildExpressionBuilder();
-        buildConversionMap();
+        try {
+            buildExpressionBuilder();
+            buildConversionMap();
+        } catch (Throwable t) {
+            android.util.Log.e("ControlData", "Failed to build expression builder or conversion map in static init", t);
+        }
     }
 
     // Internal usage only

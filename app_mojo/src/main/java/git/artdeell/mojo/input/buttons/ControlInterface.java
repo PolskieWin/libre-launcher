@@ -406,10 +406,18 @@ public interface ControlInterface extends View.OnLongClickListener, PlatformGrab
     }
 
     static float getSnapDistance() {
-        return Tools.dpToPx(6);
+        try {
+            return Tools.dpToPx(6);
+        } catch (Throwable t) {
+            return 6.0f;
+        }
     }
 
     static float getMarginDistance() {
-        return Tools.dpToPx(2);
+        try {
+            return Tools.dpToPx(2);
+        } catch (Throwable t) {
+            return 2.0f;
+        }
     }
 }
