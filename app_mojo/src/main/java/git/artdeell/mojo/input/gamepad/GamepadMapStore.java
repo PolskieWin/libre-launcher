@@ -11,7 +11,9 @@ import java.io.File;
 import java.io.IOException;
 
 public class GamepadMapStore {
-    private static final File STORE_FILE = new File(Tools.DIR_DATA, "gamepad_map.json");
+    private static File getStoreFile() {
+        return new File(Tools.DIR_DATA != null ? Tools.DIR_DATA : "", "gamepad_map.json");
+    }
     private static GamepadMapStore sMapStore;
     private GamepadMap mInMenuMap;
     private GamepadMap mInGameMap;
@@ -29,9 +31,10 @@ public class GamepadMapStore {
 
     public static void load() {
         GamepadMapStore mapStore = null;
-        if(STORE_FILE.exists() && STORE_FILE.canRead()) {
+        File storeFile = getStoreFile();
+        if(storeFile.exists() && storeFile.canRead()) {
             try {
-                String storeFileContent = Tools.read(STORE_FILE);
+                String storeFileContent = Tools.read(storeFile);
                 mapStore = Tools.GLOBAL_GSON.fromJson(storeFileContent, GamepadMapStore.class);
             } catch (JsonParseException | IOException e) {
                 Log.w("GamepadMapStore", "Map store failed to load!", e);
@@ -43,9 +46,10 @@ public class GamepadMapStore {
 
     public static void save() throws IOException {
         if(sMapStore == null) throw new RuntimeException("Must load map store first!");
-        FileUtils.ensureParentDirectory(STORE_FILE);
+        File storeFile = getStoreFile();
+        FileUtils.ensureParentDirectory(storeFile);
         String jsonData = Tools.GLOBAL_GSON.toJson(sMapStore);
-        Tools.write(STORE_FILE, jsonData);
+        Tools.write(storeFile, jsonData);
     }
 
     public static GamepadMap getGameMap() {

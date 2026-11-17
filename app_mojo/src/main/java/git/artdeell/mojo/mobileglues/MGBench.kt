@@ -6,7 +6,11 @@ import java.io.File
 object MGBench {
 
     init {
-        System.loadLibrary("mobileglues_info_getter")
+        try {
+            System.loadLibrary("mobileglues_info_getter")
+        } catch (t: Throwable) {
+            android.util.Log.e("MGBench", "Failed to load mobileglues_info_getter", t)
+        }
     }
 
     private external fun runMultidrawBench(startSections: Int, maxSections: Int): String

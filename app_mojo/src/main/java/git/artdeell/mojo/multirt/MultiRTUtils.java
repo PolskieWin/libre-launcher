@@ -38,17 +38,24 @@ public class MultiRTUtils {
 
     private static final HashMap<String,Runtime> sCache = new HashMap<>();
 
-    private static final File RUNTIME_FOLDER = new File(Tools.MULTIRT_HOME);
+    public static File getRuntimeFolder() {
+        String base = Tools.MULTIRT_HOME;
+        if (base == null) {
+            base = (Tools.DIR_DATA != null ? Tools.DIR_DATA : "/data/data/org.libre.launcher") + "/runtimes";
+        }
+        return new File(base);
+    }
     private static final String JAVA_VERSION_STR = "JAVA_VERSION=\"";
     private static final String OS_ARCH_STR = "OS_ARCH=\"";
 
     public static List<Runtime> getRuntimes() {
-        if(!RUNTIME_FOLDER.exists() && !RUNTIME_FOLDER.mkdirs()) {
+        File runtimeFolder = getRuntimeFolder();
+        if(!runtimeFolder.exists() && !runtimeFolder.mkdirs()) {
             throw new RuntimeException("Failed to create runtime directory");
         }
 
         ArrayList<Runtime> runtimes = new ArrayList<>();
-        File[] files = RUNTIME_FOLDER.listFiles();
+        File[] files = runtimeFolder.listFiles();
         if(files != null) for(File f : files) {
             runtimes.add(read(f.getName()));
         }
@@ -89,12 +96,12 @@ public class MultiRTUtils {
     }
 
     public static void installRuntimeNamed(String nativeLibDir, InputStream runtimeInputStream, String name) throws IOException {
-        File dest = new File(RUNTIME_FOLDER,"/"+name);
+        File dest = new File(getRuntimeFolder(),"/"+name);
         if(dest.exists()) FileUtils.deleteDirectory(dest);
         try {
             uncompressTarXZ(runtimeInputStream, dest);
             runtimeInputStream.close();
-            unpack200(nativeLibDir, RUNTIME_FOLDER + "/" + name);
+            unpack200(nativeLibDir, getRuntimeFolder() + "/" + name);
             read(name);
         } finally {
             ProgressLayout.clearProgress(ProgressLayout.UNPACK_RUNTIME);
@@ -102,7 +109,7 @@ public class MultiRTUtils {
     }
 
     public static void postPrepare(String name) throws IOException {
-        File dest = new File(RUNTIME_FOLDER,"/" + name);
+        File dest = new File(getRuntimeFolder(),"/" + name);
         if(!dest.exists()) return;
 
         Runtime runtime = read(name);
@@ -121,15 +128,15 @@ public class MultiRTUtils {
     }
 
     public static void installRuntimeNamedBinpack(InputStream universalFileInputStream, InputStream platformBinsInputStream, String name, String binpackVersion) throws IOException {
-        File dest = new File(RUNTIME_FOLDER,"/"+name);
+        File dest = new File(getRuntimeFolder(),"/"+name);
         if(dest.exists()) FileUtils.deleteDirectory(dest);
         try {
             installRuntimeNamedNoRemove(universalFileInputStream, dest);
             installRuntimeNamedNoRemove(platformBinsInputStream, dest);
 
-            unpack200(NATIVE_LIB_DIR, RUNTIME_FOLDER + "/" + name);
+            unpack200(NATIVE_LIB_DIR, getRuntimeFolder() + "/" + name);
 
-            File binpack_verfile = new File(RUNTIME_FOLDER, "/" + name + "/pojav_version");
+            File binpack_verfile = new File(getRuntimeFolder(), "/" + name + "/pojav_version");
             write(binpack_verfile, binpackVersion, StandardCharsets.UTF_8);
             forceReread(name);
         } finally {
@@ -139,7 +146,7 @@ public class MultiRTUtils {
 
 
     public static String readInternalRuntimeVersion(String name) {
-        File versionFile = new File(RUNTIME_FOLDER,"/" + name + "/pojav_version");
+        File versionFile = new File(getRuntimeFolder(),"/" + name + "/pojav_version");
         try {
             if (versionFile.exists()) {
                 return Tools.read(versionFile.getAbsolutePath());
@@ -153,7 +160,7 @@ public class MultiRTUtils {
     }
 
     public static long readLastUpdateTime(String name) {
-        File lastUpdateTimeFile = new File(RUNTIME_FOLDER, name+"/last_check_time");
+        File lastUpdateTimeFile = new File(getRuntimeFolder(), name+"/last_check_time");
         if(!lastUpdateTimeFile.exists()) return -1;
         try {
             return Long.parseLong(Tools.read(lastUpdateTimeFile).trim());
@@ -163,14 +170,14 @@ public class MultiRTUtils {
     }
 
     public static void writeLastUpdateTime(String name, long time) {
-        File lastUpdateTimeFile = new File(RUNTIME_FOLDER, name+"/last_check_time");
+        File lastUpdateTimeFile = new File(getRuntimeFolder(), name+"/last_check_time");
         try {
             Tools.write(lastUpdateTimeFile, Long.toString(time));
         }catch (IOException ignored) {}
     }
 
     public static void removeRuntimeNamed(String name) throws IOException {
-        File dest = new File(RUNTIME_FOLDER,"/"+name);
+        File dest = new File(getRuntimeFolder(),"/"+name);
         if(dest.exists()) {
             FileUtils.deleteDirectory(dest);
             sCache.remove(name);
@@ -178,7 +185,7 @@ public class MultiRTUtils {
     }
 
     public static File getRuntimeHome(String name) {
-        File dest = new File(RUNTIME_FOLDER, name);
+        File dest = new File(getRuntimeFolder(), name);
         Log.i("MiltiRTUitls", "Dest exists? "+dest.exists());
         if((!dest.exists()) || MultiRTUtils.forceReread(name).versionString == null) throw new RuntimeException("Selected runtime is broken!");
         return dest;
@@ -192,7 +199,7 @@ public class MultiRTUtils {
     public static Runtime read(String name) {
         Runtime returnRuntime = sCache.get(name);
         if(returnRuntime != null) return returnRuntime;
-        File release = new File(RUNTIME_FOLDER,name+"/release");
+        File release = new File(getRuntimeFolder(),name+"/release");
         if(!release.exists()) {
             return new Runtime(name);
         }

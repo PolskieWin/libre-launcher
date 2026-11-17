@@ -32,7 +32,9 @@ public class DriverManager {
     public static final String TAG = "DriverManager";
     public static final BuiltinDriver DEFAULT_DRIVER = new BuiltinDriver();
     // Must be in the exec place, /sdcard/... is noexec
-    private static final File packagesPath = new File(Tools.DIR_DATA, "vulkan-drivers");
+    public static File getPackagesPath() {
+        return new File(Tools.DIR_DATA != null ? Tools.DIR_DATA : "", "vulkan-drivers");
+    }
     private static Boolean supported = null;
     private DriverManager() {}
     /**
@@ -90,7 +92,7 @@ public class DriverManager {
     public static String getPreferredDriverLibraryPath(){
         Driver driver = getPreferredDriver();
         if(driver instanceof BuiltinDriver) return driver.getMainLibrary(); // Default driver should be in the library path already
-        File path = new File(packagesPath,  (driver.getHash() + "/" + driver.getMainLibrary()));
+        File path = new File(getPackagesPath(),  (driver.getHash() + "/" + driver.getMainLibrary()));
         if(path.exists()) return path.getAbsolutePath();
 
         // Invalid driver
@@ -105,7 +107,7 @@ public class DriverManager {
     public static String getPreferredDriverRootPath(){
         Driver driver = getPreferredDriver();
         if(driver instanceof BuiltinDriver) return null; // Already in the library path
-        File path = new File(packagesPath,  driver.getHash());
+        File path = new File(getPackagesPath(),  driver.getHash());
         if(path.exists())
             return path.getAbsolutePath();
         else return null;
@@ -123,12 +125,13 @@ public class DriverManager {
 
     public static File getDriverRoot(Driver driver) {
         if(driver instanceof BuiltinDriver) return null;
-        File root = new File(packagesPath, driver.getHash());
+        File root = new File(getPackagesPath(), driver.getHash());
         if(root.exists() && root.isDirectory()) return root;
         else return null;
     }
 
     private static boolean ensureRootExists(){
+        File packagesPath = getPackagesPath();
         if(!packagesPath.exists())
             return packagesPath.mkdirs();
         return true;
@@ -139,6 +142,7 @@ public class DriverManager {
      * @return A list of hashes
      */
     public static List<String> getDriverPaths(){
+        File packagesPath = getPackagesPath();
         if(!packagesPath.exists())
             return Collections.emptyList();
         List<String> packages = new ArrayList<>();
@@ -157,6 +161,7 @@ public class DriverManager {
     public static List<Driver> getDrivers(){
         List<Driver> drivers = new ArrayList<>();
         drivers.add(DEFAULT_DRIVER);
+        File packagesPath = getPackagesPath();
         if(!packagesPath.exists())
             return drivers;
         // I'm not sure how heavy is this crap
@@ -177,6 +182,7 @@ public class DriverManager {
      * @return True if the driver is installed
      */
     public static boolean driverExists(String hash){
+        File packagesPath = getPackagesPath();
         return packagesPath.exists() && new File(packagesPath, hash + "/" + METADATA_FILENAME).exists();
     }
 
@@ -186,14 +192,14 @@ public class DriverManager {
      * @return Driver if the load succeeded, null otherwise
      */
     public static AdrenoDriver loadDriver(String hash) {
-        File metadata = new File(packagesPath, hash + "/" + METADATA_FILENAME);
+        File metadata = new File(getPackagesPath(), hash + "/" + METADATA_FILENAME);
         if (!metadata.exists())
             return null;
         return AdrenoDriver.fromJson(metadata);
     }
 
     public static DisplayDriver loadDisplayDriver(String hash) {
-        File metadata = new File(packagesPath, hash + "/" + METADATA_FILENAME);
+        File metadata = new File(getPackagesPath(), hash + "/" + METADATA_FILENAME);
         if (!metadata.exists()) return null;
         try {
             return JSONUtils.readFromFile(metadata, DisplayDriver.class);
@@ -258,7 +264,7 @@ public class DriverManager {
                     removeDriver(hash);
                 }
             }
-            File installPath = new File(packagesPath, hash);
+            File installPath = new File(getPackagesPath(), hash);
             ZipUtils.zipExtract(zf, "", installPath);
             Log.i(TAG, "Installed driver package " + driver.getName() + " into " + installPath.getAbsolutePath());
             return driver;
@@ -280,7 +286,7 @@ public class DriverManager {
                     removeDriver(hash);
                 }
             }
-            File installPath = new File(packagesPath, hash);
+            File installPath = new File(getPackagesPath(), hash);
             FileUtils.ensureDirectory(installPath);
             ZipUtils.zipStreamExtract(zis, installPath);
             Log.i(TAG, "Installed driver package " + hash + " into " + installPath.getAbsolutePath());
@@ -294,6 +300,7 @@ public class DriverManager {
      * @return true if the remove succeeded, false otherwise
      */
     public static boolean removeDriver(String name) {
+        File packagesPath = getPackagesPath();
         if(!packagesPath.exists())
             return false;
         File path = new File(packagesPath, name);

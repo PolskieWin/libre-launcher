@@ -36,7 +36,7 @@ public class LauncherPreferences {
 	public static float PREF_BUTTONSIZE = 100f;
 	public static float PREF_MOUSESCALE = 1f;
 	public static int PREF_LONGPRESS_TRIGGER = 300;
-	public static String PREF_DEFAULTCTRL_PATH = Tools.CTRLDEF_FILE;
+	public static String PREF_DEFAULTCTRL_PATH = null;
 	public static String PREF_CUSTOM_JAVA_ARGS;
     public static boolean PREF_FORCE_ENGLISH = false;
     public static final String PREF_VERSION_REPOS = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
@@ -91,6 +91,9 @@ public class LauncherPreferences {
     public static String PREF_CURSEFORGE_API_KEY_OVERRIDE = "";
 
     public static void loadPreferences(Context ctx) {
+        if (DEFAULT_PREF == null) {
+            DEFAULT_PREF = androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx);
+        }
         //Required for CTRLDEF_FILE and MultiRT
         Tools.initStorageConstants(ctx);
         boolean isDevicePowerful = isDevicePowerful(ctx);

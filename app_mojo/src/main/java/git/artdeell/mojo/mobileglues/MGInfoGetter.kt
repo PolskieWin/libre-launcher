@@ -6,7 +6,11 @@ import java.io.File
 object MGInfoGetter {
 
     init {
-        System.loadLibrary("mobileglues_info_getter")
+        try {
+            System.loadLibrary("mobileglues_info_getter")
+        } catch (t: Throwable) {
+            android.util.Log.e("MGInfoGetter", "Failed to load mobileglues_info_getter", t)
+        }
     }
 
     external fun setenv(key: String, value: String, overwrite: Int): Int

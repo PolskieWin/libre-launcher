@@ -9,7 +9,11 @@ import git.artdeell.mojo.game.platform.Platform;
 
 public class AWTBackend implements PlatformBackend {
     static {
-        System.loadLibrary("mojoawt");
+        try {
+            System.loadLibrary("mojoawt");
+        } catch (Throwable t) {
+            android.util.Log.e("AWTBackend", "Failed to load mojoawt", t);
+        }
     }
 
     @Override

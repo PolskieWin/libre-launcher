@@ -16,6 +16,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Insets;
@@ -113,7 +114,16 @@ public final class Tools {
     // New since 3.3.1
     public static String DIR_ACCOUNT_NEW;
     // PojavLauncher is left for compatibility purposes
-    public static String DIR_GAME_HOME = Environment.getExternalStorageDirectory().getAbsolutePath() + "/games/PojavLauncher";
+    private static String getInitialGameHome() {
+        try {
+            File external = Environment.getExternalStorageDirectory();
+            if (external != null) {
+                return external.getAbsolutePath() + "/games/PojavLauncher";
+            }
+        } catch (Throwable ignored) {}
+        return "";
+    }
+    public static String DIR_GAME_HOME = getInitialGameHome();
     public static String DIR_GAME_NEW;
 
     // New since 2.4.2
@@ -312,14 +322,25 @@ public final class Tools {
     // Note: this should *NOT* be used for positioning and sizing things on the screen
     public static DisplayMetrics currentDisplayMetrics;
 
+    private static DisplayMetrics getSafeDisplayMetrics() {
+        if (currentDisplayMetrics != null) return currentDisplayMetrics;
+        try {
+            return Resources.getSystem().getDisplayMetrics();
+        } catch (Throwable t) {
+            DisplayMetrics fallback = new DisplayMetrics();
+            fallback.density = 1.0f;
+            fallback.scaledDensity = 1.0f;
+            return fallback;
+        }
+    }
+
     public static float dpToPx(float dp) {
-        //Better hope for the currentDisplayMetrics to be good
-        return dp * currentDisplayMetrics.density;
+        return dp * getSafeDisplayMetrics().density;
     }
 
     public static float pxToDp(float px){
-        //Better hope for the currentDisplayMetrics to be good
-        return px / currentDisplayMetrics.density;
+        float density = getSafeDisplayMetrics().density;
+        return density > 0 ? px / density : px;
     }
 
     public static void copyAssetFile(Context ctx, String assetPath, String output, boolean overwrite) throws IOException {

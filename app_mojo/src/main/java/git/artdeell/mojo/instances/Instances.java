@@ -19,8 +19,14 @@ import java.util.List;
 import java.util.UUID;
 
 public class Instances {
-    private static final File sInstancePath = new File(Tools.DIR_GAME_HOME, "instances");
-    public static final File SHARED_DATA_DIRECTORY = new File(Tools.DIR_GAME_HOME, "shared_dir");
+    private static final Object sInstanceLock = new Object();
+    public static File getInstancePath() {
+        return new File(Tools.DIR_GAME_HOME != null ? Tools.DIR_GAME_HOME : "", "instances");
+    }
+    public static File getSharedDataDirectory() {
+        return new File(Tools.DIR_GAME_HOME != null ? Tools.DIR_GAME_HOME : "", "shared_dir");
+    }
+    public static File SHARED_DATA_DIRECTORY = getSharedDataDirectory();
 
     public final List<DisplayInstance> list;
     public final int selectedIndex;
@@ -46,8 +52,9 @@ public class Instances {
     }
 
     private static File selectedInstanceLocation() {
+        if (LauncherPreferences.DEFAULT_PREF == null) return null;
         String directoryName = LauncherPreferences.DEFAULT_PREF.getString(LauncherPreferences.PREF_KEY_CURRENT_INSTANCE, "");
-        File instanceRoot = new File(sInstancePath, directoryName);
+        File instanceRoot = new File(getInstancePath(), directoryName);
         if(!instanceRoot.exists())
             Log.e("Instances", "New instance dir doesn't exist!");
         if(!metadataLocation(instanceRoot).exists()) return null;
@@ -63,10 +70,11 @@ public class Instances {
     }
 
     private static <T extends DisplayInstance> List<T> loadInstances(Class<T> tClass, int[] selectionDst) throws IOException {
-        synchronized (sInstancePath) {
-            FileUtils.ensureDirectory(sInstancePath);
+        File instancePath = getInstancePath();
+        synchronized (sInstanceLock) {
+            FileUtils.ensureDirectory(instancePath);
         }
-        File[] instanceDirectories = sInstancePath.listFiles(Instances::filterInstanceDirectories);
+        File[] instanceDirectories = instancePath.listFiles(Instances::filterInstanceDirectories);
         if(instanceDirectories == null) throw new IOException("Failed to enumerate instances");
         File selectedInstanceLocation = selectionDst != null ? selectedInstanceLocation() : null;
         ArrayList<T> instances = new ArrayList<>(instanceDirectories.length);
@@ -110,7 +118,7 @@ public class Instances {
             if(prefix != null) {
                 proposedDirectoryName = prefix + "-" + proposedDirectoryName;
             }
-            instanceRoot = new File(sInstancePath, proposedDirectoryName);
+            instanceRoot = new File(getInstancePath(), proposedDirectoryName);
         } while(instanceRoot.exists() && instanceRoot.isDirectory());
         return instanceRoot;
     }
@@ -201,7 +209,7 @@ public class Instances {
      */
     public static Instance loadInstance(String key) {
         if(key == null || key.isEmpty()) return null;
-        File instanceRoot = new File(sInstancePath, key);
+        File instanceRoot = new File(getInstancePath(), key);
         if(!metadataLocation(instanceRoot).exists()) return null;
         Instance instance = read(instanceRoot, Instance.class);
         if(instance == null) return null;
@@ -234,14 +242,14 @@ public class Instances {
             newName = String.valueOf(UUID.randomUUID());
         else
             newName = FileUtils.escapeFileName(newName);
-        File targetDirectory = new File(sInstancePath, newName);
+        File targetDirectory = new File(getInstancePath(), newName);
         if(targetDirectory.exists())
             targetDirectory = findNewInstanceRoot(newName);
         String oldName = instance.mInstanceRoot.getName();
         if(!instance.mInstanceRoot.renameTo(targetDirectory))
             throw new RuntimeException("Failed to rename instance!");
         instance.mInstanceRoot = targetDirectory;
-        if(oldName.equals(LauncherPreferences.DEFAULT_PREF.getString(LauncherPreferences.PREF_KEY_CURRENT_INSTANCE, "")))
+        if(LauncherPreferences.DEFAULT_PREF != null && oldName.equals(LauncherPreferences.DEFAULT_PREF.getString(LauncherPreferences.PREF_KEY_CURRENT_INSTANCE, "")))
             setSelectedInstance(instance);
     }
 }

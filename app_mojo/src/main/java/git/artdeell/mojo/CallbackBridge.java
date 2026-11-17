@@ -132,9 +132,13 @@ public class CallbackBridge {
     public static native void minibridgeInit();
 
     static {
-        System.loadLibrary("mojort");
-        minibridgeInit();
-        FileDialogBridge.nativeInit();
+        try {
+            System.loadLibrary("mojort");
+            minibridgeInit();
+            FileDialogBridge.nativeInit();
+        } catch (Throwable t) {
+            android.util.Log.e("CallbackBridge", "Failed to initialize native mojort/filedialog bridge", t);
+        }
     }
 }
 

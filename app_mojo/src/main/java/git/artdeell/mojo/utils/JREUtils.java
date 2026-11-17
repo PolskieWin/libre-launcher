@@ -170,7 +170,11 @@ public class JREUtils {
 
     public static native void setLdLibraryPath(String ldLibraryPath);
     static {
-        System.loadLibrary("mojort");
-        System.loadLibrary("mojoawt");
+        try {
+            System.loadLibrary("mojort");
+            System.loadLibrary("mojoawt");
+        } catch (Throwable t) {
+            android.util.Log.e("JREUtils", "Failed to load mojort/mojoawt", t);
+        }
     }
 }

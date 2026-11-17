@@ -32,7 +32,10 @@ import git.artdeell.mojo.utils.FileUtils;
 public class Downloader {
     private static final double ONE_MEGABYTE = (1024d * 1024d);
     private static final ThreadLocal<byte[]> sThreadLocalBuffer = new ThreadLocal<>();
-    protected static final File sPartFileDir = new File(Tools.DIR_GAME_HOME, "partfiles");
+    public static File getPartFileDir() {
+        return new File(Tools.DIR_GAME_HOME != null ? Tools.DIR_GAME_HOME : "", "partfiles");
+    }
+    protected static File sPartFileDir = getPartFileDir();
     private final String mProgressKey;
     private final AtomicReference<IOException> mThreadException = new AtomicReference<>();
     private final AtomicInteger mDownloadedFileCounter = new AtomicInteger();
@@ -48,6 +51,7 @@ public class Downloader {
     }
 
     protected void runDownloads(ArrayList<? extends TaskMetadata> downloads) throws IOException, InterruptedException {
+        sPartFileDir = getPartFileDir();
         FileUtils.ensureDirectory(sPartFileDir);
         insertMetadata(downloads);
         try {
@@ -250,6 +254,7 @@ public class Downloader {
     }
 
     public static double calculateCacheSizeMegabytes() {
+        sPartFileDir = getPartFileDir();
         File[] files = Downloader.sPartFileDir.listFiles();
         if(files == null || files.length == 0) return 0;
         long usedSpace = 0;
@@ -262,6 +267,7 @@ public class Downloader {
     }
 
     public static void clearCache() throws IOException {
+        sPartFileDir = getPartFileDir();
         File[] files = Downloader.sPartFileDir.listFiles();
         if(files == null) return;
         for(File f : files) {

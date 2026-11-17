@@ -32,7 +32,9 @@ import java.util.Objects;
 import git.artdeell.mojo.R;
 
 public class InstanceInstaller implements ContextExecutorTask {
-    private static final File sLastInstallInfo = new File(Tools.DIR_CACHE, "last_installer.json");
+    private static File getLastInstallInfoFile() {
+        return new File(Tools.DIR_CACHE, "last_installer.json");
+    }
 
     private static final String[] TRUSTED_URLS = new String[] {
             "https://maven.neoforged.net/releases/net/neoforged/neoforge/",
@@ -66,7 +68,7 @@ public class InstanceInstaller implements ContextExecutorTask {
     }
 
     private void writeLastInstaller() throws IOException {
-        JSONUtils.writeToFile(sLastInstallInfo, this);
+        JSONUtils.writeToFile(getLastInstallInfoFile(), this);
     }
 
     public void threadedStart() throws IOException {
@@ -86,10 +88,11 @@ public class InstanceInstaller implements ContextExecutorTask {
     }
 
     public static void postInstallCheck(AssetManager assetManager) throws IOException {
-        if(!sLastInstallInfo.exists() || !sLastInstallInfo.isFile()) return;
-        InstanceInstaller lastInstaller = JSONUtils.readFromFile(sLastInstallInfo, InstanceInstaller.class);
+        File lastInstallInfo = getLastInstallInfoFile();
+        if(!lastInstallInfo.exists() || !lastInstallInfo.isFile()) return;
+        InstanceInstaller lastInstaller = JSONUtils.readFromFile(lastInstallInfo, InstanceInstaller.class);
         boolean ignored = lastInstaller.installerJar().delete();
-        if(!sLastInstallInfo.delete()) throw new IOException("Failed to delete mod installer info");
+        if(!lastInstallInfo.delete()) throw new IOException("Failed to delete mod installer info");
         String targetVersionId = ProfileWatcher.consumePendingVersion(assetManager);
         if(targetVersionId == null) return;
         for(Instance instance : Instances.loadAllInstances()) {
@@ -106,8 +109,9 @@ public class InstanceInstaller implements ContextExecutorTask {
             InstanceInstaller.postInstallCheck(context.getAssets());
         }catch (Exception e) {
             Tools.showError(context, e);
-            if (sLastInstallInfo.isFile()) {
-                boolean ignored = sLastInstallInfo.delete();
+            File lastInstallInfo = getLastInstallInfoFile();
+            if (lastInstallInfo.isFile()) {
+                boolean ignored = lastInstallInfo.delete();
             }
         }
     }
