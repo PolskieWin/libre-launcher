@@ -59,6 +59,19 @@ public class HashUtils {
         }
     }
 
+    public static boolean compareSHA512(File f, String sourceSHA) throws IOException {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-512");
+            byte[] wantedBytes = Hex.decodeHex(sourceSHA.toCharArray());
+            byte[] localFileBytes = fileHash(messageDigest, f);
+            return Arrays.equals(localFileBytes, wantedBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-512 digest missing!", e);
+        } catch (DecoderException e) {
+            throw new IOException("Bad SHA-512 hash: " + sourceSHA + " for file " + f.getName());
+        }
+    }
+
     /** Computes the lowercase hex SHA-1 digest of a file. */
     public static String sha1Hex(File file) throws IOException {
         return hashHex(file, "SHA-1");

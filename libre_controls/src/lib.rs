@@ -2,6 +2,7 @@
 //! Designed for zero heap allocation, low latency, and smooth aiming in Minecraft.
 
 pub mod telemetry;
+pub mod modrinth;
 
 use std::sync::Mutex;
 

@@ -43,6 +43,9 @@ public class CheckFileOnDiskTask extends DownloaderTask {
             if(mMetadata.size != localFile.length()) return false;
             if(LauncherPreferences.PREF_RAPID_START && !mAfterDownload) return true;
         }
+        if (mMetadata.sha512Hash != null && !mMetadata.sha512Hash.isEmpty()) {
+            return HashUtils.compareSHA512(localFile, mMetadata.sha512Hash);
+        }
         return mMetadata.sha1Hash == null || HashUtils.compareSHA1(localFile, mMetadata.sha1Hash);
     }
 

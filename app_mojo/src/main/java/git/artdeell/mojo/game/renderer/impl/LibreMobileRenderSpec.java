@@ -57,7 +57,7 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
         // Universal Core 4.6 profile over Zink
         envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
         envMap.put("MESA_GLSL_VERSION_OVERRIDE", "460");
-        envMap.put("MESA_GL_VERSION_OVERRIDE", "4.6");
+        envMap.put("MESA_GL_VERSION_OVERRIDE", "4.6COMPAT");
 
         // Universal Mobile Enhancements
         envMap.put("mesa_glthread", "true");
@@ -65,8 +65,10 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
         envMap.put("LIBGL_NOERROR", "1");
         envMap.put("ZINK_DESCRIPTORS", "lazy");
         envMap.put("allow_higher_compat_version", "true");
+        envMap.put("allow_glsl_extension_directive_midshader", "true");
+        envMap.put("glsl_zero_init", "true");
         envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
-        envMap.put("MESA_EXTENSION_OVERRIDE", "+GL_EXT_texture_filter_anisotropic +GL_ARB_buffer_storage");
+        envMap.put("MESA_EXTENSION_OVERRIDE", "+GL_EXT_texture_filter_anisotropic +GL_ARB_buffer_storage +GL_ARB_clip_control +GL_ARB_shader_draw_parameters +GL_ARB_direct_state_access +GL_ARB_vertex_attrib_binding +GL_ARB_multi_bind +GL_ARB_gpu_shader5 +GL_EXT_clip_cull_distance");
 
         // GPU-Specific Performance Tuning
         if (isAdreno) {

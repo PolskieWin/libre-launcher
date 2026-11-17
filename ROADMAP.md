@@ -21,9 +21,10 @@ Architecture and feature roadmap for Libre Launcher.
 - **Rust TouchController Mod Bridge**: Direct native IPC channel bridging `libre_controls` events into in-game Fabric and NeoForge touch controller mods.
 - **Raw USB Mouse PointerCapture**: Native `PointerCapture` implementation with full Mouse4 and Mouse5 button mapping for external mice.
 
-### v1.80 — Native Modrinth Distribution
+### v1.80 — Native Modrinth Distribution & 26.4 Snapshot Engine
 - **Built-in Rust Modrinth Client**: Native, asynchronous client querying Modrinth APIs for mods, resource packs, and shaders.
 - **`mrpack` Streaming Installer**: Direct modpack installation with concurrent chunk downloading and SHA-512 cryptographic verification.
+- **Libre Mobile 26.4 Snapshot Engine**: Full Core GLSL 460 compatibility, mid-shader extension directives, and core GL extensions for modern 26.4 snapshots.
 
 ### v1.90 — Compatibility Diagnostics & Direct Shortcuts
 - **Pre-Boot Mod Conflict Analyzer**: Fast static analysis scanning JAR manifests for incompatible mixins, duplicate libraries, or known renderer conflicts before JVM launch.

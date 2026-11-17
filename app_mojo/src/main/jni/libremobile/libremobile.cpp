@@ -27,6 +27,8 @@ static void apply_common_mobile_optimizations() {
     setenv("LIBGL_NOERROR", "1", 1);
     setenv("ZINK_DESCRIPTORS", "lazy", 1);
     setenv("allow_higher_compat_version", "true", 1);
+    setenv("allow_glsl_extension_directive_midshader", "true", 1);
+    setenv("glsl_zero_init", "true", 1);
     setenv("MESA_VK_WSI_PRESENT_MODE", "mailbox", 0);
 }
 

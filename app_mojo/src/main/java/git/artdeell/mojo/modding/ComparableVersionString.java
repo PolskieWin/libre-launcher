@@ -61,16 +61,34 @@ public class ComparableVersionString implements Comparable<ComparableVersionStri
     }
 
     public static ComparableVersionString parse(String str) {
-        String[] split = str.split("\\.");
+        if (str == null) return new ComparableVersionString("");
+        String[] split = str.trim().split("\\.");
         if (split.length < 2) return new ComparableVersionString(str);
 
         try {
-            int major = Integer.parseInt(split[0]);
-            int minor = Integer.parseInt(split[1]);
-            int patch = (split.length >= 3) ? Integer.parseInt(split[2]) : 0;
+            int major = parseLeadingInt(split[0]);
+            int minor = parseLeadingInt(split[1]);
+            int patch = 0;
+            if (split.length >= 3) {
+                patch = parseLeadingInt(split[2]);
+            } else {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:snapshot|pre|rc)[\\s-]*(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(split[1]);
+                if (m.find()) {
+                    patch = Integer.parseInt(m.group(1));
+                }
+            }
             return new ComparableVersionString(str, major, minor, patch);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             return new ComparableVersionString(str);
         }
+    }
+
+    private static int parseLeadingInt(String s) {
+        if (s == null) return 0;
+        int i = 0;
+        while (i < s.length() && Character.isDigit(s.charAt(i))) {
+            i++;
+        }
+        return i > 0 ? Integer.parseInt(s.substring(0, i)) : 0;
     }
 }

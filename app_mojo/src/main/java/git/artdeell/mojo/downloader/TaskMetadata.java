@@ -11,6 +11,7 @@ public class TaskMetadata {
     public final int mirrorType;
     public long size;
     public String sha1Hash;
+    public String sha512Hash;
 
     public TaskMetadata(File path, URL url, int mirrorType) {
         this.path = path;
@@ -24,9 +25,16 @@ public class TaskMetadata {
         this.size = size;
     }
 
+    public TaskMetadata(File path, URL url, long size, String sha1Hash, String sha512Hash, int mirrorType) {
+        this(path, url, mirrorType);
+        this.sha1Hash = sha1Hash;
+        this.sha512Hash = sha512Hash;
+        this.size = size;
+    }
+
     @NonNull
     @Override
     public String toString() {
-        return "TaskMetadata{\nurl="+url+";\npath="+path+"\nhash="+sha1Hash+";\nsize="+size+"\n}";
+        return "TaskMetadata{\nurl="+url+";\npath="+path+"\nhash="+sha1Hash+";\nsha512="+sha512Hash+";\nsize="+size+"\n}";
     }
 }

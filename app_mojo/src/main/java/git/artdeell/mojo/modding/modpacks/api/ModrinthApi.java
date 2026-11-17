@@ -334,9 +334,11 @@ public class ModrinthApi implements ModpackApi{
                 File targetPath = new File(instanceDestination, file.path);
                 if(!targetPath.getAbsolutePath().startsWith(absoluteInstancePath)) throw new IOException("Bad path!");
                 FileUtils.ensureParentDirectory(targetPath);
+                String sha1 = file.hashes != null ? file.hashes.sha1 : null;
+                String sha512 = file.hashes != null ? file.hashes.sha512 : null;
                 taskMetadatas.add(new TaskMetadata(
-                        targetPath, new URL(file.downloads[0]), // TODO source selection
-                        file.fileSize, file.hashes.sha1,
+                        targetPath, new URL(file.downloads[0]),
+                        file.fileSize, sha1, sha512,
                         DownloadMirror.DOWNLOAD_CLASS_NONE
                 ));
             }

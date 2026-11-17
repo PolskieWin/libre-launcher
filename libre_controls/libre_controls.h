@@ -131,6 +131,27 @@ void libre_touch_bridge_clear(void);
 void libre_touch_bridge_set_enabled(bool enabled);
 bool libre_touch_bridge_is_enabled(void);
 
+int32_t libre_modrinth_build_search_url(
+    const char* query,
+    const char* project_type,
+    const char* mc_version,
+    const char* loader,
+    const char* category,
+    int32_t limit,
+    int32_t offset,
+    const char* index,
+    char* out_buf,
+    size_t out_buf_len
+);
+int32_t libre_modrinth_build_project_url(
+    const char* project_id,
+    bool get_versions,
+    char* out_buf,
+    size_t out_buf_len
+);
+int32_t libre_modrinth_sha512(const uint8_t* data, size_t len, char* out_hex, size_t out_hex_len);
+bool libre_modrinth_verify_sha512(const uint8_t* data, size_t len, const char* expected_hex);
+
 #ifdef __cplusplus
 }
 #endif
