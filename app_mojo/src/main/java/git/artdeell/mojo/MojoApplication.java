@@ -109,7 +109,8 @@ public class MojoApplication extends Application {
 
 	@Override
     protected void attachBaseContext(Context base) {
-        super.attachBaseContext(LocaleUtils.setLocale(base));
+        super.attachBaseContext(base);
+        LocaleUtils.setLocale(this);
     }
 
     @Override
