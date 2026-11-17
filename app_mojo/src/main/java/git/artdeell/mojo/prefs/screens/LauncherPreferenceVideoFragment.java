@@ -86,6 +86,7 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
         requirePreference("alternate_surface", SwitchPreferenceCompat.class).setChecked(LauncherPreferences.PREF_USE_ALTERNATE_SURFACE);
         requirePreference("force_vsync", SwitchPreferenceCompat.class).setChecked(LauncherPreferences.PREF_FORCE_VSYNC);
         requirePreference("force_120hz", SwitchPreferenceCompat.class).setChecked(LauncherPreferences.PREF_FORCE_120HZ);
+        requirePreference("perf_overlay", SwitchPreferenceCompat.class).setChecked(LauncherPreferences.PREF_PERF_OVERLAY);
 
         // Show the bundled ANGLE switch only if the bundled ANGLE libraries are actually present
         if(hasAngle == null) {

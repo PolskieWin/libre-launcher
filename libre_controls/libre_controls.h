@@ -51,6 +51,19 @@ typedef struct {
     float radius;
 } LibreCircle;
 
+typedef struct {
+    float fps;
+    float frame_time_ms;
+    float one_percent_low;
+    float min_frame_time_ms;
+    float max_frame_time_ms;
+    uint64_t frame_count;
+    float cpu_percent;
+    uint32_t ram_used_mb;
+    uint32_t ram_total_mb;
+    bool is_afk_active;
+} LibreTelemetrySnapshot;
+
 // Engine Lifecycle & Smoothing
 void libre_controls_init(void);
 void libre_controls_reset(void);
@@ -73,6 +86,16 @@ uint32_t libre_controls_crc32(const uint8_t* data, size_t len);
 uint32_t libre_controls_pack_argb(uint8_t a, uint8_t r, uint8_t g, uint8_t b);
 float libre_controls_dp_to_px(float dp, float density);
 float libre_controls_px_to_dp(float px, float density);
+
+// Telemetry & AFK Native Controls
+void libre_telemetry_record_frame(float delta_ms);
+void libre_telemetry_get_snapshot(LibreTelemetrySnapshot* out);
+void libre_afk_enter(uint32_t target_fps);
+void libre_afk_exit(void);
+bool libre_afk_toggle(uint32_t target_fps);
+bool libre_afk_is_active(void);
+void libre_afk_notify_input(void);
+uint32_t libre_afk_get_sleep_duration_ms(void);
 
 #ifdef __cplusplus
 }

@@ -409,6 +409,241 @@ pub fn compute_crc32(bytes: &[u8]) -> u32 {
 }
 
 // -------------------------------------------------------------
+// Native Performance Telemetry Engine
+// -------------------------------------------------------------
+
+pub const TELEMETRY_WINDOW_SIZE: usize = 120;
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LibreTelemetrySnapshot {
+    pub fps: f32,
+    pub frame_time_ms: f32,
+    pub one_percent_low: f32,
+    pub min_frame_time_ms: f32,
+    pub max_frame_time_ms: f32,
+    pub frame_count: u64,
+    pub cpu_percent: f32,
+    pub ram_used_mb: u32,
+    pub ram_total_mb: u32,
+    pub is_afk_active: bool,
+}
+
+pub struct TelemetryEngine {
+    frame_times: [f32; TELEMETRY_WINDOW_SIZE],
+    head: usize,
+    count: usize,
+    total_frames: u64,
+    last_snapshot: LibreTelemetrySnapshot,
+}
+
+impl TelemetryEngine {
+    pub const fn new() -> Self {
+        Self {
+            frame_times: [16.66; TELEMETRY_WINDOW_SIZE],
+            head: 0,
+            count: 0,
+            total_frames: 0,
+            last_snapshot: LibreTelemetrySnapshot {
+                fps: 60.0,
+                frame_time_ms: 16.66,
+                one_percent_low: 60.0,
+                min_frame_time_ms: 16.66,
+                max_frame_time_ms: 16.66,
+                frame_count: 0,
+                cpu_percent: 0.0,
+                ram_used_mb: 0,
+                ram_total_mb: 0,
+                is_afk_active: false,
+            },
+        }
+    }
+
+    pub fn record_frame(&mut self, delta_ms: f32) {
+        let clean_delta = if delta_ms <= 0.001 {
+            0.001
+        } else if delta_ms > 1000.0 {
+            1000.0
+        } else {
+            delta_ms
+        };
+        self.frame_times[self.head] = clean_delta;
+        self.head = (self.head + 1) % TELEMETRY_WINDOW_SIZE;
+        if self.count < TELEMETRY_WINDOW_SIZE {
+            self.count += 1;
+        }
+        self.total_frames += 1;
+    }
+
+    pub fn compute_snapshot(&mut self, is_afk: bool, cpu: f32, ram_used: u32, ram_total: u32) -> LibreTelemetrySnapshot {
+        if self.count == 0 {
+            return self.last_snapshot;
+        }
+
+        let mut sum = 0.0f32;
+        let mut min = f32::MAX;
+        let mut max = 0.0f32;
+        let mut sorted = [0.0f32; TELEMETRY_WINDOW_SIZE];
+
+        for i in 0..self.count {
+            let val = self.frame_times[i];
+            sum += val;
+            if val < min {
+                min = val;
+            }
+            if val > max {
+                max = val;
+            }
+            sorted[i] = val;
+        }
+
+        let avg_delta = sum / (self.count as f32);
+        let fps = if avg_delta > 0.0 { 1000.0 / avg_delta } else { 0.0 };
+
+        // 1% Low FPS: calculate 99th percentile of frame times (worst 1% of frames)
+        for i in 1..self.count {
+            let mut j = i;
+            while j > 0 && sorted[j - 1] > sorted[j] {
+                sorted.swap(j - 1, j);
+                j -= 1;
+            }
+        }
+        let p99_idx = ((self.count as f32) * 0.99) as usize;
+        let p99_idx = p99_idx.min(self.count.saturating_sub(1));
+        let p99_time = sorted[p99_idx];
+        let one_percent_low = if p99_time > 0.0 { 1000.0 / p99_time } else { 0.0 };
+
+        let latest_idx = (self.head + TELEMETRY_WINDOW_SIZE - 1) % TELEMETRY_WINDOW_SIZE;
+        let latest_delta = self.frame_times[latest_idx];
+
+        let snapshot = LibreTelemetrySnapshot {
+            fps,
+            frame_time_ms: latest_delta,
+            one_percent_low,
+            min_frame_time_ms: min,
+            max_frame_time_ms: max,
+            frame_count: self.total_frames,
+            cpu_percent: cpu,
+            ram_used_mb: ram_used,
+            ram_total_mb: ram_total,
+            is_afk_active: is_afk,
+        };
+        self.last_snapshot = snapshot;
+        snapshot
+    }
+}
+
+// -------------------------------------------------------------
+// Low-Power AFK & Hibernate Engine
+// -------------------------------------------------------------
+
+pub struct AfkEngine {
+    is_active: bool,
+    target_fps: u32,
+    idle_timeout_ms: u64,
+    last_input_time_ms: u64,
+    afk_entered_time_ms: u64,
+    throttled_frames: u64,
+}
+
+impl AfkEngine {
+    pub const fn new() -> Self {
+        Self {
+            is_active: false,
+            target_fps: 10,
+            idle_timeout_ms: 0,
+            last_input_time_ms: 0,
+            afk_entered_time_ms: 0,
+            throttled_frames: 0,
+        }
+    }
+
+    pub fn enter(&mut self, target_fps: u32, now_ms: u64) {
+        self.is_active = true;
+        self.target_fps = target_fps.clamp(1, 30);
+        self.afk_entered_time_ms = now_ms;
+    }
+
+    pub fn exit(&mut self, now_ms: u64) {
+        self.is_active = false;
+        self.last_input_time_ms = now_ms;
+    }
+
+    pub fn toggle(&mut self, target_fps: u32, now_ms: u64) -> bool {
+        if self.is_active {
+            self.exit(now_ms);
+        } else {
+            self.enter(target_fps, now_ms);
+        }
+        self.is_active
+    }
+
+    pub fn notify_input(&mut self, now_ms: u64) {
+        self.last_input_time_ms = now_ms;
+        if self.is_active {
+            self.is_active = false;
+        }
+    }
+
+    pub fn check_idle_timeout(&mut self, now_ms: u64) -> bool {
+        if !self.is_active && self.idle_timeout_ms > 0 && self.last_input_time_ms > 0 {
+            if now_ms.saturating_sub(self.last_input_time_ms) >= self.idle_timeout_ms {
+                self.enter(self.target_fps, now_ms);
+                return true;
+            }
+        }
+        false
+    }
+
+    #[inline]
+    pub fn is_active(&self) -> bool {
+        self.is_active
+    }
+
+    #[inline]
+    pub fn target_frame_duration_ms(&self) -> u32 {
+        if self.target_fps == 0 {
+            100
+        } else {
+            1000 / self.target_fps
+        }
+    }
+
+    pub fn record_throttle(&mut self) {
+        self.throttled_frames += 1;
+    }
+}
+
+pub fn read_proc_memory() -> (u32, u32) {
+    if let Ok(content) = std::fs::read_to_string("/proc/self/statm") {
+        let parts: Vec<&str> = content.split_whitespace().collect();
+        if parts.len() >= 2 {
+            if let Ok(pages) = parts[1].parse::<u32>() {
+                let resident_mb = (pages * 4) / 1024;
+                return (resident_mb, read_total_memory_mb());
+            }
+        }
+    }
+    (0, 0)
+}
+
+fn read_total_memory_mb() -> u32 {
+    if let Ok(content) = std::fs::read_to_string("/proc/meminfo") {
+        for line in content.lines() {
+            if line.starts_with("MemTotal:") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    if let Ok(kb) = parts[1].parse::<u32>() {
+                        return kb / 1024;
+                    }
+                }
+            }
+        }
+    }
+    0
+}
+
+// -------------------------------------------------------------
 // Fast String / Extension Check (Zero Allocation)
 // -------------------------------------------------------------
 
@@ -567,6 +802,88 @@ pub extern "C" fn libre_controls_px_to_dp(px: f32, density: f32) -> f32 {
 }
 
 // -------------------------------------------------------------
+// Telemetry & AFK Global State & C ABI Exports
+// -------------------------------------------------------------
+
+static TELEMETRY: Mutex<TelemetryEngine> = Mutex::new(TelemetryEngine::new());
+static AFK: Mutex<AfkEngine> = Mutex::new(AfkEngine::new());
+
+#[no_mangle]
+pub extern "C" fn libre_telemetry_record_frame(delta_ms: f32) {
+    if let Ok(mut engine) = TELEMETRY.lock() {
+        engine.record_frame(delta_ms);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_telemetry_get_snapshot(out: *mut LibreTelemetrySnapshot) {
+    if out.is_null() {
+        return;
+    }
+    let is_afk = if let Ok(afk) = AFK.lock() {
+        afk.is_active()
+    } else {
+        false
+    };
+    let (ram_used, ram_total) = read_proc_memory();
+    if let Ok(mut engine) = TELEMETRY.lock() {
+        let snapshot = engine.compute_snapshot(is_afk, 0.0, ram_used, ram_total);
+        unsafe {
+            *out = snapshot;
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_afk_enter(target_fps: u32) {
+    if let Ok(mut afk) = AFK.lock() {
+        afk.enter(target_fps, 0);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_afk_exit() {
+    if let Ok(mut afk) = AFK.lock() {
+        afk.exit(0);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_afk_toggle(target_fps: u32) -> bool {
+    if let Ok(mut afk) = AFK.lock() {
+        afk.toggle(target_fps, 0)
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_afk_is_active() -> bool {
+    if let Ok(afk) = AFK.lock() {
+        afk.is_active()
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_afk_notify_input() {
+    if let Ok(mut afk) = AFK.lock() {
+        afk.notify_input(0);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn libre_afk_get_sleep_duration_ms() -> u32 {
+    if let Ok(afk) = AFK.lock() {
+        if afk.is_active() {
+            return afk.target_frame_duration_ms();
+        }
+    }
+    0
+}
+
+// -------------------------------------------------------------
 // Unit Tests
 // -------------------------------------------------------------
 
@@ -670,5 +987,48 @@ mod tests {
         assert!(has_extension_ignore_case(b"/sdcard/mod.jar", b"jar"));
         assert!(has_extension_ignore_case(b"CONFIG.JSON", b"json"));
         assert!(!has_extension_ignore_case(b"readme.txt", b"jar"));
+    }
+
+    #[test]
+    fn test_telemetry_fps_and_1percent_low() {
+        let mut telemetry = TelemetryEngine::new();
+        // Record 100 frames at 16.66ms (~60 FPS)
+        for _ in 0..99 {
+            telemetry.record_frame(16.66);
+        }
+        // Introduce one stutter frame at 50ms (20 FPS)
+        telemetry.record_frame(50.0);
+
+        let snap = telemetry.compute_snapshot(false, 15.0, 512, 4096);
+        assert!(snap.fps >= 55.0 && snap.fps <= 62.0);
+        assert!(snap.one_percent_low < 55.0); // Catches the 50ms stutter!
+        assert_eq!(snap.frame_count, 100);
+        assert_eq!(snap.ram_used_mb, 512);
+    }
+
+    #[test]
+    fn test_afk_state_transitions() {
+        let mut afk = AfkEngine::new();
+        assert!(!afk.is_active());
+
+        // Enter AFK
+        afk.enter(10, 1000);
+        assert!(afk.is_active());
+        assert_eq!(afk.target_frame_duration_ms(), 100); // 100ms = 10 FPS
+
+        // Toggle back off
+        assert!(!afk.toggle(10, 2000));
+        assert!(!afk.is_active());
+    }
+
+    #[test]
+    fn test_afk_input_wake() {
+        let mut afk = AfkEngine::new();
+        afk.enter(10, 1000);
+        assert!(afk.is_active());
+
+        // Player touches screen or presses key -> immediately wake up
+        afk.notify_input(1500);
+        assert!(!afk.is_active());
     }
 }

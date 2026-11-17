@@ -50,6 +50,7 @@ add_library(mojort SHARED
         stdio_is.c
         minibridge.c
         affinity.c
+        telemetry_afk.c
         libremobile/libremobile.cpp
 )
 

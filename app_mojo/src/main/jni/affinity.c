@@ -88,3 +88,16 @@ void make_big_core_affine() {
         big_core_affine = true;
     }
 }
+
+void make_all_cores_affine() {
+    cpu_set_t all_cores;
+    CPU_ZERO(&all_cores);
+    long num_cores = sysconf(_SC_NPROCESSORS_CONF);
+    if(num_cores <= 0) num_cores = 8;
+    for(int i = 0; i < num_cores && i < MAX_CORES; i++) {
+        CPU_SET_S(i, CPU_SETSIZE, &all_cores);
+    }
+    sched_setaffinity(0, CPU_SETSIZE, &all_cores);
+    big_core_affine = false;
+    printf("bigcore: relaxed affinity to all cores for low-power operation\n");
+}
