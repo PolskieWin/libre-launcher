@@ -59,6 +59,7 @@ public class LauncherPreferences {
     public static boolean PREF_GYRO_INVERT_Y = false;
 
     public static boolean PREF_FORCE_VSYNC = false;
+    public static boolean PREF_FORCE_120HZ = true;
 
     public static boolean PREF_USE_ANGLE = false;
     public static boolean PREF_USE_SYSTEM_ANGLE = false;
@@ -124,6 +125,7 @@ public class LauncherPreferences {
         PREF_GYRO_INVERT_X = DEFAULT_PREF.getBoolean("gyroInvertX", false);
         PREF_GYRO_INVERT_Y = DEFAULT_PREF.getBoolean("gyroInvertY", false);
         PREF_FORCE_VSYNC = DEFAULT_PREF.getBoolean("force_vsync", isDevicePowerful);
+        PREF_FORCE_120HZ = DEFAULT_PREF.getBoolean("force_120hz", true);
         PREF_USE_ANGLE = DEFAULT_PREF.getBoolean("use_angle", false);
         PREF_USE_SYSTEM_ANGLE = DEFAULT_PREF.getBoolean("use_system_angle", false);
         PREF_BUTTON_ALL_CAPS = DEFAULT_PREF.getBoolean("buttonAllCaps", true);

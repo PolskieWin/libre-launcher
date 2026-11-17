@@ -49,6 +49,8 @@ add_library(mojort SHARED
         utils.c
         stdio_is.c
         minibridge.c
+        affinity.c
+        libremobile/libremobile.cpp
 )
 
 target_include_directories(mojort PRIVATE .)

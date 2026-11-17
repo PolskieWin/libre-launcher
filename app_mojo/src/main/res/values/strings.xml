@@ -63,6 +63,7 @@
     <string name="mcl_setting_title_javaargs">JVM Launch arguments</string>
     <string name="mcl_setting_subtitle_javaargs">Be careful, this may make game crash if modified without knowledge.</string>
     <string name="mcl_setting_category_renderer">Renderer</string>
+    <string name="mcl_setting_renderer_libre_mobile">Libre Mobile (Snapdragon Ultra-Perf) - all versions</string>
     <string name="mcl_setting_renderer_gles2_4">GL4ES (OpenGL ES 2) - 1.21.4 and lower</string>
     <string name="mcl_setting_renderer_ltw">LTW (OpenGL ES 3) - 1.17+ only</string>
     <string name="mcl_setting_renderer_vulkan_zink">Zink (Vulkan) - all versions</string>
@@ -230,6 +231,8 @@
     <string name="preference_sustained_performance_description">Limit thermal throttling by limiting peak performance.</string>
     <string name="preference_force_vsync_title">Force enable VSync</string>
     <string name="preference_force_vsync_description">Limit thermal throttling by limiting peak performance.</string>
+    <string name="preference_force_120hz_title">Force 120Hz / High Refresh Rate</string>
+    <string name="preference_force_120hz_description">Force the highest supported display refresh rate (90Hz, 120Hz, 144Hz) for maximum frame rate and smoothness in Minecraft.</string>
     <string name="preference_use_angle_title">Use ANGLE</string>
     <string name="preference_use_system_angle_title">Use system ANGLE</string>
     <string name="preference_use_system_angle_description">Use your device\u0027s system-provided ANGLE driver instead of the app\u0027s version.</string>

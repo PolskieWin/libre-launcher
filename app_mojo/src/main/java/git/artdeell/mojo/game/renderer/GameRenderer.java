@@ -1,5 +1,6 @@
 package git.artdeell.mojo.game.renderer;
 
+import static git.artdeell.mojo.game.renderer.def.Renderers.LIBRE_MOBILE_RENDERER;
 import static git.artdeell.mojo.game.renderer.def.Renderers.FREEDRENO_RENDERER;
 import static git.artdeell.mojo.game.renderer.def.Renderers.GL4ES_RENDERER;
 import static git.artdeell.mojo.game.renderer.def.Renderers.LEGACYZINK_RENDERER;
@@ -69,6 +70,7 @@ public class GameRenderer {
      */
     public static RenderSpec getKnownRenderer(String renderer) {
         switch (renderer) {
+            case LIBRE_MOBILE_RENDERER: return new git.artdeell.mojo.game.renderer.impl.LibreMobileRenderSpec();
             // For compatibility
             case "opengles2_4":
             case "opengles2_5":

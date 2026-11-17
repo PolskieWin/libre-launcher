@@ -2,7 +2,7 @@
 // Created by maks on 19.06.2023.
 //
 
-#define _GNU_SOURCE // we are GNU GPLv3
+#define _GNU_SOURCE
 
 #include <linux/limits.h>
 #include <stdbool.h>
@@ -19,6 +19,8 @@ static cpu_set_t bigcore_affinity_set;
 static bool has_affinity_set;
 
 #define FREQ_MAX 256
+#define MAX_CORES 32
+
 void bigcore_format_cpu_path(char* buffer, unsigned int cpu_core) {
     snprintf(buffer, PATH_MAX, "/sys/devices/system/cpu/cpu%i/cpufreq/cpuinfo_max_freq", cpu_core);
 }
@@ -27,30 +29,51 @@ static void create_affinity_set() {
     char path_buffer[PATH_MAX];
     char freq_buffer[FREQ_MAX];
     char* discard;
-    unsigned long core_freq;
+    unsigned long core_freq[MAX_CORES];
     unsigned long max_freq = 0;
+    unsigned long min_freq = ~0UL;
     unsigned int corecnt = 0;
-    unsigned int big_core_id = 0;
-    while(1) {
+
+    memset(core_freq, 0, sizeof(core_freq));
+
+    while(corecnt < MAX_CORES) {
         bigcore_format_cpu_path(path_buffer, corecnt);
         int corefreqfd = open(path_buffer, O_RDONLY);
         if(corefreqfd != -1) {
-            ssize_t read_count = read(corefreqfd, freq_buffer, FREQ_MAX);
+            ssize_t read_count = read(corefreqfd, freq_buffer, FREQ_MAX - 1);
             close(corefreqfd);
-            freq_buffer[read_count] = 0;
-            core_freq = strtoul(freq_buffer, &discard, 10);
-            if(core_freq >= max_freq) {
-                max_freq = core_freq;
-                big_core_id = corecnt;
+            if (read_count > 0) {
+                freq_buffer[read_count] = 0;
+                unsigned long freq = strtoul(freq_buffer, &discard, 10);
+                core_freq[corecnt] = freq;
+                if(freq > max_freq) max_freq = freq;
+                if(freq < min_freq) min_freq = freq;
             }
         }else{
             break;
         }
         corecnt++;
     }
-    printf("bigcore: big CPU number is %u, frequency %lu Hz\n", big_core_id, max_freq);
+
     CPU_ZERO(&bigcore_affinity_set);
-    CPU_SET_S(big_core_id, CPU_SETSIZE, &bigcore_affinity_set);
+    unsigned int set_count = 0;
+
+    // Threshold: include all cores whose frequency is closer to max than min (performance + prime cores)
+    unsigned long threshold = (min_freq != ~0UL && max_freq > min_freq) ? (min_freq + (max_freq - min_freq) / 2) : max_freq;
+    for(unsigned int i = 0; i < corecnt; i++) {
+        if(core_freq[i] >= threshold && core_freq[i] > 0) {
+            CPU_SET_S(i, CPU_SETSIZE, &bigcore_affinity_set);
+            set_count++;
+        }
+    }
+
+    if(set_count == 0 && corecnt > 0) {
+        for(unsigned int i = 0; i < corecnt; i++) {
+            CPU_SET_S(i, CPU_SETSIZE, &bigcore_affinity_set);
+        }
+    }
+
+    printf("bigcore: selected %u performance/prime CPU cores (max freq: %lu Hz)\n", set_count, max_freq);
     has_affinity_set = true;
 }
 

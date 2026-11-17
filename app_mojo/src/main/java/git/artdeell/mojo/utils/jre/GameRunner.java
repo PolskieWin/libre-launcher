@@ -72,7 +72,16 @@ public class GameRunner {
                     name.contains("iris") ||
                     name.contains("oculus") ||
                     name.contains("radium") ||
-                    name.contains("indium")) return true;
+                    name.contains("indium") ||
+                    name.contains("moreculling") ||
+                    name.contains("more-culling") ||
+                    name.contains("entityculling") ||
+                    name.contains("cullleaves") ||
+                    name.contains("immediatelyfast") ||
+                    name.contains("ferritecore") ||
+                    name.contains("modernfix") ||
+                    name.contains("krypton") ||
+                    name.contains("lithium")) return true;
         }
         return false;
     }

@@ -1,5 +1,6 @@
 package git.artdeell.mojo.game.renderer;
 
+import static git.artdeell.mojo.game.renderer.def.Renderers.LIBRE_MOBILE_RENDERER;
 import static git.artdeell.mojo.game.renderer.def.Renderers.FREEDRENO_RENDERER;
 import static git.artdeell.mojo.game.renderer.def.Renderers.GL4ES_RENDERER;
 import static git.artdeell.mojo.game.renderer.def.Renderers.LEGACYZINK_RENDERER;
@@ -44,7 +45,7 @@ public class RendererCache {
         if (sCompatibleRenderers != null) return sCompatibleRenderers;
         // This is the list that controls em all!
         String[] renderers = {
-                GL4ES_RENDERER, ZINK_RENDERER, LTW_RENDERER, MOBILEGLUES_RENDERER, SFPEW_RENDERER, FREEDRENO_RENDERER, MESA_RENDERER, MESA_RENDERER_EXT, LEGACYZINK_RENDERER
+                LIBRE_MOBILE_RENDERER, GL4ES_RENDERER, ZINK_RENDERER, LTW_RENDERER, MOBILEGLUES_RENDERER, SFPEW_RENDERER, FREEDRENO_RENDERER, MESA_RENDERER, MESA_RENDERER_EXT, LEGACYZINK_RENDERER
         };
         ArrayList<String> rendererIds = new ArrayList<>(renderers.length);
         ArrayList<String> rendererNames = new ArrayList<>(rendererIds);

@@ -157,6 +157,33 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
             getWindow().setSustainedPerformanceMode(PREF_SUSTAINED_PERFORMANCE);
 
+        // Force 120Hz / highest available display refresh rate
+        if(LauncherPreferences.PREF_FORCE_120HZ && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                android.view.Display display = getWindowManager().getDefaultDisplay();
+                android.view.Display.Mode[] modes = display.getSupportedModes();
+                android.view.Display.Mode bestMode = null;
+                float highestRate = 60.0f;
+                for(android.view.Display.Mode mode : modes) {
+                    if(mode.getRefreshRate() > highestRate) {
+                        highestRate = mode.getRefreshRate();
+                        bestMode = mode;
+                    }
+                }
+                if(bestMode != null) {
+                    WindowManager.LayoutParams params = getWindow().getAttributes();
+                    params.preferredDisplayModeId = bestMode.getModeId();
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        params.preferredRefreshRate = highestRate;
+                    }
+                    getWindow().setAttributes(params);
+                    Log.i("GameActivity", "Forced high display refresh rate: " + highestRate + "Hz");
+                }
+            } catch (Throwable t) {
+                Log.w("GameActivity", "Could not force high refresh rate", t);
+            }
+        }
+
         // This is required on Android 10 for the insets listener
         // https://issuetracker.google.com/issues/266331465
         boolean androidCompat = Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q;

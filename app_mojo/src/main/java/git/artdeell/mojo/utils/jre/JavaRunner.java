@@ -126,10 +126,11 @@ public class JavaRunner {
                 "-Dloader.disable_forked_guis=true",
                 "-Djdk.lang.Process.launchMechanism=FORK", // Default is POSIX_SPAWN which requires starting jspawnhelper, which doesn't work on Android
 
-                // Sodium & VulkanMod Compatibility & Performance flags
+                // Sodium, VulkanMod & More Culling Performance flags
                 "-Dvulkanmod.renderdoc=false",
                 "-Dsodium.workarounds.all=true",
                 "-Dsodium.checks.issue2486=false",
+                "-Dmoreculling.disable=false",
 
                 // FPS & Low-Latency Garbage Collection Tuning for Android
                 "-XX:+UnlockExperimentalVMOptions",
