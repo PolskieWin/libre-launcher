@@ -5,7 +5,7 @@
     <string name="app_short_name">Libre Launcher</string>
     <string name="login_online_username_hint">Имя пользователя</string>
     <string name="login_online_login_label">Войти</string>
-    <string name="hint_control_mapping">Нажмите на иконку шестерёнки ⚙, чтобы открыть меню действий.\nВыберите кнопку, чтобы удалить её или скопировать;\nизменить её свойства, размер или привязанные клавиши.</string>
+    <string name="hint_control_mapping">Нажмите на иконку шестерёнки, чтобы открыть меню действий.\nВыберите кнопку, чтобы удалить её или скопировать;\nизменить её свойства, размер или привязанные клавиши.</string>
     <string name="warning_remove_account">Эта учётная запись будет удалена!</string>
     <string name="alerttitle_installmod">Выберите установщик мода</string>
     <string name="error_fatal">Libre был остановлен в результате сбоя</string>
