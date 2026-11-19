@@ -7,10 +7,18 @@ extern "C" {
 #endif
 
 const unsigned char* libre_glGetString(unsigned int name);
-void* libre_eglGetProcAddress(const char *procname);
+void* libre_eglGetProcAddress(const char* procname);
+void libre_adpf_report_swap();
 
 JNIEXPORT jboolean JNICALL
-Java_git_artdeell_mojo_game_renderer_impl_LibreMobileRenderSpec_nativeSetupSnapdragon(JNIEnv *env, jclass clazz);
+Java_git_artdeell_mojo_game_renderer_impl_LibreMobileRenderSpec_nativeIsFlagshipAdreno(
+        JNIEnv *env,
+        jclass clazz);
+
+JNIEXPORT jboolean JNICALL
+Java_git_artdeell_mojo_game_renderer_impl_LibreMobileRenderSpec_nativeSetupSnapdragon(
+        JNIEnv *env,
+        jclass clazz);
 
 JNIEXPORT jboolean JNICALL
 Java_git_artdeell_mojo_game_renderer_impl_LibreMobileRenderSpec_nativeSetupMobile(

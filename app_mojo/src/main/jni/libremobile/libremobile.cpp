@@ -2,6 +2,7 @@
 
 #include <android/log.h>
 #include <sys/resource.h>
+#include <sys/system_properties.h>
 #include <unistd.h>
 #include <sched.h>
 #include <stdio.h>
@@ -9,6 +10,9 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <stdint.h>
+#include <pthread.h>
+#include <time.h>
+#include <EGL/egl.h>
 
 #define TAG "LibreMobile"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -20,45 +24,173 @@
 typedef unsigned char GLubyte;
 typedef unsigned int GLenum;
 typedef const GLubyte* (*PFNGLGETSTRINGPROC)(GLenum);
-typedef void* (*PFNEGLGETPROCADDRESSPROC)(const char*);
+
+// ADPF function prototypes from libandroid.so (API 33+)
+struct APerformanceHintManager;
+typedef struct APerformanceHintManager APerformanceHintManager;
+struct APerformanceHintSession;
+typedef struct APerformanceHintSession APerformanceHintSession;
+
+typedef APerformanceHintManager* (*pfn_APerformanceHint_getManager)();
+typedef APerformanceHintSession* (*pfn_APerformanceHint_createSession)(
+        APerformanceHintManager*, const int32_t*, size_t, int64_t);
+typedef int (*pfn_APerformanceHint_reportActualWorkDuration)(
+        APerformanceHintSession*, int64_t);
+typedef int (*pfn_APerformanceHint_updateTargetWorkDuration)(
+        APerformanceHintSession*, int64_t);
+typedef void (*pfn_APerformanceHint_closeSession)(APerformanceHintSession*);
 
 extern "C" void make_big_core_affine();
 extern "C" void* mojoexec_acq_egl_handle();
+extern "C" EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surf);
 
+static pthread_once_t s_init_once = PTHREAD_ONCE_INIT;
+static bool s_libre_mobile_active = false;
 static PFNGLGETSTRINGPROC s_real_glGetString = NULL;
 static PFNEGLGETPROCADDRESSPROC s_real_eglGetProcAddress = NULL;
 
-static bool contains_case_insensitive(const char* haystack, const char* needle) {
-    if (!haystack || !needle) return false;
-    size_t nlen = strlen(needle);
-    size_t hlen = strlen(haystack);
-    if (nlen > hlen) return false;
-    for (size_t i = 0; i <= hlen - nlen; i++) {
-        if (strncasecmp(haystack + i, needle, nlen) == 0) return true;
+static pfn_APerformanceHint_getManager s_pfn_getManager = NULL;
+static pfn_APerformanceHint_createSession s_pfn_createSession = NULL;
+static pfn_APerformanceHint_reportActualWorkDuration s_pfn_reportActualWorkDuration = NULL;
+static pfn_APerformanceHint_updateTargetWorkDuration s_pfn_updateTargetWorkDuration = NULL;
+static pfn_APerformanceHint_closeSession s_pfn_closeSession = NULL;
+
+static APerformanceHintManager* s_adpf_manager = NULL;
+static APerformanceHintSession* s_adpf_session = NULL;
+static int64_t s_adpf_target_duration_ns = 16666667LL;
+static struct timespec s_last_swap_time = {0, 0};
+
+// Flagship SoC Lookup Table (< 4 KB)
+static const uint16_t s_flagship_soc_ids[] = {
+    339, 356, 361, 362, 367, 393, 400, 415, 439, 456, 457, 459, 482,
+    501, 502, 519, 530, 531, 536, 540, 552, 557, 577, 603, 619, 621, 623, 693
+};
+static const size_t s_flagship_soc_count = sizeof(s_flagship_soc_ids) / sizeof(s_flagship_soc_ids[0]);
+
+static const uint16_t s_adreno_7xx_8xx_soc_ids[] = {
+    457, 482, 519, 530, 531, 536, 540, 552, 557, 577, 603, 619, 621, 623, 693
+};
+static const size_t s_adreno_7xx_8xx_soc_count = sizeof(s_adreno_7xx_8xx_soc_ids) / sizeof(s_adreno_7xx_8xx_soc_ids[0]);
+
+static const char* const s_flagship_platform_names[] = {
+    "sm8150", "sm8250", "sm8350", "sm8450", "sm8475", "sm8550", "sm8650", "sm8750",
+    "sm7475", "sm7675", "kona", "lahaina", "taro", "kalama", "pineapple", "sun"
+};
+static const size_t s_flagship_platform_count = sizeof(s_flagship_platform_names) / sizeof(s_flagship_platform_names[0]);
+
+static const char* const s_adreno_7xx_8xx_names[] = {
+    "sm8450", "sm8475", "sm8550", "sm8650", "sm8750", "sm7475", "sm7675",
+    "taro", "kalama", "pineapple", "sun"
+};
+static const size_t s_adreno_7xx_8xx_name_count = sizeof(s_adreno_7xx_8xx_names) / sizeof(s_adreno_7xx_8xx_names[0]);
+
+static bool id_in_array(uint16_t id, const uint16_t* arr, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        if (arr[i] == id) return true;
     }
     return false;
 }
 
-static const GLubyte* get_real_gl_string(GLenum name) {
-    if (__builtin_expect(!s_real_glGetString, 0)) {
-        void* egl_handle = mojoexec_acq_egl_handle();
-        if (egl_handle) {
-            s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(egl_handle, "glGetString");
-        }
-        if (!s_real_glGetString) {
-            s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(RTLD_NEXT, "glGetString");
-        }
-        if (!s_real_glGetString) {
-            void* libegl = dlopen("libEGL_mesa.so", RTLD_NOLOAD);
-            if (libegl) s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(libegl, "glGetString");
-        }
-        if (!s_real_glGetString) {
-            void* libdri = dlopen("libgallium_dri.so", RTLD_NOLOAD);
-            if (libdri) s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(libdri, "glGetString");
-        }
-        if (!s_real_glGetString && s_real_eglGetProcAddress) {
-            s_real_glGetString = (PFNGLGETSTRINGPROC)s_real_eglGetProcAddress("glGetString");
-        }
+static bool str_in_list(const char* target, const char* const* list, size_t count) {
+    if (!target || !target[0]) return false;
+    for (size_t i = 0; i < count; i++) {
+        if (strcasestr(target, list[i]) != NULL) return true;
+    }
+    return false;
+}
+
+static uint16_t read_soc_id() {
+    FILE* fp = fopen("/sys/devices/soc0/soc_id", "r");
+    if (!fp) return 0;
+    char buf[32];
+    uint16_t id = 0;
+    if (fgets(buf, sizeof(buf), fp) != NULL) {
+        id = (uint16_t)atoi(buf);
+    }
+    fclose(fp);
+    return id;
+}
+
+static bool detect_is_flagship_adreno() {
+    uint16_t soc_id = read_soc_id();
+    if (soc_id > 0 && id_in_array(soc_id, s_flagship_soc_ids, s_flagship_soc_count)) {
+        return true;
+    }
+    char prop[PROP_VALUE_MAX];
+    if (__system_property_get("ro.soc.model", prop) > 0) {
+        if (str_in_list(prop, s_flagship_platform_names, s_flagship_platform_count)) return true;
+    }
+    if (__system_property_get("ro.board.platform", prop) > 0) {
+        if (str_in_list(prop, s_flagship_platform_names, s_flagship_platform_count)) return true;
+    }
+    return false;
+}
+
+static bool detect_is_adreno_7xx_8xx() {
+    uint16_t soc_id = read_soc_id();
+    if (soc_id > 0 && id_in_array(soc_id, s_adreno_7xx_8xx_soc_ids, s_adreno_7xx_8xx_soc_count)) {
+        return true;
+    }
+    char prop[PROP_VALUE_MAX];
+    if (__system_property_get("ro.soc.model", prop) > 0) {
+        if (str_in_list(prop, s_adreno_7xx_8xx_names, s_adreno_7xx_8xx_name_count)) return true;
+    }
+    if (__system_property_get("ro.board.platform", prop) > 0) {
+        if (str_in_list(prop, s_adreno_7xx_8xx_names, s_adreno_7xx_8xx_name_count)) return true;
+    }
+    return false;
+}
+
+static void init_adpf() {
+    void* libandroid = dlopen("libandroid.so", RTLD_NOW | RTLD_LOCAL);
+    if (!libandroid) return;
+
+    s_pfn_getManager = (pfn_APerformanceHint_getManager)dlsym(libandroid, "APerformanceHint_getManager");
+    s_pfn_createSession = (pfn_APerformanceHint_createSession)dlsym(libandroid, "APerformanceHint_createSession");
+    s_pfn_reportActualWorkDuration = (pfn_APerformanceHint_reportActualWorkDuration)dlsym(libandroid, "APerformanceHint_reportActualWorkDuration");
+    s_pfn_updateTargetWorkDuration = (pfn_APerformanceHint_updateTargetWorkDuration)dlsym(libandroid, "APerformanceHint_updateTargetWorkDuration");
+    s_pfn_closeSession = (pfn_APerformanceHint_closeSession)dlsym(libandroid, "APerformanceHint_closeSession");
+
+    if (s_pfn_getManager) {
+        s_adpf_manager = s_pfn_getManager();
+    }
+}
+
+static void init_libremobile_pointers_internal() {
+    const char* lm = getenv("LIBRE_MOBILE_ACTIVE");
+    s_libre_mobile_active = (lm != NULL && (strcmp(lm, "1") == 0 || strcasecmp(lm, "true") == 0));
+
+    void* egl_handle = mojoexec_acq_egl_handle();
+    if (!egl_handle) {
+        egl_handle = dlopen("libEGL_mesa.so", RTLD_NOLOAD);
+    }
+    if (egl_handle) {
+        s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(egl_handle, "eglGetProcAddress");
+        s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(egl_handle, "glGetString");
+    }
+    if (!s_real_eglGetProcAddress) {
+        s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(RTLD_NEXT, "eglGetProcAddress");
+    }
+    if (!s_real_glGetString && s_real_eglGetProcAddress) {
+        s_real_glGetString = (PFNGLGETSTRINGPROC)s_real_eglGetProcAddress("glGetString");
+    }
+    if (!s_real_glGetString) {
+        s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(RTLD_NEXT, "glGetString");
+    }
+
+    init_adpf();
+}
+
+static inline void ensure_initialized() {
+    pthread_once(&s_init_once, init_libremobile_pointers_internal);
+}
+
+extern "C" __attribute__((visibility("default")))
+const unsigned char* libre_glGetString(unsigned int name) {
+    ensure_initialized();
+    if (name == GL_RENDERER) {
+        static const unsigned char s_libre_mobile_renderer[] = "Libremobile 2.00";
+        return s_libre_mobile_renderer;
     }
     if (s_real_glGetString) {
         return s_real_glGetString(name);
@@ -67,89 +199,69 @@ static const GLubyte* get_real_gl_string(GLenum name) {
 }
 
 extern "C" __attribute__((visibility("default")))
-const unsigned char* libre_glGetString(unsigned int name) {
-    const char* lm = getenv("LIBRE_MOBILE_ACTIVE");
-    bool is_libre_mobile = (lm != NULL && (strcmp(lm, "1") == 0 || strcasecmp(lm, "true") == 0));
-
-    if (name == GL_RENDERER) {
-        const GLubyte* real_str = get_real_gl_string(name);
-        const char* str = (const char*)real_str;
-
-        bool has_unwanted_string = false;
-        if (str != NULL) {
-            if (contains_case_insensitive(str, "turnip") ||
-                contains_case_insensitive(str, "zink") ||
-                contains_case_insensitive(str, "mesa git") ||
-                contains_case_insensitive(str, "mesa")) {
-                has_unwanted_string = true;
-            }
-        }
-
-        if (is_libre_mobile || has_unwanted_string) {
-            static const unsigned char s_libre_mobile_renderer[] = "Libremobile 2.00";
-            return s_libre_mobile_renderer;
-        }
-
-        if (real_str) return real_str;
-        static const unsigned char s_fallback_renderer[] = "Libremobile 2.00";
-        return s_fallback_renderer;
-    }
-
-    return get_real_gl_string(name);
-}
-
-extern "C" __attribute__((visibility("default")))
 const unsigned char* glGetString(unsigned int name) {
     return libre_glGetString(name);
 }
 
 extern "C" __attribute__((visibility("default")))
+void libre_adpf_report_swap() {
+    ensure_initialized();
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    if (s_pfn_createSession && s_adpf_manager && !s_adpf_session) {
+        int32_t tid = (int32_t)gettid();
+        s_adpf_session = s_pfn_createSession(s_adpf_manager, &tid, 1, s_adpf_target_duration_ns);
+    }
+
+    if (s_last_swap_time.tv_sec != 0 && s_adpf_session && s_pfn_reportActualWorkDuration) {
+        int64_t dur = (int64_t)(now.tv_sec - s_last_swap_time.tv_sec) * 1000000000LL +
+                      (int64_t)(now.tv_nsec - s_last_swap_time.tv_nsec);
+        if (dur > 0 && dur < 500000000LL) {
+            s_pfn_reportActualWorkDuration(s_adpf_session, dur);
+        }
+    }
+    s_last_swap_time = now;
+}
+
+extern "C" __attribute__((visibility("default")))
 void* libre_eglGetProcAddress(const char* procname) {
-    if (procname && strcmp(procname, "glGetString") == 0) {
+    if (!procname) return NULL;
+    ensure_initialized();
+
+    if (strcmp(procname, "glGetString") == 0) {
         return (void*)&libre_glGetString;
     }
-    if (__builtin_expect(!s_real_eglGetProcAddress, 0)) {
-        void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
-        if (libegl) {
-            s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(libegl, "eglGetProcAddress");
-        }
-        if (!s_real_eglGetProcAddress) {
-            s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(RTLD_NEXT, "eglGetProcAddress");
-        }
+    if (strcmp(procname, "eglSwapBuffers") == 0) {
+        return (void*)&eglSwapBuffers;
     }
     if (s_real_eglGetProcAddress) {
-        return s_real_eglGetProcAddress(procname);
+        return (void*)s_real_eglGetProcAddress(procname);
     }
     return NULL;
 }
 
 extern "C" __attribute__((visibility("default")))
-void* eglGetProcAddress(const char* procname) {
-    return libre_eglGetProcAddress(procname);
+__eglMustCastToProperFunctionPointerType eglGetProcAddress(const char* procname) {
+    return (__eglMustCastToProperFunctionPointerType)libre_eglGetProcAddress(procname);
 }
 
 static void apply_common_mobile_optimizations() {
-    // 1. Enforce performance & prime core CPU affinity
     make_big_core_affine();
-
-    // 2. Elevate process nice priority to -10 for minimum scheduling latency
     setpriority(PRIO_PROCESS, 0, -10);
 
-    // 3. Mark Libre Mobile as active
     setenv("LIBRE_MOBILE_ACTIVE", "1", 1);
-
-    // 4. Universal Mesa & Vulkan / Zink high-performance flags with 26.4 snapshots support
-    setenv("mesa_glthread", "true", 1);
-    setenv("MESA_NO_ERROR", "1", 1);
-    setenv("LIBGL_NOERROR", "1", 1);
-    setenv("ZINK_DESCRIPTORS", "lazy", 1);
-    setenv("allow_higher_compat_version", "true", 1);
-    setenv("allow_glsl_extension_directive_midshader", "true", 1);
-    setenv("glsl_zero_init", "true", 1);
-    setenv("MESA_VK_WSI_PRESENT_MODE", "mailbox", 0);
     setenv("MESA_LOADER_DRIVER_OVERRIDE", "zink", 1);
     setenv("MESA_GLSL_VERSION_OVERRIDE", "460", 1);
     setenv("MESA_GL_VERSION_OVERRIDE", "4.6COMPAT", 1);
+    setenv("allow_higher_compat_version", "true", 1);
+    setenv("allow_glsl_extension_directive_midshader", "true", 1);
+    setenv("MESA_NO_ERROR", "1", 1);
+    setenv("LIBGL_NOERROR", "1", 1);
+    setenv("glsl_zero_init", "true", 1);
+    setenv("ZINK_DESCRIPTORS", "lazy", 1);
+
     setenv("MESA_EXTENSION_OVERRIDE",
            "+GL_EXT_texture_filter_anisotropic "
            "+GL_ARB_buffer_storage "
@@ -175,31 +287,57 @@ static void apply_common_mobile_optimizations() {
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_git_artdeell_mojo_game_renderer_impl_LibreMobileRenderSpec_nativeIsFlagshipAdreno(
+        JNIEnv *env,
+        jclass clazz) {
+    return detect_is_flagship_adreno() ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_git_artdeell_mojo_game_renderer_impl_LibreMobileRenderSpec_nativeSetupMobile(
         JNIEnv *env,
         jclass clazz,
         jboolean isAdreno,
         jboolean isMali,
         jboolean isXclipse) {
-    LOGI("Activating Libre Mobile Universal Performance Engine (Adreno=%d, Mali=%d, Xclipse=%d)",
+    LOGI("Activating Libre Mobile Universal Engine (Adreno=%d, Mali=%d, Xclipse=%d)",
          isAdreno, isMali, isXclipse);
 
     apply_common_mobile_optimizations();
 
     if (isAdreno) {
-        LOGI("Applying Qualcomm Snapdragon / Adreno optimizations");
-        setenv("TU_DEBUG", "sysmem", 1);
-        setenv("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1", 1);
+        bool isFlagship = detect_is_flagship_adreno();
+        bool is7xx8xx = detect_is_adreno_7xx_8xx();
+
+        if (isFlagship) {
+            LOGI("Configuring Flagship Tuned Turnip profile (7xx/8xx=%d)", is7xx8xx);
+            setenv("MESA_VK_WSI_PRESENT_MODE", "mailbox", 1);
+            if (is7xx8xx) {
+                setenv("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1", 1);
+            }
+            unsetenv("TU_DEBUG");
+        } else {
+            LOGI("Configuring Mid-Range Standard Turnip profile");
+            unsetenv("FD_DEV_FEATURES");
+            unsetenv("TU_DEBUG");
+            unsetenv("MESA_VK_WSI_PRESENT_MODE");
+        }
     } else if (isMali) {
-        LOGI("Applying ARM Mali / Immortalis optimizations");
+        LOGI("Configuring ARM Mali / Immortalis profile");
+        unsetenv("FD_DEV_FEATURES");
+        unsetenv("TU_DEBUG");
         setenv("ZINK_DEBUG", "compact", 1);
         setenv("PAN_MESA_DEBUG", "gl3", 0);
     } else if (isXclipse) {
-        LOGI("Applying Samsung Xclipse / AMD RDNA optimizations");
+        LOGI("Configuring Samsung Xclipse profile");
+        unsetenv("FD_DEV_FEATURES");
+        unsetenv("TU_DEBUG");
         setenv("RADV_DEBUG", "nocompact", 0);
+    } else {
+        unsetenv("FD_DEV_FEATURES");
+        unsetenv("TU_DEBUG");
     }
 
-    LOGI("Libre Mobile optimizations applied successfully");
     return JNI_TRUE;
 }
 

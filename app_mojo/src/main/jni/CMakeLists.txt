@@ -85,8 +85,12 @@ add_library(mojort SHARED
         libremobile/libremobile.cpp
 )
 
+set_source_files_properties(libremobile/libremobile.cpp PROPERTIES COMPILE_FLAGS "-Oz -flto -ffunction-sections -fdata-sections -fvisibility=hidden -fvisibility-inlines-hidden -fno-rtti -fno-exceptions")
+
 target_include_directories(mojort PRIVATE .)
-target_link_libraries(mojort PRIVATE log mojoexec z freetype dl)
+target_compile_options(mojort PRIVATE -fdata-sections -ffunction-sections)
+target_link_options(mojort PRIVATE -Wl,--gc-sections -Wl,--strip-all)
+target_link_libraries(mojort PRIVATE log mojoexec z freetype dl android)
 
 add_library(mojoawt SHARED
 		awt/awt.c

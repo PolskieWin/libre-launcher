@@ -70,11 +70,17 @@ Architecture and feature roadmap for Libre Launcher.
 - **26.4 Snapshot Engine & Core GLSL Extensions**: Full compatibility with 26.4 snapshots via core GLSL 460 compat mode, compute shader / SSBO overrides, snapshot regex sorting in `ComparableVersionString`, and automatic Java 21 runtime resolution.
 - **Pre-Boot Mod Compatibility for Forge & NeoForge**: Native Rust (`libre_controls`) and C (`preboot_scanner`) support for `mods.toml` and `neoforge.mods.toml` mod manifest inspection, detecting duplicate mod IDs, missing dependencies, and renderer conflicts across Forge and NeoForge.
 
+### v2.40 — Anti-Piracy Enforcement, Microsoft Auth Hardening & F-Droid Pure Compliance
+- **Complete Anti-Piracy Enforcement**: Decommissioned offline/cracked local session fallback (`account.toLocal()`) in `GameRunner`. All game launches strictly mandate authenticated Microsoft accounts with active tokens.
+- **Loopback Auth Emulation Removal**: Decommissioned `LocalSkinServer` Yggdrasil-compatible loopback HTTP server and stripped unofficial Ely.by authorization backend.
+- **Javaagent Security Neutralization**: Completely removed `authlib-injector.jar` and `NoBlocklist-1.0-SNAPSHOT-all.jar` JVM agent hooks, excised `NoBlocklist` submodule, and removed the server blocklist bypass toggle in Preferences to enforce Mojang's official blocked servers policy.
+- **F-Droid Build Compliance**: Removed legacy builds (`2.34` - `2.38`) containing cracked piracy vectors from F-Droid metadata recipes, eliminated `authlib-injector` from `srclibs` and `prebuild`, and flavor-gated in-app `UpdateManager` for `noruntime` package-managed builds.
+- **Ultra-Lightweight Stripped Flavor**: Dedicated standalone APK flavor containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes (~35–45 MB), tailored for GitHub Releases and IzzyOnDroid.
+
 ---
 
 ## Upcoming Milestones
 
-### v2.40 — Ultra-Lightweight Stripped Flavor & IzzyOnDroid Distribution
-- **Ultra-Lightweight Stripped Flavor**: Dedicated standalone APK flavor containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes (~35–45 MB), tailored for GitHub Releases and IzzyOnDroid.
-- **F-Droid Official Repository Inclusion**: Full inclusion in the official F-Droid main catalog via Merge Request `!58168`.
+### v2.50 — Adaptive Vulkan Pipeline & Official Repository Inclusion
+- **F-Droid Official Repository Inclusion**: Completion and merge of official F-Droid Merge Request `!58168`.
 - **Adaptive Vulkan Extension Optimizer**: Dynamic detection of Turnip driver extensions with real-time pipeline optimizations.

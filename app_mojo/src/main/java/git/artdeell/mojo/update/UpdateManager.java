@@ -54,6 +54,13 @@ public class UpdateManager {
      * @param userTriggered If true, feedback is displayed even when already up to date or on network failure.
      */
     public static void checkForUpdate(@NonNull Activity activity, boolean userTriggered) {
+        if ("noruntime".equalsIgnoreCase(BuildConfig.FLAVOR)) {
+            if (userTriggered) {
+                showToastDirect(activity, "Updates are managed by your package manager (F-Droid).");
+            }
+            return;
+        }
+
         if (!userTriggered && sCheckedThisSession) {
             return;
         }

@@ -123,7 +123,10 @@ public class JavaRunner {
                 "-Dext.net.resolvPath=" +resolvFile,
                 "-Dlog4j2.formatMsgNoLookups=true", //Log4j RCE mitigation
                 "-Dfml.earlyprogresswindow=false", //Forge 1.14+ workaround
+                "-Dfml.disableEarlyDisplay=true",
                 "-Dneoforge.earlyprogresswindow=false",
+                "-Dneoforge.disableEarlyDisplay=true",
+                "-Dforge.earlyprogresswindow=false",
                 "-Dforge.forceNoStencil=true",
                 "-Dterminal.ansi=true",
                 "-Dterminal.jline=false",
@@ -318,6 +321,7 @@ public class JavaRunner {
      * @throws VMLoadException if an error occurred during VM loading
      */
     public static void startJvm(Runtime runtime, List<String> vmArgs, List<String> classpathEntries, String mainClass, List<String> applicationArgs) throws VMLoadException{
+        runtime = git.artdeell.mojo.utils.JREUtils.initJavaRuntime(runtime);
         File runtimeHomeDir = MultiRTUtils.getRuntimeHome(runtime.name);
         File vmPath = findVmPath(runtimeHomeDir, runtime.arch);
         if(vmPath == null) {

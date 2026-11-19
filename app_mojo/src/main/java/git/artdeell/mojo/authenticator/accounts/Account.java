@@ -88,14 +88,12 @@ public class Account {
     }
 
     public boolean isLocal(){
-        return accessToken.equals("0");
+        return accessToken == null || accessToken.equals("0") || authType != AuthType.MICROSOFT;
     }
 
+    @Deprecated
     public Account toLocal() {
-        Account localAccount = new Account();
-        localAccount.username = this.username;
-        localAccount.authType = AuthType.LOCAL;
-        return localAccount;
+        throw new UnsupportedOperationException("Offline/cracked accounts are strictly prohibited.");
     }
 
     public void save() throws IOException {

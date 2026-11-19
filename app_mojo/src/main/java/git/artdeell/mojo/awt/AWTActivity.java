@@ -227,10 +227,15 @@ public class AWTActivity extends BaseActivity implements View.OnTouchListener {
         }
         String nearestRuntime = MultiRTUtils.getNearestJreName(javaVersion);
         if(nearestRuntime == null) {
+            Runtime fallback = MultiRTUtils.getHighestValidRuntime();
+            if (fallback != null) {
+                return fallback;
+            }
             finalErrorDialog(getString(R.string.multirt_nocompatiblert, javaVersion));
             return null;
         }
-        return MultiRTUtils.forceReread(nearestRuntime);
+        Runtime resolved = MultiRTUtils.forceReread(nearestRuntime);
+        return git.artdeell.mojo.utils.JREUtils.initJavaRuntime(resolved);
     }
 
     private static class JarFileProperties {

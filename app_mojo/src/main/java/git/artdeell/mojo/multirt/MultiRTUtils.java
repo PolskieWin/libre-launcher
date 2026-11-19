@@ -101,8 +101,52 @@ public class MultiRTUtils {
         return clean.replace("-", " ");
     }
 
+    public static boolean isRuntimeValid(Runtime runtime) {
+        if (runtime == null || runtime.name == null) return false;
+        File rtHome = new File(getRuntimeFolder(), runtime.name);
+        if (!rtHome.exists() || !rtHome.isDirectory()) return false;
+        return isRuntimeDirectoryValid(rtHome, runtime.javaVersion);
+    }
+
+    public static boolean isRuntimeDirectoryValid(File homeDir, int javaVersion) {
+        if (homeDir == null || !homeDir.exists()) return false;
+        if (javaVersion <= 8 && javaVersion > 0) {
+            File rtJar1 = new File(homeDir, "lib/rt.jar");
+            File rtJar2 = new File(homeDir, "jre/lib/rt.jar");
+            return (rtJar1.exists() && rtJar1.length() > 0) || (rtJar2.exists() && rtJar2.length() > 0);
+        } else {
+            File modules = new File(homeDir, "lib/modules");
+            if (modules.exists() && modules.length() > 0) return true;
+            File rtJar1 = new File(homeDir, "lib/rt.jar");
+            File rtJar2 = new File(homeDir, "jre/lib/rt.jar");
+            return (rtJar1.exists() && rtJar1.length() > 0) || (rtJar2.exists() && rtJar2.length() > 0);
+        }
+    }
+
+    public static List<Runtime> getValidRuntimes() {
+        List<Runtime> all = getRuntimes();
+        List<Runtime> valid = new ArrayList<>();
+        for (Runtime r : all) {
+            if (isRuntimeValid(r)) {
+                valid.add(r);
+            }
+        }
+        return valid;
+    }
+
+    public static Runtime getHighestValidRuntime() {
+        List<Runtime> runtimes = getValidRuntimes();
+        Runtime best = null;
+        for (Runtime r : runtimes) {
+            if (best == null || r.javaVersion > best.javaVersion) {
+                best = r;
+            }
+        }
+        return best;
+    }
+
     public static String getExactJreName(int majorVersion) {
-        List<Runtime> runtimes = getRuntimes();
+        List<Runtime> runtimes = getValidRuntimes();
         for(Runtime r : runtimes)
             if(r.javaVersion == majorVersion)return r.name;
 
@@ -110,12 +154,13 @@ public class MultiRTUtils {
     }
 
     public static String getNearestJreName(int majorVersion) {
-        List<Runtime> runtimes = getRuntimes();
+        List<Runtime> runtimes = getValidRuntimes();
         MathUtils.RankedValue<Runtime> nearestRankedRuntime = MathUtils.findNearestPositive(majorVersion, runtimes, (runtime)->runtime.javaVersion);
-        if(nearestRankedRuntime == null) return null;
-        Runtime nearestRuntime = nearestRankedRuntime.value;
-        if(nearestRuntime == null) return null;
-        return nearestRuntime.name;
+        if(nearestRankedRuntime != null && nearestRankedRuntime.value != null) {
+            return nearestRankedRuntime.value.name;
+        }
+        Runtime highest = getHighestValidRuntime();
+        return highest != null ? highest.name : null;
     }
 
     public static void installRuntimeNamed(String nativeLibDir, InputStream runtimeInputStream, String name) throws IOException {

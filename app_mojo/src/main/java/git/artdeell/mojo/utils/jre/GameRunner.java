@@ -14,7 +14,6 @@ import git.artdeell.mojo.Logger;
 import git.artdeell.mojo.Tools;
 import git.artdeell.mojo.authenticator.accounts.Account;
 import git.artdeell.mojo.authenticator.AuthType;
-import git.artdeell.mojo.skins.LocalSkinServer;
 import git.artdeell.mojo.game.renderer.def.Renderers;
 import git.artdeell.mojo.game.renderer.impl.GLESRenderSpec;
 import git.artdeell.mojo.instances.Instance;
@@ -199,7 +198,13 @@ public class GameRunner {
 
     public static void launchGame(final AppCompatActivity activity, Account account,
                                   Instance instance, String versionId, File[] classpath, GameRenderer gameRenderer) throws Throwable {
-        if(!performAuthPing(activity, account)) account = account.toLocal();
+        boolean hasToken = account != null && (
+                (account.accessToken != null && !account.accessToken.equals("0") && !account.accessToken.trim().isEmpty())
+                || (account.refreshToken != null && !account.refreshToken.equals("0") && !account.refreshToken.trim().isEmpty())
+        );
+        if (account == null || account.authType != AuthType.MICROSOFT || !account.isMicrosoft || !hasToken) {
+            throw new IllegalStateException("Valid Microsoft authentication is strictly required to launch Minecraft: Java Edition.");
+        }
 
         int freeDeviceMemory = Tools.getFreeDeviceMemory(activity);
         int localeString;
@@ -380,9 +385,6 @@ public class GameRunner {
         FileUtils.ensureDirectory(lwjglExtractDir);
         javaArgList.add("-Dorg.lwjgl.system.SharedLibraryExtractPath="+lwjglExtractDir.getAbsolutePath());
 
-        addAuthlibInjectorArgs(javaArgList, account);
-        addNoBlocklistArgs(javaArgList);
-
         mergeMoJsonArgs(javaArgList, getMoJsonJvmArgs(versionId));
 
         versionInfo.arguments = null;
@@ -420,6 +422,7 @@ public class GameRunner {
         String mainClass = versionInfo.mainClass;
 
         try {
+            launchArgs = sanitizeQuickPlayArgs(launchArgs);
             JavaRunner.nativeSetupExit(activity);
             JavaRunner.startJvm(runtime, javaArgList, launchClassPath, mainClass, launchArgs);
         }catch (VMLoadException e) {
@@ -483,30 +486,6 @@ public class GameRunner {
         }
     }
 
-    private static boolean performAuthPing(Context context, Account account) {
-        String injectorUrl = account.authType.injectorUrl;
-        if(injectorUrl == null) return true;
-        Logger.appendToLog("Pinging authentication service...");
-        if(DownloadUtils.pingInjectorUrl(injectorUrl)) return true;
-        Logger.appendToLog("Authentication service did not respond, disabling");
-        Tools.runOnUiThread(()-> Toast.makeText(context, context.getString(R.string.warn_auth_type_missing, injectorUrl), Toast.LENGTH_SHORT).show());
-        return false;
-    }
-
-    private static void addAuthlibInjectorArgs(List<String> javaArgList, Account account) {
-        String injectorUrl = account.authType.injectorUrl;
-        if(injectorUrl == null && account.authType == AuthType.LOCAL) {
-            injectorUrl = LocalSkinServer.prepare(account);
-        }
-        if(injectorUrl == null) return;
-        javaArgList.add("-javaagent:"+Tools.DIR_DATA+"/authlib-injector/authlib-injector.jar="+injectorUrl);
-    }
-
-    private static void addNoBlocklistArgs(List<String> javaArgList) {
-        if(!LauncherPreferences.PREF_DISABLE_BLOCKLIST) return;
-        javaArgList.add("-javaagent:"+Tools.DIR_DATA+"/noblocklist/NoBlocklist-1.0-SNAPSHOT-all.jar");
-    }
-
     // Skip setting essential flags from the version JSON as we already override them
     private static boolean shouldSkipArg(String arg) {
         final String[] args = {
@@ -529,6 +508,10 @@ public class GameRunner {
     }
 
     private static boolean isRuleAllowed(Object rulesObj) {
+        return isRuleAllowed(rulesObj, null);
+    }
+
+    private static boolean isRuleAllowed(Object rulesObj, Map<String, Boolean> activeFeatures) {
         if (rulesObj == null) return true;
         if (rulesObj instanceof List) {
             List<?> rulesList = (List<?>) rulesObj;
@@ -536,23 +519,27 @@ public class GameRunner {
             try {
                 String rulesJson = Tools.GLOBAL_GSON.toJson(rulesList);
                 MoJsonRule[] rules = Tools.GLOBAL_GSON.fromJson(rulesJson, MoJsonRule[].class);
-                return "allow".equals(MoJsonRule.ruleSetCheck(rules));
+                return "allow".equals(MoJsonRule.ruleSetCheck(rules, activeFeatures));
             } catch (Exception e) {
                 return true;
             }
         } else if (rulesObj instanceof MoJsonRule[]) {
-            return "allow".equals(MoJsonRule.ruleSetCheck((MoJsonRule[]) rulesObj));
+            return "allow".equals(MoJsonRule.ruleSetCheck((MoJsonRule[]) rulesObj, activeFeatures));
         }
         return true;
     }
 
     private static void parseArgIntoList(List<String> list, Object arg) {
+        parseArgIntoList(list, arg, null);
+    }
+
+    private static void parseArgIntoList(List<String> list, Object arg, Map<String, Boolean> activeFeatures) {
         if (arg == null) return;
         if (arg instanceof String) {
             list.add((String) arg);
         } else if (arg instanceof Map) {
             Map<?, ?> map = (Map<?, ?>) arg;
-            if (isRuleAllowed(map.get("rules"))) {
+            if (isRuleAllowed(map.get("rules"), activeFeatures)) {
                 Object val = map.get("value");
                 if (val == null) val = map.get("values");
                 if (val instanceof String) {
@@ -565,7 +552,7 @@ public class GameRunner {
             }
         } else if (arg instanceof JVersionList.Arguments.ArgValue) {
             JVersionList.Arguments.ArgValue av = (JVersionList.Arguments.ArgValue) arg;
-            if (av.rules == null || "allow".equals(MoJsonRule.ruleSetCheck(av.rules))) {
+            if (av.rules == null || "allow".equals(MoJsonRule.ruleSetCheck(av.rules, activeFeatures))) {
                 if (av.value != null) list.add(av.value);
                 if (av.values != null) list.addAll(Arrays.asList(av.values));
             }
@@ -640,7 +627,69 @@ public class GameRunner {
         if(versionInfo.minecraftArguments != null){
             clientArgs.addAll(splitAndFilterEmpty(versionInfo.minecraftArguments));
         }
-        return JSONUtils.insertJSONValueList(clientArgs, varArgMap);
+        List<String> rawClientArgs = JSONUtils.insertJSONValueList(clientArgs, varArgMap);
+        return sanitizeQuickPlayArgs(rawClientArgs);
+    }
+
+    public static List<String> sanitizeQuickPlayArgs(List<String> rawArgs) {
+        if (rawArgs == null || rawArgs.isEmpty()) return rawArgs;
+
+        List<String> result = new ArrayList<>();
+        String quickPlayTargetArg = null;
+        String quickPlayTargetVal = null;
+        String quickPlayPathVal = null;
+
+        for (int i = 0; i < rawArgs.size(); i++) {
+            String arg = rawArgs.get(i);
+            if (arg == null) continue;
+
+            if (arg.equals("--quickPlaySingleplayer") || arg.equals("--quickPlayMultiplayer") || arg.equals("--quickPlayRealms")) {
+                String val = (i + 1 < rawArgs.size()) ? rawArgs.get(i + 1) : null;
+                i++;
+                if (val != null && !val.trim().isEmpty() && !val.startsWith("${") && !val.startsWith("--")) {
+                    if (quickPlayTargetArg == null) {
+                        quickPlayTargetArg = arg;
+                        quickPlayTargetVal = val;
+                    }
+                }
+            } else if (arg.startsWith("--quickPlaySingleplayer=") || arg.startsWith("--quickPlayMultiplayer=") || arg.startsWith("--quickPlayRealms=")) {
+                int eq = arg.indexOf('=');
+                String key = arg.substring(0, eq);
+                String val = arg.substring(eq + 1);
+                if (!val.trim().isEmpty() && !val.startsWith("${")) {
+                    if (quickPlayTargetArg == null) {
+                        quickPlayTargetArg = key;
+                        quickPlayTargetVal = val;
+                    }
+                }
+            } else if (arg.equals("--quickPlayPath")) {
+                String val = (i + 1 < rawArgs.size()) ? rawArgs.get(i + 1) : null;
+                i++;
+                if (val != null && !val.trim().isEmpty() && !val.startsWith("${") && !val.startsWith("--")) {
+                    quickPlayPathVal = val;
+                }
+            } else if (arg.startsWith("--quickPlayPath=")) {
+                String val = arg.substring("--quickPlayPath=".length());
+                if (!val.trim().isEmpty() && !val.startsWith("${")) {
+                    quickPlayPathVal = val;
+                }
+            } else if (arg.startsWith("${quick_play") || arg.equals("${quick_play_singleplayer}") || arg.equals("${quick_play_multiplayer}") || arg.equals("${quick_play_realms}") || arg.equals("${quick_play_path}")) {
+                // Ignore stray placeholder
+            } else {
+                result.add(arg);
+            }
+        }
+
+        if (quickPlayTargetArg != null && quickPlayTargetVal != null) {
+            result.add(quickPlayTargetArg);
+            result.add(quickPlayTargetVal);
+            if (quickPlayPathVal != null) {
+                result.add("--quickPlayPath");
+                result.add(quickPlayPathVal);
+            }
+        }
+
+        return result;
     }
 
     private static List<String> splitAndFilterEmpty(String argStr) {
@@ -657,9 +706,16 @@ public class GameRunner {
         String runtime = Tools.getSelectedRuntime(instance);
         String profileRuntime = instance.selectedRuntime;
         Runtime pickedRuntime = MultiRTUtils.read(runtime);
-        if(runtime == null || pickedRuntime.javaVersion == 0 || pickedRuntime.javaVersion < targetJavaVersion) {
+        if(runtime == null || pickedRuntime.javaVersion == 0 || pickedRuntime.javaVersion < targetJavaVersion || !MultiRTUtils.isRuntimeValid(pickedRuntime)) {
             String preferredRuntime = MultiRTUtils.getNearestJreName(targetJavaVersion);
-            if(preferredRuntime == null) throw new RuntimeException("Failed to autopick runtime!");
+            if(preferredRuntime == null) {
+                Runtime fallback = MultiRTUtils.getHighestValidRuntime();
+                if (fallback != null) {
+                    preferredRuntime = fallback.name;
+                } else {
+                    throw new RuntimeException("Failed to autopick runtime!");
+                }
+            }
             if(profileRuntime != null) {
                 instance.selectedRuntime = preferredRuntime;
                 instance.maybeWrite();

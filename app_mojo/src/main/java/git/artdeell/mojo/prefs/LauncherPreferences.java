@@ -161,7 +161,7 @@ public class LauncherPreferences {
         PREF_SHOW_MEMORY_WARNING_DIALOG = DEFAULT_PREF.getBoolean("showMemoryWarning", true);
         PREF_BUTTON_TRANSPARENCY = (short) DEFAULT_PREF.getInt("buttonTransparency", 100);
         PREF_UBWC_WORKAROUND = DEFAULT_PREF.getBoolean("ubwcWorkaround", false);
-        PREF_DISABLE_BLOCKLIST = DEFAULT_PREF.getBoolean("disableServerBlocklist", true);
+        PREF_DISABLE_BLOCKLIST = false;
         PREF_CHECK_UPDATES = DEFAULT_PREF.getBoolean("checkUpdates", true);
         PREF_VULKAN_DRIVER = DEFAULT_PREF.getString("customVulkanDriver", null);
 

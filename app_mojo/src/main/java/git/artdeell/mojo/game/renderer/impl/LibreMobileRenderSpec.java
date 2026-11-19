@@ -8,9 +8,13 @@ import git.artdeell.mojo.Tools;
 import git.artdeell.mojo.prefs.LauncherPreferences;
 import git.artdeell.mojo.game.renderer.def.Renderers;
 import git.artdeell.mojo.utils.GpuUtils;
+import git.artdeell.mojo.vulkan.DriverManager;
+import git.artdeell.mojo.vulkan.driver.BuiltinDriver;
+import git.artdeell.mojo.vulkan.driver.Driver;
 import git.artdeell.mojoexec.MojoExec;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,6 +31,7 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
         }
     }
 
+    public static native boolean nativeIsFlagshipAdreno();
     public static native boolean nativeSetupSnapdragon();
     public static native boolean nativeSetupMobile(boolean isAdreno, boolean isMali, boolean isXclipse);
 
@@ -68,23 +73,56 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
         envMap.put("allow_higher_compat_version", "true");
         envMap.put("allow_glsl_extension_directive_midshader", "true");
         envMap.put("glsl_zero_init", "true");
-        envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
         envMap.put("MESA_EXTENSION_OVERRIDE", "+GL_EXT_texture_filter_anisotropic +GL_ARB_buffer_storage +GL_ARB_clip_control +GL_ARB_shader_draw_parameters +GL_ARB_direct_state_access +GL_ARB_vertex_attrib_binding +GL_ARB_multi_bind +GL_ARB_gpu_shader5 +GL_EXT_clip_cull_distance +GL_ARB_shader_storage_buffer_object +GL_ARB_compute_shader +GL_ARB_explicit_uniform_location +GL_ARB_multi_draw_indirect +GL_ARB_texture_query_levels +GL_ARB_conservative_depth +GL_ARB_shader_image_load_store +GL_ARB_shading_language_include +GL_ARB_polygon_offset_clamp +GL_ARB_texture_storage +GL_ARB_arrays_of_arrays +GL_ARB_clear_texture");
 
-        // GPU-Specific Performance Tuning
+        boolean isFlagship = false;
+        try {
+            isFlagship = nativeIsFlagshipAdreno();
+        } catch (Throwable ignored) {}
+
         if (isAdreno) {
-            StringBuilder tu = new StringBuilder();
-            if (LauncherPreferences.PREF_FREEDRENO_SYSMEM) tu.append("sysmem,");
-            if (LauncherPreferences.PREF_TU_DEBUG_NOBIN) tu.append("nobin,");
-            if (tu.length() == 0) tu.append("sysmem,");
-            tu.setLength(tu.length() - 1);
-            envMap.put("TU_DEBUG", tu.toString());
-            envMap.put("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1");
+            if (isFlagship) {
+                // Flagship Tuned Turnip
+                envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
+                boolean is7xx8xx = glInfo.renderer != null && (
+                        glInfo.renderer.contains("730") || glInfo.renderer.contains("740") ||
+                        glInfo.renderer.contains("750") || glInfo.renderer.contains("830") ||
+                        glInfo.renderer.contains("735") || glInfo.renderer.contains("725") ||
+                        glInfo.renderer.contains("732")
+                );
+                if (is7xx8xx || isFlagship) {
+                    envMap.put("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1");
+                }
+                StringBuilder tu = new StringBuilder();
+                if (LauncherPreferences.PREF_FREEDRENO_SYSMEM) tu.append("sysmem,");
+                if (LauncherPreferences.PREF_TU_DEBUG_NOBIN) tu.append("nobin,");
+                if (tu.length() > 0) {
+                    tu.setLength(tu.length() - 1);
+                    envMap.put("TU_DEBUG", tu.toString());
+                } else {
+                    envMap.remove("TU_DEBUG");
+                }
+            } else {
+                // Normal / Untuned Standard Turnip
+                envMap.remove("FD_DEV_FEATURES");
+                envMap.remove("TU_DEBUG");
+                envMap.remove("MESA_VK_WSI_PRESENT_MODE");
+            }
         } else if (isMali) {
+            envMap.remove("FD_DEV_FEATURES");
+            envMap.remove("TU_DEBUG");
+            envMap.remove("MESA_VK_WSI_PRESENT_MODE");
             envMap.put("ZINK_DEBUG", "compact");
             envMap.put("PAN_MESA_DEBUG", "gl3");
         } else if (isXclipse) {
+            envMap.remove("FD_DEV_FEATURES");
+            envMap.remove("TU_DEBUG");
+            envMap.remove("MESA_VK_WSI_PRESENT_MODE");
             envMap.put("RADV_DEBUG", "nocompact");
+        } else {
+            envMap.remove("FD_DEV_FEATURES");
+            envMap.remove("TU_DEBUG");
+            envMap.remove("MESA_VK_WSI_PRESENT_MODE");
         }
 
         // 2GB High-Performance Persistent Shader Cache
@@ -101,17 +139,44 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
 
     @Override
     public boolean compatibleDevice(Context context) {
-        // High-performance Vulkan renderer compatible with all mobile Vulkan GPUs
         return hasMesa() && GpuUtils.checkVulkanSupport(context.getPackageManager());
     }
 
     @Override
     public boolean setupRenderer() {
+        GpuUtils.GLInfo glInfo = GpuUtils.getGlInfo();
+        boolean isAdreno = glInfo.isAdreno();
+        boolean isMali = glInfo.isArm();
+        boolean isXclipse = glInfo.renderer != null && (glInfo.renderer.contains("Xclipse") || glInfo.renderer.contains("AMD"));
+
+        boolean isFlagship = false;
         try {
-            GpuUtils.GLInfo glInfo = GpuUtils.getGlInfo();
-            boolean isAdreno = glInfo.isAdreno();
-            boolean isMali = glInfo.isArm();
-            boolean isXclipse = glInfo.renderer != null && (glInfo.renderer.contains("Xclipse") || glInfo.renderer.contains("AMD"));
+            isFlagship = nativeIsFlagshipAdreno();
+        } catch (Throwable ignored) {}
+
+        // Auto-select flagship Turnip driver build if installed and unconfigured
+        if (isAdreno && isFlagship && DriverManager.isSupportedByDevice()) {
+            try {
+                List<Driver> drivers = DriverManager.getDrivers();
+                Driver bestTurnip = null;
+                for (Driver d : drivers) {
+                    if (d instanceof BuiltinDriver) continue;
+                    String dName = d.getName() != null ? d.getName().toLowerCase() : "";
+                    String dDesc = d.getDescription() != null ? d.getDescription().toLowerCase() : "";
+                    if (dName.contains("turnip") || dDesc.contains("turnip") || dName.contains("flagship")) {
+                        bestTurnip = d;
+                        break;
+                    }
+                }
+                if (bestTurnip != null && DriverManager.getPreferredDriver() instanceof BuiltinDriver) {
+                    DriverManager.setPreferredDriver(bestTurnip);
+                }
+            } catch (Throwable t) {
+                Log.w("LibreMobile", "Failed to auto-select flagship Turnip driver", t);
+            }
+        }
+
+        try {
             nativeSetupMobile(isAdreno, isMali, isXclipse);
         } catch (Throwable t) {
             Log.w("LibreMobile", "Could not apply native mobile tweaks", t);

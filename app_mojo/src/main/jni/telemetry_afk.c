@@ -80,12 +80,24 @@ void libre_on_present_swap(void) {
     }
 }
 
+extern void* mojoexec_acq_egl_handle();
+extern void libre_adpf_report_swap();
+
 __attribute__((visibility("default")))
 EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surf) {
     if (__builtin_expect(!s_real_eglSwapBuffers, 0)) {
-        void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
-        if (libegl) {
-            s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(libegl, "eglSwapBuffers");
+        void* egl_handle = mojoexec_acq_egl_handle();
+        if (!egl_handle) {
+            egl_handle = dlopen("libEGL_mesa.so", RTLD_NOLOAD);
+        }
+        if (egl_handle) {
+            s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(egl_handle, "eglSwapBuffers");
+        }
+        if (!s_real_eglSwapBuffers) {
+            void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
+            if (libegl) {
+                s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(libegl, "eglSwapBuffers");
+            }
         }
         if (!s_real_eglSwapBuffers) {
             s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(RTLD_NEXT, "eglSwapBuffers");
@@ -93,6 +105,7 @@ EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surf) {
     }
 
     libre_on_present_swap();
+    libre_adpf_report_swap();
 
     if (s_real_eglSwapBuffers) {
         return s_real_eglSwapBuffers(dpy, surf);

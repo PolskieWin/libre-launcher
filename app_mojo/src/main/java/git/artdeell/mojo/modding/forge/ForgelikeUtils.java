@@ -126,13 +126,18 @@ public abstract class ForgelikeUtils {
     public static String getMcVersionForNeoVersion(String neoVersion) {
         try {
             int firstIndex = neoVersion.indexOf('.');
-            int secondIndex = neoVersion.indexOf('.', firstIndex + 1);
-            if (firstIndex == -1 || secondIndex == -1) {
+            int secondIndex = firstIndex != -1 ? neoVersion.indexOf('.', firstIndex + 1) : -1;
+            if (firstIndex == -1) {
                 Log.e("NeoforgeUtils", "Failed to parse neoforge version: " + neoVersion + "; not enough '.' found");
                 return neoVersion;
             }
             if (Integer.parseInt(neoVersion.substring(0, firstIndex)) >= 26) {
                 // Calendar versioning, the Minecraft version has no "1." in front and a hotfix of 0 is left out
+                if (secondIndex == -1) {
+                    int end = firstIndex + 1;
+                    while (end < neoVersion.length() && Character.isDigit(neoVersion.charAt(end))) end++;
+                    return neoVersion.substring(0, end);
+                }
                 int thirdIndex = secondIndex + 1;
                 int thirdEnd = thirdIndex;
                 while (thirdEnd < neoVersion.length() && Character.isDigit(neoVersion.charAt(thirdEnd))) thirdEnd++;
@@ -140,6 +145,9 @@ public abstract class ForgelikeUtils {
                 String mcVersion = neoVersion.substring(0, secondIndex);
                 if (!hotfix.isEmpty() && Integer.parseInt(hotfix) != 0) mcVersion += "." + hotfix;
                 return mcVersion;
+            }
+            if (secondIndex == -1) {
+                return "1." + neoVersion;
             }
             return "1." + neoVersion.substring(0, secondIndex);
         } catch (RuntimeException e) {

@@ -1,22 +1,38 @@
 package git.artdeell.mojo.value;
 
+import java.util.Map;
 import git.artdeell.mojo.Architecture;
 
 public class MoJsonRule {
     public String action;
     public OSDescriptor os;
+    public Map<String, Boolean> features;
 
     public int getPrecedenceLevel() {
-        if(os == null) return 1;
-        return 1 + os.getPrecedenceLevel();
+        int precedence = 0;
+        if(os != null) precedence += os.getPrecedenceLevel();
+        if(features != null) precedence += features.size();
+        return precedence == 0 ? 1 : precedence;
+    }
+
+    public boolean matches(Map<String, Boolean> activeFeatures) {
+        if(os != null && !os.matches()) return false;
+        if(features != null) {
+            for(Map.Entry<String, Boolean> entry : features.entrySet()) {
+                boolean active = activeFeatures != null && Boolean.TRUE.equals(activeFeatures.get(entry.getKey()));
+                if(entry.getValue() != null && entry.getValue() != active) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public boolean matches() {
-        if(os == null) return true;
-        else return os.matches();
+        return matches(null);
     }
 
-    public static String ruleSetCheck(MoJsonRule[] rules) {
+    public static String ruleSetCheck(MoJsonRule[] rules, Map<String, Boolean> activeFeatures) {
         int precedenceLevel = 0;
         String action = "disallow";
         for(MoJsonRule rule : rules) {
@@ -24,10 +40,14 @@ public class MoJsonRule {
             if(ruleLevel <= precedenceLevel) {
                 continue;
             }
-            if(rule.matches()) action = rule.action;
+            if(rule.matches(activeFeatures)) action = rule.action;
             precedenceLevel = ruleLevel;
         }
         return action;
+    }
+
+    public static String ruleSetCheck(MoJsonRule[] rules) {
+        return ruleSetCheck(rules, null);
     }
 
     public static class OSDescriptor {

@@ -27,7 +27,7 @@ def getAppVersionCode = {
         }
         return Integer.parseInt(stdout.toString().trim())
     } catch (Exception ignored) {
-        return 238
+        return 240
     }
 }
 
@@ -49,7 +49,7 @@ def getAppVersionName = {
         if (!tag.isEmpty()) return tag
     } catch (Exception ignored) {
     }
-    return "2.38"
+    return "2.40"
 }
 
 def getCFApiKey = {
@@ -143,6 +143,10 @@ android {
             dimension "runtime"
             versionNameSuffix "-stripped"
             buildConfigField "boolean", "STRIPPED_MODE", "true"
+            matchingFallbacks = ['full', 'noruntime']
+            ndk {
+                abiFilters "arm64-v8a"
+            }
         }
     }
 
@@ -168,12 +172,10 @@ android {
         }
 
         release {
-            // Don't set to true or java.awt will be a.a or something similar.
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            // defaultConfig already set
-            // multiDexEnabled = true
-            // debuggable = true
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.customDebug
             resValue 'string', 'storageProviderAuthorities', 'org.libre.launcher.scoped.gamefolder'
             resValue 'string', 'application_package', 'org.libre.launcher'
         }
@@ -348,7 +350,6 @@ afterEvaluate {
         registrar.setVariant(variant)
 
         registrar.projectJarDependency project(":forge_installer"), "components/forge_installer"
-        registrar.projectJarDependency project(":NoBlocklist"), "components/noblocklist"
         registrar.projectJarDependency project(":filedialog_bridge"), "components/filedialog_bridge"
 
 		if (variant.getName().toLowerCase().contains("full")) {

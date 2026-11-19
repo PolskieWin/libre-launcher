@@ -50,6 +50,7 @@ public class ControlButton extends TextView implements ControlInterface {
         setGravity(Gravity.CENTER);
         setAllCaps(LauncherPreferences.PREF_BUTTON_ALL_CAPS);
         setTextColor(Color.WHITE);
+        setShadowLayer(4.0f, 1.0f, 1.0f, Color.argb(220, 0, 0, 0));
         setPadding(4, 4, 4, 4);
         setTextSize(14); // Nullify the default size setting
         setOutlineProvider(null); // Disable shadow casting, removing one drawing pass
@@ -101,6 +102,14 @@ public class ControlButton extends TextView implements ControlInterface {
         else setupNormalTint();
 
         setText(properties.name);
+    }
+
+    @Override
+    public void setBackground() {
+        ControlInterface.super.setBackground();
+        if (mProperties != null) {
+            mComputedRadius = ControlInterface.super.computeCornerRadius(mProperties.cornerRadius);
+        }
     }
 
     @Override

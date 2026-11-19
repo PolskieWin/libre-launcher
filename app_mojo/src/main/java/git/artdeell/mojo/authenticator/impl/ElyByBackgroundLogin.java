@@ -69,21 +69,12 @@ public class ElyByBackgroundLogin implements BackgroundLogin {
 
     @Override
     public void createAccount(@NonNull LoginListener loginListener, String code) {
-        acquireAccountDetails(loginListener, ()->{
-            Account account = Accounts.create(this::fillAccount);
-            Tools.runOnUiThread(() -> loginListener.onLoginDone(account));
-            return null;
-        }, code, false);
+        Tools.runOnUiThread(() -> loginListener.onLoginError(new IllegalStateException("Ely.by authentication is disabled. Microsoft account required.")));
     }
 
     @Override
     public void refreshAccount(@NonNull LoginListener loginListener, Account account) {
-        acquireAccountDetails(loginListener, ()->{
-            fillAccount(account);
-            account.save();
-            Tools.runOnUiThread(() -> loginListener.onLoginDone(account));
-            return null;
-        }, account.refreshToken, true);
+        Tools.runOnUiThread(() -> loginListener.onLoginError(new IllegalStateException("Ely.by authentication is disabled. Microsoft account required.")));
     }
 
     private void acquireTokens(boolean isRefresh, String code) throws IOException, PresentableException {

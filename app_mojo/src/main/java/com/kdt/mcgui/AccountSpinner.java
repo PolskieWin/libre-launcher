@@ -84,7 +84,10 @@ public class AccountSpinner extends AppCompatSpinner implements LoginListener, A
 
     /* Login listeners */
     private final ExtraListener<String> mMicrosoftLoginListener = new LoginExtraListener(AuthType.MICROSOFT);
-    private final ExtraListener<String> mElyByLoginListener = new LoginExtraListener(AuthType.ELY_BY);
+    private final ExtraListener<String> mElyByLoginListener = (key, value) -> {
+        onLoginError(new IllegalStateException(getContext().getString(R.string.ms_auth_required)));
+        return false;
+    };
     private final ExtraListener<String[]> mMojangLoginListener = (key, value) -> {
         onLoginError(new IllegalStateException(getContext().getString(R.string.ms_auth_required)));
         return false;
@@ -208,9 +211,8 @@ public class AccountSpinner extends AppCompatSpinner implements LoginListener, A
             return;
         }
         dismissPopup();
-        if(account.authType == AuthType.ELY_BY) {
-            // Ely.by has no skin API, so its own site is opened in the browser
-            Tools.openURL(activity, "https://ely.by/skins");
+        if(account.authType != AuthType.MICROSOFT) {
+            Toast.makeText(getContext(), R.string.ms_auth_required, Toast.LENGTH_SHORT).show();
             return;
         }
         Bundle args = new Bundle();
@@ -404,9 +406,8 @@ public class AccountSpinner extends AppCompatSpinner implements LoginListener, A
 
             Account account = Objects.requireNonNull(getItem(position));
 
-            // Microsoft and local accounts use the built-in editor, Ely.by accounts the Ely.by site
-            if(account.authType == AuthType.MICROSOFT || account.authType == AuthType.LOCAL
-                    || account.authType == AuthType.ELY_BY) {
+            // Only valid Microsoft accounts can use the skin editor
+            if(account.authType == AuthType.MICROSOFT) {
                 editButton.setVisibility(View.VISIBLE);
                 editButton.setOnClickListener(v -> openSkinEditor(account));
             }else {

@@ -1,33 +1,42 @@
 # Add project specific ProGuard rules here.
-# By default, the flags in this file are appended to flags specified
-# in C:\tools\adt-bundle-windows-x86_64-20131030\sdk/tools/proguard/proguard-android.txt
-# You can edit the include path and order by changing the proguardFiles
-# directive in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,SourceFile,LineNumberTable
 
-# Add any project specific keep options here:
+# Preserve native JNI methods and their enclosing classes
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Launcher core classes, UI controllers, and reflection targets
+-keep class git.artdeell.mojo.** { *; }
+-keep class com.kdt.mcgui.** { *; }
+-keep class org.lwjgl.** { *; }
+-keep class java.awt.** { *; }
+-keep class javax.swing.** { *; }
+-keep class sun.awt.** { *; }
+-keep class net.java.openjdk.cacio.** { *; }
+-keep class io.github.controlwear.** { *; }
+-keep class com.github.** { *; }
 
-# We use Reflection on the builder to avoid creating too many objects
- -keep class net.objecthunter.exp4j.ExpressionBuilder**
- -keepclassmembers class net.objecthunter.exp4j.ExpressionBuilder** {
-    *;
- }
-# Option screens
- -keep class git.artdeell.mojo.prefs.screens** {*;}
+# Serialization models and data classes (Gson)
+-keepclassmembers enum * { *; }
+-keep class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator *;
+}
+
+# Math and expression parsing
+-keep class net.objecthunter.exp4j.** { *; }
+-keepclassmembers class net.objecthunter.exp4j.** { *; }
 
 # File dialog bridge: methods are looked up by name from native code
- -keep class git.artdeell.mojo.game.platform.dialog.FileDialogBridge { *; }
- -keep class git.artdeell.mojo.game.platform.dialog.SDLFileDialogHandler { *; }
-
+-keep class git.artdeell.mojo.game.platform.dialog.FileDialogBridge { *; }
+-keep class git.artdeell.mojo.game.platform.dialog.SDLFileDialogHandler { *; }
 
 # Home screen tiles are saved as JSON with Gson, the field names must stay
- -keep class git.artdeell.mojo.home.HomeTile { *; }
+-keep class git.artdeell.mojo.home.HomeTile { *; }
+
+# JNA and dynamic linkers
+-keep class com.sun.jna.** { *; }
+-dontwarn java.awt.**
+-dontwarn javax.swing.**
+-dontwarn sun.awt.**
+-dontwarn com.sun.jna.**

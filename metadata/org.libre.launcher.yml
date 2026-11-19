@@ -32,41 +32,9 @@ AntiFeatures:
   - NonFreeNet
 
 Builds:
-  - versionName: '2.34'
-    versionCode: 234
-    commit: v2.34
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.35'
-    versionCode: 235
-    commit: v2.35
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.36'
-    versionCode: 236
-    commit: v2.36
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.37'
-    versionCode: 237
-    commit: v2.37
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.38'
-    versionCode: 238
-    commit: v2.38
+  - versionName: '2.40'
+    versionCode: 240
+    commit: v2.40
     subdir: app_mojo
     submodules: true
     gradle:
@@ -74,5 +42,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '2.38'
-CurrentVersionCode: 238
+CurrentVersion: '2.40'
+CurrentVersionCode: 240

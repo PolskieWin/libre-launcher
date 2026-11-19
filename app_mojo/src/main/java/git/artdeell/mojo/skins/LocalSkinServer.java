@@ -71,41 +71,8 @@ public final class LocalSkinServer {
      */
     @Nullable
     public static synchronized String prepare(@NonNull Account account) {
-        if (account.authType != AuthType.LOCAL) return null;
-        String key = SkinLibrary.localKey(account.username);
-
-        byte[] skin = null;
-        boolean slim = false;
-        SkinLibrary.Entry entry = SkinLibrary.find(SkinLibrary.getSelected(key));
-        if (entry != null) {
-            try {
-                skin = SkinLibrary.readBytes(entry);
-                slim = entry.slim;
-            } catch (IOException e) {
-                Log.w(TAG, "Could not read the selected skin", e);
-            }
-        }
-
-        byte[] cape = null;
-        String capeId = SkinLibrary.getSelectedCape(key);
-        if (capeId != null) {
-            try {
-                cape = CapeCatalog.loadAny(capeId);
-            } catch (IOException e) {
-                Log.w(TAG, "Could not read the selected cape", e);
-            }
-        }
-
-        if (skin == null && cape == null) return null;
-
-        try {
-            if (sInstance == null) sInstance = new LocalSkinServer();
-            sInstance.register(account, skin, slim, cape);
-            return "http://127.0.0.1:" + sInstance.ensureStarted();
-        } catch (Exception e) {
-            Log.e(TAG, "Could not start the local skin server", e);
-            return null;
-        }
+        Log.w(TAG, "Local skin server is disabled: pure Microsoft authentication required.");
+        return null;
     }
 
     private void register(Account account, @Nullable byte[] skin, boolean slim, @Nullable byte[] cape) throws Exception {

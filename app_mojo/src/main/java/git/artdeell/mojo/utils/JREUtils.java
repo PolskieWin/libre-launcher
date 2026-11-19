@@ -12,6 +12,7 @@ import java.util.*;
 
 import git.artdeell.mojo.Logger;
 import git.artdeell.mojo.Tools;
+import git.artdeell.mojo.multirt.MultiRTUtils;
 import git.artdeell.mojo.multirt.Runtime;
 import git.artdeell.mojo.prefs.LauncherPreferences;
 import git.artdeell.mojo.utils.plugins.LibraryPlugin;
@@ -162,6 +163,23 @@ public class JREUtils {
             }
         }
         return parsedArguments;
+    }
+
+    public static Runtime initJavaRuntime(Runtime runtime) {
+        if (runtime != null && MultiRTUtils.isRuntimeValid(runtime)) {
+            return runtime;
+        }
+        Runtime fallback = MultiRTUtils.getHighestValidRuntime();
+        if (fallback != null) {
+            Log.w("JREUtils", "Runtime " + (runtime != null ? runtime.name : "null") + " failed validation; falling back to " + fallback.name);
+            return fallback;
+        }
+        return runtime;
+    }
+
+    public static Runtime initJavaRuntime(String runtimeName) {
+        Runtime runtime = runtimeName != null ? MultiRTUtils.read(runtimeName) : null;
+        return initJavaRuntime(runtime);
     }
 
     public static int getDetectedVersion() {

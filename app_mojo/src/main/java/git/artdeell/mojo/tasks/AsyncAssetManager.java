@@ -86,8 +86,6 @@ public class AsyncAssetManager {
 
             tryUnpackComponent(ctx, "security", true);
             tryUnpackComponent(ctx, "forge_installer", true);
-            tryUnpackComponent(ctx, "authlib-injector", true);
-            tryUnpackComponent(ctx, "noblocklist", true);
             ProgressLayout.clearProgress(ProgressLayout.EXTRACT_COMPONENTS);
         });
     }
