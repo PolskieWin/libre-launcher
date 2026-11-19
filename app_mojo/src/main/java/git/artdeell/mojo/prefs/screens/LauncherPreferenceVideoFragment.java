@@ -158,11 +158,6 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String s) {
         super.onSharedPreferenceChanged(p, s);
-        if ("stripped_mode".equals(s)) {
-            LauncherPreferences.PREF_STRIPPED_MODE = p.getBoolean("stripped_mode", false);
-            RendererCache.releaseRendererCache();
-            updateRendererList();
-        }
         computeVisibility();
     }
 
@@ -177,12 +172,6 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
         Preference importRenderer = findPreference("import_renderer");
         if (importRenderer != null) {
             importRenderer.setVisible(!LauncherPreferences.isStrippedMode());
-        }
-
-        SwitchPreferenceCompat strippedSwitch = findPreference("stripped_mode");
-        if (strippedSwitch != null && git.artdeell.mojo.BuildConfig.STRIPPED_MODE) {
-            strippedSwitch.setChecked(true);
-            strippedSwitch.setEnabled(false);
         }
     }
 

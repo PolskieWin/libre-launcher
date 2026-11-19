@@ -105,6 +105,7 @@ public final class Tools {
             .create();
 
     public static final String URL_HOME = "https://github.com/PolskieWin/libre-launcher";
+    public static Context APP_CONTEXT;
     public static String NATIVE_LIB_DIR;
     public static String DIR_DATA; //Initialized later to get context
     public static File DIR_CACHE;
@@ -184,11 +185,14 @@ public final class Tools {
      * @param ctx the context for initialization.
      */
     public static void initEarlyConstants(Context ctx) {
+        APP_CONTEXT = ctx.getApplicationContext();
         DIR_CACHE = ctx.getCacheDir();
         DIR_DATA = ctx.getFilesDir().getParent();
         MULTIRT_HOME = DIR_DATA + "/runtimes";
         DIR_ACCOUNT_NEW = DIR_DATA + "/accounts";
-        NATIVE_LIB_DIR = ctx.getApplicationInfo().nativeLibraryDir;
+        if (ctx.getApplicationInfo() != null) {
+            NATIVE_LIB_DIR = ctx.getApplicationInfo().nativeLibraryDir;
+        }
     }
 
     /**

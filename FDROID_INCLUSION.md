@@ -41,12 +41,13 @@ Because Libre Launcher interacts with Microsoft authentication services and down
 
 1. **Push commits & tag a release** on GitHub:
    ```bash
-   git tag -a v2.30 -m "Release v2.30"
-   git push origin v2.30
+   git tag -a v2.31 -m "Release v2.31"
+   git push origin v2.31
    ```
 2. Ensure GitHub Actions successfully runs `.github/workflows/android.yml` and attaches:
    - `LibreLauncher-release.apk`
    - `LibreLauncher-noruntime-release.apk`
+   - `LibreLauncher-stripped-release.apk`
 3. Open an issue at [IzzyOnDroid Repository Issues](https://gitlab.com/IzzyOnDroid/repo/-/issues/new?issuable_template=Inclusion).
 4. Use the pre-filled template below.
 

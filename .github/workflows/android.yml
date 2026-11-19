@@ -84,6 +84,12 @@ jobs:
         run: |
           gradle :app_mojo:assembleNoruntimeDebug
           mv app_mojo/build/outputs/apk/noruntime/debug/app_mojo-noruntime-debug.apk out/LibreLauncher-debug-noruntime.apk
+
+      - name: Build Debug .apk (Stripped)
+        run: |
+          gradle :app_mojo:assembleStrippedDebug
+          mv app_mojo/build/outputs/apk/stripped/debug/app_mojo-stripped-debug.apk out/LibreLauncher-debug-stripped.apk
+
       - name: Build Release .apk
         if: (github.repository_owner == 'PolskieWin' || github.repository_owner == 'CopperLauncher') && github.event_name != 'pull_request'
         run: |
@@ -96,15 +102,27 @@ jobs:
           gradle :app_mojo:assembleNoruntimePubRelease
           mv app_mojo/build/outputs/apk/noruntime/pubRelease/app_mojo-noruntime-pubRelease.apk out/LibreLauncher-noruntime-release.apk
 
+      - name: Build Stripped Release .apk
+        if: (github.repository_owner == 'PolskieWin' || github.repository_owner == 'CopperLauncher') && github.event_name != 'pull_request'
+        run: |
+          gradle :app_mojo:assembleStrippedPubRelease
+          mv app_mojo/build/outputs/apk/stripped/pubRelease/app_mojo-stripped-pubRelease.apk out/LibreLauncher-stripped-release.apk
+
       - name: Gen md5sums
         run: |
           md5sum out/LibreLauncher-debug-full.apk > out/LibreLauncher-debug-full.md5
           md5sum out/LibreLauncher-debug-noruntime.apk > out/LibreLauncher-debug-noruntime.md5
+          if [ -f out/LibreLauncher-debug-stripped.apk ]; then
+            md5sum out/LibreLauncher-debug-stripped.apk > out/LibreLauncher-debug-stripped.md5
+          fi
           if [ -f out/LibreLauncher-release.apk ]; then
             md5sum out/LibreLauncher-release.apk > out/LibreLauncher-release.md5
           fi
           if [ -f out/LibreLauncher-noruntime-release.apk ]; then
             md5sum out/LibreLauncher-noruntime-release.apk > out/LibreLauncher-noruntime-release.md5
+          fi
+          if [ -f out/LibreLauncher-stripped-release.apk ]; then
+            md5sum out/LibreLauncher-stripped-release.apk > out/LibreLauncher-stripped-release.md5
           fi
 
       - name: Upload Debug APK
@@ -119,6 +137,12 @@ jobs:
           name: LibreLauncher-debug-noruntime
           path: out/LibreLauncher-debug-noruntime.apk
 
+      - name: Upload Debug APK (Stripped)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LibreLauncher-debug-stripped
+          path: out/LibreLauncher-debug-stripped.apk
+
       - name: Upload Release APK
         if: (github.repository_owner == 'PolskieWin' || github.repository_owner == 'CopperLauncher') && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
@@ -132,6 +156,13 @@ jobs:
         with:
           name: LibreLauncher-noruntime-release
           path: out/LibreLauncher-noruntime-release.apk
+
+      - name: Upload Stripped Release APK
+        if: (github.repository_owner == 'PolskieWin' || github.repository_owner == 'CopperLauncher') && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LibreLauncher-stripped-release
+          path: out/LibreLauncher-stripped-release.apk
 
       - name: Upload AAB
         if: github.repository_owner == 'CopperLauncher' && (github.ref == 'refs/heads/v3_openjdk' || startsWith(github.ref, 'refs/tags/v'))
@@ -154,8 +185,10 @@ jobs:
           files: |
             out/LibreLauncher-release.apk
             out/LibreLauncher-noruntime-release.apk
+            out/LibreLauncher-stripped-release.apk
             out/LibreLauncher-debug-full.apk
             out/LibreLauncher-debug-noruntime.apk
+            out/LibreLauncher-debug-stripped.apk
             out/*.md5
 
       - name: Release Tagged APK
@@ -171,8 +204,10 @@ jobs:
           files: |
             out/LibreLauncher-release.apk
             out/LibreLauncher-noruntime-release.apk
+            out/LibreLauncher-stripped-release.apk
             out/LibreLauncher-debug-full.apk
             out/LibreLauncher-debug-noruntime.apk
+            out/LibreLauncher-debug-stripped.apk
             out/*.md5
 
       - name: Upload onto the Google Play testing track

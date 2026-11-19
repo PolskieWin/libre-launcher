@@ -7,6 +7,7 @@ import android.util.*;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 
 import git.artdeell.mojo.Logger;
@@ -169,12 +170,89 @@ public class JREUtils {
     public static native int chdir(String path);
 
     public static native void setLdLibraryPath(String ldLibraryPath);
+
+    public static void prepareRuntimeLibraries(Context context, File vmPath) {
+        String nativeLibDir = null;
+        if (context != null && context.getApplicationInfo() != null) {
+            nativeLibDir = context.getApplicationInfo().nativeLibraryDir;
+        }
+        if (nativeLibDir == null) {
+            nativeLibDir = Tools.NATIVE_LIB_DIR;
+        }
+
+        try {
+            System.loadLibrary("freetype");
+            Log.i("JREUtils", "Preloaded libfreetype.so successfully");
+        } catch (UnsatisfiedLinkError e) {
+            Log.e("JREUtils", "Failed to preload libfreetype.so", e);
+        }
+
+        if (nativeLibDir == null || vmPath == null) return;
+        File vmDir = vmPath.getParentFile();
+        if (vmDir == null) return;
+        File runtimeLibDir = vmDir.getParentFile();
+        if (runtimeLibDir == null) return;
+
+        File nativeDir = new File(nativeLibDir);
+        String[] libsToSync = new String[] { "libfreetype.so", "libawt_xawt.so", "libgl4es_114.so" };
+
+        for (String libName : libsToSync) {
+            File src = new File(nativeDir, libName);
+            if (src.exists()) {
+                ensureLibInDir(src, runtimeLibDir);
+                if (runtimeLibDir.getParentFile() != null && "lib".equals(runtimeLibDir.getParentFile().getName())) {
+                    ensureLibInDir(src, runtimeLibDir.getParentFile());
+                }
+            }
+        }
+    }
+
+    public static void ensureLibInDir(File src, File targetDir) {
+        if (!src.exists() || !targetDir.exists()) return;
+        File target = new File(targetDir, src.getName());
+        try {
+            try {
+                Files.deleteIfExists(target.toPath());
+            } catch (Throwable ignored) {
+                target.delete();
+            }
+            try {
+                Os.symlink(src.getAbsolutePath(), target.getAbsolutePath());
+                Log.i("JREUtils", "Symlinked " + src.getName() + " to " + target.getAbsolutePath());
+            } catch (Throwable t) {
+                copyFile(src, target);
+                Log.i("JREUtils", "Copied " + src.getName() + " to " + target.getAbsolutePath());
+            }
+            try {
+                Os.chmod(target.getAbsolutePath(), 0755);
+            } catch (Throwable ignored) {}
+        } catch (Throwable t) {
+            Log.e("JREUtils", "Failed to sync " + src.getName() + " into " + targetDir.getAbsolutePath(), t);
+        }
+    }
+
+    private static void copyFile(File src, File dst) throws IOException {
+        try (InputStream in = new FileInputStream(src);
+             OutputStream out = new FileOutputStream(dst)) {
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+        }
+    }
+
     static {
         try {
             System.loadLibrary("mojort");
             System.loadLibrary("mojoawt");
         } catch (Throwable t) {
             android.util.Log.e("JREUtils", "Failed to load mojort/mojoawt", t);
+        }
+        try {
+            System.loadLibrary("freetype");
+        } catch (Throwable t) {
+            android.util.Log.e("JREUtils", "Failed to load freetype", t);
         }
     }
 }

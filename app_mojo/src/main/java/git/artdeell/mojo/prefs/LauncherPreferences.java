@@ -32,10 +32,8 @@ public class LauncherPreferences {
     public static SharedPreferences DEFAULT_PREF;
     public static String PREF_RENDERER = "opengles2";
 
-    public static boolean PREF_STRIPPED_MODE = false;
-
     public static boolean isStrippedMode() {
-        return BuildConfig.STRIPPED_MODE || PREF_STRIPPED_MODE;
+        return BuildConfig.STRIPPED_MODE;
     }
 
     public static boolean PREF_IGNORE_NOTCH = false;
@@ -109,7 +107,6 @@ public class LauncherPreferences {
 
         PREF_DISABLE_CURSEFORGE_API = DEFAULT_PREF.getBoolean("disableCurseforgeApi", false);
         PREF_CURSEFORGE_API_KEY_OVERRIDE = DEFAULT_PREF.getString("curseforgeApiKeyOverride", "");
-        PREF_STRIPPED_MODE = DEFAULT_PREF.getBoolean("stripped_mode", BuildConfig.STRIPPED_MODE);
         PREF_RENDERER = DEFAULT_PREF.getString("renderer", isStrippedMode() ? git.artdeell.mojo.game.renderer.def.Renderers.LIBRE_MOBILE_RENDERER : "opengles2");
         if (isStrippedMode()) {
             if (!git.artdeell.mojo.game.renderer.def.Renderers.LIBRE_MOBILE_RENDERER.equals(PREF_RENDERER)

@@ -212,11 +212,20 @@ public class JavaRunner {
         // and so on. Hotspot itself relies on this we also rely on this.
         File vmDir = Objects.requireNonNull(vmPath.getParentFile());
         File libsDir = Objects.requireNonNull(vmDir.getParentFile());
+        String nativeDir = NATIVE_LIB_DIR;
+        if (nativeDir == null && Tools.APP_CONTEXT != null && Tools.APP_CONTEXT.getApplicationInfo() != null) {
+            nativeDir = Tools.APP_CONTEXT.getApplicationInfo().nativeLibraryDir;
+            NATIVE_LIB_DIR = nativeDir;
+        }
         StringBuilder libPathBuilder =  new StringBuilder()
                 .append(libsDir.getAbsolutePath()).append(":")
-                .append(NATIVE_LIB_DIR).append(':')
+                .append(nativeDir != null ? nativeDir : "").append(':')
                 .append(vmDir.getAbsolutePath()).append(':')
                 .append(new File(libsDir, "jli").getAbsolutePath());
+
+        if (libsDir.getParentFile() != null && "lib".equals(libsDir.getParentFile().getName())) {
+            libPathBuilder.append(':').append(libsDir.getParentFile().getAbsolutePath());
+        }
 
         if(extraDirs != null) for(String path : extraDirs) {
             libPathBuilder.append(':').append(path);
@@ -310,6 +319,8 @@ public class JavaRunner {
             throw new VMLoadException("Unable to find the Java VM", 0, -1);
         }
 
+        JREUtils.prepareRuntimeLibraries(Tools.APP_CONTEXT, vmPath);
+
         boolean hasJavaAgent = preprocessUserArgs(vmArgs);
         List<String> runtimeArgs = new ArrayList<>();
         if(getCacioJavaArgs(runtimeArgs,runtime.javaVersion == 8)) hasJavaAgent = true;
@@ -352,6 +363,12 @@ public class JavaRunner {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_DISPLAY);
         } catch (Throwable t) {
             Log.w("JavaRunner", "Could not elevate thread priority", t);
+        }
+
+        try {
+            System.loadLibrary("freetype");
+        } catch (UnsatisfiedLinkError e) {
+            Log.e("JavaRunner", "Failed to preload freetype before nativeLoadJVM", e);
         }
 
         nativeLoadJVM(vmPath.getAbsolutePath(), javaArgsL, mainClass, appArgsL, hasJavaAgent);

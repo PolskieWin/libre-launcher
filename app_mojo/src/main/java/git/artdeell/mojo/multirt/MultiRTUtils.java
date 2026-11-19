@@ -143,6 +143,12 @@ public class MultiRTUtils {
         if (ftIn.exists() && (!ftOut.exists() || ftIn.length() != ftOut.length())) {
             if(!ftIn.renameTo(ftOut)) throw new IOException("Failed to rename freetype");
         }
+        if (NATIVE_LIB_DIR != null) {
+            File nativeFt = new File(NATIVE_LIB_DIR, "libfreetype.so");
+            if (nativeFt.exists() && !ftOut.exists()) {
+                copyDummyNativeLib("libfreetype.so", libDir);
+            }
+        }
 
         // Refresh libraries
         copyDummyNativeLib("libawt_xawt.so", libDir);
