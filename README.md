@@ -17,6 +17,21 @@
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_home.jpg" width="23%" alt="Home Screen">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2_settings.jpg" width="23%" alt="Settings Screen">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3_skinChangerMenu.jpg" width="23%" alt="Skin Changer">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4_homeFolders.jpg" width="23%" alt="Instance Folders">
+</p>
+
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5_ingameControls.jpg" width="95%" alt="In-Game Rust Virtual Touch Controls (libre_controls)">
+</p>
+
+---
+
 ## Roadmap
 
 See [ROADMAP.md](ROADMAP.md) for full version milestones and development plans through v2.40.
