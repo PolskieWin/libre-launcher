@@ -1,0 +1,1 @@
+Fast Minecraft: Java Edition launcher with native Rust controls.

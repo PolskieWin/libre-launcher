@@ -1,0 +1,47 @@
+Categories:
+  - Games
+License: LGPL-3.0-or-later
+AuthorName: Libre Launcher Contributors
+SourceCode: https://github.com/PolskieWin/libre-launcher
+IssueTracker: https://github.com/PolskieWin/libre-launcher/issues
+Changelog: https://github.com/PolskieWin/libre-launcher/releases
+
+AutoName: Libre Launcher
+
+Summary: Fast Minecraft: Java Edition launcher with native Rust controls
+
+Description: |-
+  Libre Launcher is an open-source, lightweight, high-performance Minecraft:
+  Java Edition launcher for Android.
+
+  Features:
+  * Native Rust touch controls and aim smoothing (libre_controls)
+  * Thermal-aware AFK hibernate mode (5 FPS, pure-black OLED display)
+  * Pre-boot mod compatibility scanner (Fabric, NeoForge, Quilt)
+  * Custom Vulkan Turnip / Freedreno drivers and Mesa Zink renderer
+  * 100% Material 3 design with home-screen pinned instance shortcuts
+  * Zero telemetry, ads, or tracking SDKs
+
+  DISCLAIMER: NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED
+  WITH MOJANG OR MICROSOFT. Minecraft is a trademark of Mojang AB.
+
+RepoType: git
+Repo: https://github.com/PolskieWin/libre-launcher.git
+
+AntiFeatures:
+  - NonFreeNet
+  - NonFreeDep
+
+Builds:
+  - versionName: '2.00'
+    versionCode: 200
+    commit: v2.00
+    subdir: app_mojo
+    submodules: true
+    gradle:
+      - assembleNoruntimeRelease
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '2.00'
+CurrentVersionCode: 200

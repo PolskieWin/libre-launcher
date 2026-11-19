@@ -1,0 +1,18 @@
+Libre Launcher is an open-source, lightweight, high-performance Minecraft: Java Edition launcher for Android.
+
+Key Features:
+- Native Rust Controls (libre_controls): Zero-heap allocation virtual touch controls, sprint lock debounce, and exponential moving average aim smoothing.
+- Thermal-Aware AFK Hibernate: Monitors device SoC temperatures and scales FPS down to 5 FPS with OLED pure-black screen during AFK sessions to protect battery health.
+- Modern Version Support: Full support from rd-132211 up to modern calendar versions (26.3, 26.4), NeoForge 4-part versions, Fabric, Quilt, and OptiFine.
+- Native Pre-Boot Compatibility Scanner: Inspects mod manifests before launching the JVM to diagnose mod conflicts, missing dependencies, or incompatible native libraries.
+- Material 3 Design: Clean, consistent interface with pinned home-screen instance shortcuts.
+- Renderer & Driver Choices: Built-in support for Mesa Zink (OpenGL over Vulkan), GL4ES, VirGL, ANGLE, and custom Turnip GPU drivers.
+- Completely Tracker-Free: Zero telemetry, zero analytics, zero proprietary advertising SDKs.
+
+Anti-Features Notice:
+- NonFreeNet: Requires a valid Microsoft / Minecraft: Java Edition account to authenticate and download official game binaries and assets from Mojang/Microsoft servers.
+- NonFreeDep: Requires proprietary game assets from Minecraft: Java Edition to launch.
+
+DISCLAIMER:
+NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
+Minecraft is a registered trademark of Mojang AB. Libre Launcher is an independent open-source project and is not affiliated with Mojang Studios or Microsoft.

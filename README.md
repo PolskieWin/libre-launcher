@@ -90,3 +90,11 @@ Libre Launcher is built upon the incredible work of the open-source Minecraft on
 - **[PojavLauncher](https://github.com/PojavLauncherTeam/PojavLauncher)**
 
 Licensed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**.
+
+---
+
+## Legal & Trademarks
+
+**NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.**
+
+Minecraft is a registered trademark of Mojang AB. Libre Launcher is an independent open-source launcher developed under the LGPL-3.0 license and is not affiliated with, endorsed by, or sponsored by Mojang Studios or Microsoft Corporation. All trademarks belong to their respective owners.
