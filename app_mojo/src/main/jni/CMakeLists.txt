@@ -42,6 +42,7 @@ set(FT_DISABLE_BROTLI   ON CACHE BOOL "" FORCE)
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/freetype/CMakeLists.txt")
     add_subdirectory(freetype)
+    set_target_properties(freetype PROPERTIES VERSION "" SOVERSION "" OUTPUT_NAME "freetype")
 endif()
 
 # ----------------------

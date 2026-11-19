@@ -27,7 +27,7 @@ def getAppVersionCode = {
         }
         return Integer.parseInt(stdout.toString().trim())
     } catch (Exception ignored) {
-        return 211
+        return 230
     }
 }
 
@@ -49,7 +49,7 @@ def getAppVersionName = {
         if (!tag.isEmpty()) return tag
     } catch (Exception ignored) {
     }
-    return "2.11"
+    return "2.30"
 }
 
 def getCFApiKey = {
@@ -217,6 +217,9 @@ android {
             useLegacyPackaging = true
         }
         pickFirst '**/libbytehook.so'
+        pickFirst '**/libfreetype.so'
+        pickFirst '**/libgl4es_114.so'
+        pickFirst '**/libVkLayer_khronos_timeline_semaphore.so'
     }
 
     buildFeatures {
