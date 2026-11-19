@@ -27,7 +27,7 @@ def getAppVersionCode = {
         }
         return Integer.parseInt(stdout.toString().trim())
     } catch (Exception ignored) {
-        return 240
+        return 250
     }
 }
 
@@ -49,7 +49,7 @@ def getAppVersionName = {
         if (!tag.isEmpty()) return tag
     } catch (Exception ignored) {
     }
-    return "2.40"
+    return "2.50"
 }
 
 def getCFApiKey = {
@@ -118,8 +118,8 @@ android {
         applicationId "org.libre.launcher"
         minSdkVersion 23
         targetSdkVersion 36
-        versionCode getAppVersionCode()
-        versionName getAppVersionName()
+        versionCode 250
+        versionName "2.50"
         multiDexEnabled false //important
         resValue 'string', 'curseforge_api_key', getCFApiKey()
         resValue 'string', 'group_id', 'git.artdeell'
@@ -135,7 +135,6 @@ android {
         
         noruntime {
             dimension "runtime"
-            versionNameSuffix "-noruntime"
             buildConfigField "boolean", "STRIPPED_MODE", "false"
         }
 
@@ -172,9 +171,9 @@ android {
         }
 
         release {
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.customDebug
             resValue 'string', 'storageProviderAuthorities', 'org.libre.launcher.scoped.gamefolder'
             resValue 'string', 'application_package', 'org.libre.launcher'
@@ -358,10 +357,12 @@ afterEvaluate {
         
 		def cacioJarUrl = "https://jitpack.io/com/github/MojoLauncher/%1\$s/%2\$s/%3\$s/%2\$s-%3\$s%4\$s.jar"
 
-        registrar.onlineJarDependency cacioJarUrl, "caciocavallo", "cacio-shared", "d0efb5aaba", "", "components/caciocavallo"
-        registrar.onlineJarDependency cacioJarUrl, "caciocavallo", "cacio-androidnw", "d0efb5aaba", "", "components/caciocavallo"
+        if (!variant.getName().toLowerCase().contains("noruntime")) {
+            registrar.onlineJarDependency cacioJarUrl, "caciocavallo", "cacio-shared", "d0efb5aaba", "", "components/caciocavallo"
+            registrar.onlineJarDependency cacioJarUrl, "caciocavallo", "cacio-androidnw", "d0efb5aaba", "", "components/caciocavallo"
 
-        registrar.onlineJarDependency cacioJarUrl, "caciocavallo17", "cacio-tta", "-411454b006-1", "-jar-with-dependencies", "components/caciocavallo17"
+            registrar.onlineJarDependency cacioJarUrl, "caciocavallo17", "cacio-tta", "-411454b006-1", "-jar-with-dependencies", "components/caciocavallo17"
+        }
     }
 }
 

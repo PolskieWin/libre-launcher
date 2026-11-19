@@ -284,18 +284,24 @@ public class MultiRTUtils {
             String javaVersion = Tools.extractUntilCharacter(content, JAVA_VERSION_STR, '"');
             String osArch = Tools.extractUntilCharacter(content, OS_ARCH_STR, '"');
             if(javaVersion != null && osArch != null) {
-                String[] javaVersionSplit = javaVersion.split("\\.");
-                int javaVersionInt;
-                if (javaVersionSplit[0].equals("1")) {
-                    javaVersionInt = Integer.parseInt(javaVersionSplit[1]);
-                } else {
-                    javaVersionInt = Integer.parseInt(javaVersionSplit[0]);
+                String[] javaVersionSplit = javaVersion.split("[.\\-+]");
+                int javaVersionInt = 0;
+                if (javaVersionSplit.length > 0) {
+                    if (javaVersionSplit[0].equals("1") && javaVersionSplit.length > 1) {
+                        try {
+                            javaVersionInt = Integer.parseInt(javaVersionSplit[1]);
+                        } catch (NumberFormatException ignored) {}
+                    } else {
+                        try {
+                            javaVersionInt = Integer.parseInt(javaVersionSplit[0]);
+                        } catch (NumberFormatException ignored) {}
+                    }
                 }
                 returnRuntime = new Runtime(name, javaVersion, osArch, javaVersionInt);
             }else{
                 returnRuntime =  new Runtime(name);
             }
-        }catch(IOException e) {
+        }catch(Exception e) {
             returnRuntime =  new Runtime(name);
         }
         sCache.put(name, returnRuntime);

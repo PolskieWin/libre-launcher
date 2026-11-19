@@ -322,6 +322,9 @@ public class JavaRunner {
      */
     public static void startJvm(Runtime runtime, List<String> vmArgs, List<String> classpathEntries, String mainClass, List<String> applicationArgs) throws VMLoadException{
         runtime = git.artdeell.mojo.utils.JREUtils.initJavaRuntime(runtime);
+        if (runtime == null || runtime.name == null) {
+            throw new VMLoadException("Unable to find a valid Java runtime", 0, -1);
+        }
         File runtimeHomeDir = MultiRTUtils.getRuntimeHome(runtime.name);
         File vmPath = findVmPath(runtimeHomeDir, runtime.arch);
         if(vmPath == null) {

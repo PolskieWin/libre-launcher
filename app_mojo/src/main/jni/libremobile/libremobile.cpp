@@ -101,6 +101,9 @@ static bool str_in_list(const char* target, const char* const* list, size_t coun
 
 static uint16_t read_soc_id() {
     FILE* fp = fopen("/sys/devices/soc0/soc_id", "r");
+    if (!fp) {
+        fp = fopen("/sys/devices/system/soc/soc0/id", "r");
+    }
     if (!fp) return 0;
     char buf[32];
     uint16_t id = 0;
@@ -171,6 +174,15 @@ static void init_libremobile_pointers_internal() {
     if (!s_real_eglGetProcAddress) {
         s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(RTLD_NEXT, "eglGetProcAddress");
     }
+    if (!s_real_eglGetProcAddress) {
+        void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
+        if (libegl) {
+            s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(libegl, "eglGetProcAddress");
+            if (!s_real_glGetString) {
+                s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(libegl, "glGetString");
+            }
+        }
+    }
     if (!s_real_glGetString && s_real_eglGetProcAddress) {
         s_real_glGetString = (PFNGLGETSTRINGPROC)s_real_eglGetProcAddress("glGetString");
     }
@@ -188,8 +200,8 @@ static inline void ensure_initialized() {
 extern "C" __attribute__((visibility("default")))
 const unsigned char* libre_glGetString(unsigned int name) {
     ensure_initialized();
-    if (name == GL_RENDERER) {
-        static const unsigned char s_libre_mobile_renderer[] = "Libremobile 2.00";
+    if (s_libre_mobile_active && name == GL_RENDERER) {
+        static const unsigned char s_libre_mobile_renderer[] = "Libre Mobile";
         return s_libre_mobile_renderer;
     }
     if (s_real_glGetString) {

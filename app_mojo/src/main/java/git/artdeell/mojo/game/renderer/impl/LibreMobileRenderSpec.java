@@ -9,6 +9,7 @@ import git.artdeell.mojo.prefs.LauncherPreferences;
 import git.artdeell.mojo.game.renderer.def.Renderers;
 import git.artdeell.mojo.utils.GpuUtils;
 import git.artdeell.mojo.vulkan.DriverManager;
+import git.artdeell.mojo.vulkan.driver.AdrenoDriver;
 import git.artdeell.mojo.vulkan.driver.BuiltinDriver;
 import git.artdeell.mojo.vulkan.driver.Driver;
 import git.artdeell.mojoexec.MojoExec;
@@ -81,6 +82,16 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
         } catch (Throwable ignored) {}
 
         if (isAdreno) {
+            StringBuilder tu = new StringBuilder();
+            if (LauncherPreferences.PREF_FREEDRENO_SYSMEM) tu.append("sysmem,");
+            if (LauncherPreferences.PREF_TU_DEBUG_NOBIN) tu.append("nobin,");
+            if (tu.length() > 0) {
+                tu.setLength(tu.length() - 1);
+                envMap.put("TU_DEBUG", tu.toString());
+            } else {
+                envMap.remove("TU_DEBUG");
+            }
+
             if (isFlagship) {
                 // Flagship Tuned Turnip
                 envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
@@ -93,19 +104,9 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
                 if (is7xx8xx || isFlagship) {
                     envMap.put("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1");
                 }
-                StringBuilder tu = new StringBuilder();
-                if (LauncherPreferences.PREF_FREEDRENO_SYSMEM) tu.append("sysmem,");
-                if (LauncherPreferences.PREF_TU_DEBUG_NOBIN) tu.append("nobin,");
-                if (tu.length() > 0) {
-                    tu.setLength(tu.length() - 1);
-                    envMap.put("TU_DEBUG", tu.toString());
-                } else {
-                    envMap.remove("TU_DEBUG");
-                }
             } else {
                 // Normal / Untuned Standard Turnip
                 envMap.remove("FD_DEV_FEATURES");
-                envMap.remove("TU_DEBUG");
                 envMap.remove("MESA_VK_WSI_PRESENT_MODE");
             }
         } else if (isMali) {
@@ -162,7 +163,13 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
                 for (Driver d : drivers) {
                     if (d instanceof BuiltinDriver) continue;
                     String dName = d.getName() != null ? d.getName().toLowerCase() : "";
-                    String dDesc = d.getDescription() != null ? d.getDescription().toLowerCase() : "";
+                    String dDesc = "";
+                    if (d instanceof AdrenoDriver) {
+                        AdrenoDriver ad = (AdrenoDriver) d;
+                        if (ad.description != null) {
+                            dDesc = ad.description.toLowerCase();
+                        }
+                    }
                     if (dName.contains("turnip") || dDesc.contains("turnip") || dName.contains("flagship")) {
                         bestTurnip = d;
                         break;

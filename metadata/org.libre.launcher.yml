@@ -1,5 +1,5 @@
 Categories:
-  - Games
+  - Game Helper
 License: LGPL-3.0-or-later
 AuthorName: Libre Launcher Contributors
 SourceCode: https://github.com/PolskieWin/libre-launcher
@@ -30,11 +30,12 @@ Repo: https://github.com/PolskieWin/libre-launcher.git
 
 AntiFeatures:
   - NonFreeNet
+  - NonFreeDep
 
 Builds:
-  - versionName: '2.40'
-    versionCode: 240
-    commit: v2.40
+  - versionName: '2.50'
+    versionCode: 250
+    commit: 3994d64400d3a80206b3e0bb0d9fbb2f50b7a037
     subdir: app_mojo
     submodules: true
     gradle:
@@ -42,5 +43,6 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '2.40'
-CurrentVersionCode: 240
+UpdateCheckData: app_mojo/build.gradle|versionCode\s+(\d+)|app_mojo/build.gradle|versionName\s+["']([^"']+)["']
+CurrentVersion: '2.50'
+CurrentVersionCode: 250

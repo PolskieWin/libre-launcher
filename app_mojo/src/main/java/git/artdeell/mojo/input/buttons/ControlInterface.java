@@ -215,13 +215,18 @@ public interface ControlInterface extends View.OnLongClickListener, PlatformGrab
      * smoothly scaling relative to button height.
      */
     default float computeCornerRadius(float radiusInPercent) {
+        if (getProperties() == null) return 0f;
         float height = getProperties().getHeight();
         if (height <= 0 && getControlView() != null && getControlView().getHeight() > 0) {
             height = getControlView().getHeight();
         }
         if (height <= 0) {
-            height = Math.min(getProperties().getWidth(), getProperties().getHeight());
+            height = getProperties().getWidth();
+            if (height <= 0 && getControlView() != null && getControlView().getWidth() > 0) {
+                height = getControlView().getWidth();
+            }
         }
+        if (height <= 0) return 0f;
         return (height / 2f) * (radiusInPercent / 100f);
     }
 

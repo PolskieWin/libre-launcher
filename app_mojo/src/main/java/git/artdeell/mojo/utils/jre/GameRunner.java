@@ -705,8 +705,8 @@ public class GameRunner {
     public static @NonNull String pickRuntime(Instance instance, int targetJavaVersion) {
         String runtime = Tools.getSelectedRuntime(instance);
         String profileRuntime = instance.selectedRuntime;
-        Runtime pickedRuntime = MultiRTUtils.read(runtime);
-        if(runtime == null || pickedRuntime.javaVersion == 0 || pickedRuntime.javaVersion < targetJavaVersion || !MultiRTUtils.isRuntimeValid(pickedRuntime)) {
+        Runtime pickedRuntime = runtime != null ? MultiRTUtils.read(runtime) : null;
+        if(runtime == null || pickedRuntime == null || pickedRuntime.javaVersion == 0 || pickedRuntime.javaVersion < targetJavaVersion || !MultiRTUtils.isRuntimeValid(pickedRuntime)) {
             String preferredRuntime = MultiRTUtils.getNearestJreName(targetJavaVersion);
             if(preferredRuntime == null) {
                 Runtime fallback = MultiRTUtils.getHighestValidRuntime();

@@ -35,13 +35,16 @@ public class MoJsonRule {
     public static String ruleSetCheck(MoJsonRule[] rules, Map<String, Boolean> activeFeatures) {
         int precedenceLevel = 0;
         String action = "disallow";
+        if (rules == null || rules.length == 0) return "allow";
         for(MoJsonRule rule : rules) {
             int ruleLevel = rule.getPrecedenceLevel();
-            if(ruleLevel <= precedenceLevel) {
+            if(ruleLevel < precedenceLevel) {
                 continue;
             }
-            if(rule.matches(activeFeatures)) action = rule.action;
-            precedenceLevel = ruleLevel;
+            if(rule.matches(activeFeatures)) {
+                action = rule.action;
+                precedenceLevel = ruleLevel;
+            }
         }
         return action;
     }
@@ -69,10 +72,17 @@ public class MoJsonRule {
         }
 
         public boolean matches() {
-            // TODO: version matching
-            return propertyMatches(name, "linux") &&
-                    propertyMatches(arch, Architecture.archAsString(Architecture.getDeviceArchitecture())) &&
-                    version == null;
+            boolean nameMatch = propertyMatches(name, "linux");
+            boolean archMatch = propertyMatches(arch, Architecture.archAsString(Architecture.getDeviceArchitecture()));
+            boolean versionMatch = true;
+            if (version != null) {
+                try {
+                    versionMatch = android.os.Build.VERSION.RELEASE.matches(version);
+                } catch (Exception ignored) {
+                    versionMatch = false;
+                }
+            }
+            return nameMatch && archMatch && versionMatch;
         }
     }
 }
