@@ -32,9 +32,9 @@ AntiFeatures:
   - NonFreeNet
 
 Builds:
-  - versionName: '2.33'
-    versionCode: 233
-    commit: v2.33
+  - versionName: '2.34'
+    versionCode: 234
+    commit: v2.34
     subdir: app_mojo
     submodules: true
     gradle:
@@ -42,5 +42,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '2.33'
-CurrentVersionCode: 233
+CurrentVersion: '2.34'
+CurrentVersionCode: 234

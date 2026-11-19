@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/license-LGPLv3-blue" alt="License">
   <img src="https://img.shields.io/badge/Minecraft-rd--132211%20to%2026.4-green" alt="Minecraft Versions">
   <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Roadmap-v1.50--v2.00-blueviolet" alt="Roadmap"></a>
-  <a href="https://discord.gg/gdcm"><img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://discord.gg/KJpCVzRzRy"><img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
 </p>
 
 ---
