@@ -10,7 +10,12 @@ local.properties
 .idea/
 .vs/
 /curseforge_key.txt
+*.tar.gz
+*.zip
 /app_mojo/libs/ltw-release.aar
+app_mojo/libs/*.aar
+app_mojo/src/main/jniLibs/**/*.so
+app_mojo/src/main/assets/components/**/*.jar
 app_mojo/src/main/assets/components/jre
 /app_mojo/src/main/assets/components/jre-new/
 /app_mojo/src/main/assets/components/jre-21/

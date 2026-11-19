@@ -116,7 +116,6 @@ public class MultiRTUtils {
         try {
             uncompressTarXZ(runtimeInputStream, dest);
             runtimeInputStream.close();
-            unpack200(nativeLibDir, getRuntimeFolder() + "/" + name);
             read(name);
         } finally {
             ProgressLayout.clearProgress(ProgressLayout.UNPACK_RUNTIME);
@@ -148,8 +147,6 @@ public class MultiRTUtils {
         try {
             installRuntimeNamedNoRemove(universalFileInputStream, dest);
             installRuntimeNamedNoRemove(platformBinsInputStream, dest);
-
-            unpack200(NATIVE_LIB_DIR, getRuntimeFolder() + "/" + name);
 
             File binpack_verfile = new File(getRuntimeFolder(), "/" + name + "/pojav_version");
             write(binpack_verfile, binpackVersion, StandardCharsets.UTF_8);
@@ -241,28 +238,6 @@ public class MultiRTUtils {
         return returnRuntime;
     }
 
-    /**
-     * Unpacks all .pack files into .jar Serves only for java 8, as java 9 brought project jigsaw
-     * @param nativeLibraryDir The native lib path, required to execute the unpack200 binary
-     * @param runtimePath The path to the runtime to walk into
-     */
-    private static void unpack200(String nativeLibraryDir, String runtimePath) {
-
-        File basePath = new File(runtimePath);
-        Collection<File> files = listFiles(basePath, new String[]{"pack"}, true);
-
-        File workdir = new File(nativeLibraryDir);
-
-        ProcessBuilder processBuilder = new ProcessBuilder().directory(workdir);
-        for(File jarFile : files){
-            try{
-                Process process = processBuilder.command("./libunpack200.so", "-r", jarFile.getAbsolutePath(), jarFile.getAbsolutePath().replace(".pack", "")).start();
-                process.waitFor();
-            }catch (InterruptedException | IOException e) {
-                Log.e("MULTIRT", "Failed to unpack the runtime !");
-            }
-        }
-    }
 
     @SuppressWarnings("SameParameterValue")
     private static void copyDummyNativeLib(String name, File dest) throws IOException {

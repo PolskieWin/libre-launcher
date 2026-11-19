@@ -392,6 +392,7 @@ dependencies {
     implementation 'com.caverock:androidsvg-aar:1.4'
 
     implementation 'com.github.MojoLauncher:alsoft-android-aar:f369161d5f'
+    implementation 'net.java.dev.jna:jna:5.14.0@aar'
 
     implementation project(":glfw:jni_bindings")
     implementation project(":sdl:jni_bindings")
