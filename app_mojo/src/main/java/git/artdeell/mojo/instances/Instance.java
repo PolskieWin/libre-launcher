@@ -107,7 +107,7 @@ public class Instance extends DisplayInstance {
         if(versionId == null) return false;
         if(VERSION_LATEST_SNAPSHOT.equals(versionId)) return true;
         String v = versionId.toLowerCase();
-        return v.contains("snapshot") || v.contains("-pre") || v.contains("-rc") || v.matches(".*\\d{2}w\\d{2}[a-z].*");
+        return v.contains("snapshot") || v.contains("-pre") || v.contains("-rc") || v.matches(".*\\d{2}w\\d{2}[a-z].*") || v.contains("26.4") || v.startsWith("26.") || v.startsWith("26w");
     }
 
     public String getLaunchRenderer() {

@@ -63,6 +63,13 @@ Architecture and feature roadmap for Libre Launcher.
 - **Strict Compiler Exception Compliance**: Resolved unhandled `IOException` bounds on executor threads during automated update download handshakes.
 - **Seamless Continuous Integration**: Verified flawless compilation and packaging across `full`, `noruntime`, and `stripped` build variants.
 
+### v2.38 — Forge & NeoForge Parity, 26.4 Snapshots & LibreMobile 2.00 F3
+- **Forge & NeoForge Stability & Inheritance**: Complete JVM argument and library inheritance merging without duplicates, full support for rule-based JVM arguments (`--add-opens`, `--add-modules`, system properties), automatic NeoForge Minecraft version detection (`neoforge-` prefix to MC version resolution), and Forge terminal/AWT workarounds (`-Dneoforge.earlyprogresswindow=false`, `-Dforge.forceNoStencil=true`, `-Dterminal.jline=false`, `-Djline.terminal=none`).
+- **Resilient Forge/NeoForge Installer Automation**: Case-insensitive and HTML-stripped button normalization supporting "Install client", "Install", "OK", "Proceed", and non-blocking dialog inspection handling all `JOptionPane` variants.
+- **Libre Mobile 2.00 in F3 Debug Screen**: Intercepted LWJGL `DynamicLinkLoader` and EGL proc address queries to report `"Libremobile 2.00"` on F3 debug screen instead of raw `turnip`, `zink`, or `mesa git`.
+- **26.4 Snapshot Engine & Core GLSL Extensions**: Full compatibility with 26.4 snapshots via core GLSL 460 compat mode, compute shader / SSBO overrides, snapshot regex sorting in `ComparableVersionString`, and automatic Java 21 runtime resolution.
+- **Pre-Boot Mod Compatibility for Forge & NeoForge**: Native Rust (`libre_controls`) and C (`preboot_scanner`) support for `mods.toml` and `neoforge.mods.toml` mod manifest inspection, detecting duplicate mod IDs, missing dependencies, and renderer conflicts across Forge and NeoForge.
+
 ---
 
 ## Upcoming Milestones

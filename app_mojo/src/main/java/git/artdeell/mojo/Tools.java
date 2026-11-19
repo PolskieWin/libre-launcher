@@ -622,49 +622,91 @@ public final class Tools {
                 }catch(IOException e) {
                     throw new RuntimeException("Can't find the source version for "+ versionName +" (req version="+customVer.inheritsFrom+")");
                 }
-                //inheritsVer.inheritsFrom = inheritsVer.id;
+                inheritsVer.inheritsFrom = customVer.inheritsFrom;
                 insertSafety(inheritsVer, customVer,
                         "assetIndex", "assets", "id",
                         "mainClass", "minecraftArguments",
                         "releaseTime", "time", "type", "environment",
-                        "disableRendererChecks"
+                        "disableRendererChecks", "javaVersion"
                 );
 
+                if (customVer.libraries != null) {
+                    if (inheritsVer.libraries == null) {
+                        inheritsVer.libraries = customVer.libraries;
+                    } else {
+                        List<DependentLibrary> totalLibs = new ArrayList<>(Arrays.asList(customVer.libraries));
+                        for (DependentLibrary lib : inheritsVer.libraries) {
+                            boolean alreadyPresent = false;
+                            for (DependentLibrary customLib : totalLibs) {
+                                if (customLib.name != null && lib.name != null &&
+                                    Objects.equals(customLib.name.provider, lib.name.provider) &&
+                                    Objects.equals(customLib.name.module, lib.name.module)) {
+                                    alreadyPresent = true;
+                                    break;
+                                }
+                            }
+                            if (!alreadyPresent && !totalLibs.contains(lib)) {
+                                totalLibs.add(lib);
+                            }
+                        }
+                        inheritsVer.libraries = totalLibs.toArray(new DependentLibrary[0]);
+                    }
+                }
 
-                // Inheriting Minecraft 1.13+ with append custom args
-                if (inheritsVer.arguments != null && customVer.arguments != null &&
-                    inheritsVer.arguments.game != null && customVer.arguments.game != null) {
-                    List totalArgList = new ArrayList(Arrays.asList(inheritsVer.arguments.game));
+                if (customVer.arguments != null) {
+                    if (inheritsVer.arguments == null) {
+                        inheritsVer.arguments = customVer.arguments;
+                    } else {
+                        // Inheriting Minecraft 1.13+ with append custom args
+                        if (inheritsVer.arguments.game == null && customVer.arguments.game != null) {
+                            inheritsVer.arguments.game = customVer.arguments.game;
+                        } else if (inheritsVer.arguments.game != null && customVer.arguments.game != null) {
+                            List totalArgList = new ArrayList(Arrays.asList(inheritsVer.arguments.game));
 
-                    int nskip = 0;
-                    for (int i = 0; i < customVer.arguments.game.length; i++) {
-                        if (nskip > 0) {
-                            nskip--;
-                            continue;
+                            int nskip = 0;
+                            for (int i = 0; i < customVer.arguments.game.length; i++) {
+                                if (nskip > 0) {
+                                    nskip--;
+                                    continue;
+                                }
+
+                                Object perCustomArg = customVer.arguments.game[i];
+                                if (perCustomArg instanceof String) {
+                                    String perCustomArgStr = (String) perCustomArg;
+                                    // Check if there is a duplicate argument on combine
+                                    if (perCustomArgStr.startsWith("--") && totalArgList.contains(perCustomArgStr)) {
+                                        perCustomArg = customVer.arguments.game[i + 1];
+                                        if (perCustomArg instanceof String) {
+                                            perCustomArgStr = (String) perCustomArg;
+                                            // If the next is argument value, skip it
+                                            if (!perCustomArgStr.startsWith("--")) {
+                                                nskip++;
+                                            }
+                                        }
+                                    } else {
+                                        totalArgList.add(perCustomArgStr);
+                                    }
+                                } else if (!totalArgList.contains(perCustomArg)) {
+                                    totalArgList.add(perCustomArg);
+                                }
+                            }
+
+                            inheritsVer.arguments.game = totalArgList.toArray(new Object[0]);
                         }
 
-                        Object perCustomArg = customVer.arguments.game[i];
-                        if (perCustomArg instanceof String) {
-                            String perCustomArgStr = (String) perCustomArg;
-                            // Check if there is a duplicate argument on combine
-                            if (perCustomArgStr.startsWith("--") && totalArgList.contains(perCustomArgStr)) {
-                                perCustomArg = customVer.arguments.game[i + 1];
-                                if (perCustomArg instanceof String) {
-                                    perCustomArgStr = (String) perCustomArg;
-                                    // If the next is argument value, skip it
-                                    if (!perCustomArgStr.startsWith("--")) {
-                                        nskip++;
-                                    }
+                        // Inheriting JVM arguments
+                        if (inheritsVer.arguments.jvm == null && customVer.arguments.jvm != null) {
+                            inheritsVer.arguments.jvm = customVer.arguments.jvm;
+                        } else if (inheritsVer.arguments.jvm != null && customVer.arguments.jvm != null) {
+                            List totalJvmList = new ArrayList(Arrays.asList(inheritsVer.arguments.jvm));
+                            for (Object perCustomArg : customVer.arguments.jvm) {
+                                if (!totalJvmList.contains(perCustomArg)) {
+                                    totalJvmList.add(perCustomArg);
                                 }
-                            } else {
-                                totalArgList.add(perCustomArgStr);
                             }
-                        } else if (!totalArgList.contains(perCustomArg)) {
-                            totalArgList.add(perCustomArg);
+                            inheritsVer.arguments.jvm = totalJvmList.toArray(new Object[0]);
                         }
                     }
-
-                    inheritsVer.arguments.game = totalArgList.toArray(new Object[0]);
                 }
 
                 customVer = inheritsVer;

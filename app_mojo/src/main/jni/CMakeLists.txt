@@ -86,7 +86,7 @@ add_library(mojort SHARED
 )
 
 target_include_directories(mojort PRIVATE .)
-target_link_libraries(mojort PRIVATE log mojoexec z freetype)
+target_link_libraries(mojort PRIVATE log mojoexec z freetype dl)
 
 add_library(mojoawt SHARED
 		awt/awt.c

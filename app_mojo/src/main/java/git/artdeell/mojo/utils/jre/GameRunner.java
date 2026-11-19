@@ -34,6 +34,8 @@ import git.artdeell.mojo.utils.JSONUtils;
 import git.artdeell.mojo.utils.MCOptionUtils;
 import git.artdeell.mojo.utils.OldVersionsUtils;
 import git.artdeell.mojo.utils.SocUtils;
+import git.artdeell.mojo.modding.forge.ForgelikeUtils;
+import git.artdeell.mojo.value.MoJsonRule;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,6 +44,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -157,7 +160,11 @@ public class GameRunner {
     }
 
     private static boolean isGl4esCompatible(JVersionList.Version version) throws Exception{
-        return DateUtils.dateBefore(DateUtils.getOriginalReleaseDate(version), 2025, 1, 7);
+        String id = version != null && version.id != null ? version.id.toLowerCase() : "";
+        if (id.startsWith("26.") || id.startsWith("26w") || id.contains("26.4") || id.startsWith("25.") || id.startsWith("25w")) return false;
+        Date origDate = DateUtils.getOriginalReleaseDate(version);
+        if (origDate == null) return false;
+        return DateUtils.dateBefore(origDate, 2025, 1, 7);
     }
 
     private static boolean isCompatContext(JVersionList.Version version) throws Exception{
@@ -307,14 +314,21 @@ public class GameRunner {
         }
 
         int requiredJavaVersion = 8;
-        if(versionInfo.javaVersion != null) {
+        if(versionInfo.javaVersion != null && versionInfo.javaVersion.majorVersion > 0) {
             requiredJavaVersion = versionInfo.javaVersion.majorVersion;
-        } else if (versionInfo.id != null) {
-            String id = versionInfo.id.toLowerCase();
-            if (id.startsWith("26.") || id.startsWith("26w") || id.startsWith("25.") || id.startsWith("25w") || id.startsWith("24.") || id.startsWith("24w") || id.startsWith("1.21") || id.startsWith("1.20.5") || id.startsWith("1.20.6")) {
+        } else {
+            String id = versionInfo.id != null ? versionInfo.id.toLowerCase() : "";
+            String inherits = versionInfo.inheritsFrom != null ? versionInfo.inheritsFrom.toLowerCase() : "";
+            if (id.startsWith("neoforge-")) {
+                inherits = ForgelikeUtils.getMcVersionForNeoVersion(id.substring("neoforge-".length())).toLowerCase();
+            }
+            if (id.startsWith("26.") || id.startsWith("26w") || id.contains("26.4") || id.startsWith("25.") || id.startsWith("25w") || id.startsWith("24.") || id.startsWith("24w") || id.startsWith("1.21") || id.startsWith("1.20.5") || id.startsWith("1.20.6")
+                    || inherits.startsWith("26.") || inherits.startsWith("26w") || inherits.contains("26.4") || inherits.startsWith("25.") || inherits.startsWith("25w") || inherits.startsWith("24.") || inherits.startsWith("24w") || inherits.startsWith("1.21") || inherits.startsWith("1.20.5") || inherits.startsWith("1.20.6")) {
                 requiredJavaVersion = 21;
-            } else if (id.startsWith("1.18") || id.startsWith("1.19") || id.startsWith("1.20")) {
+            } else if (id.startsWith("1.18") || id.startsWith("1.19") || id.startsWith("1.20") || inherits.startsWith("1.18") || inherits.startsWith("1.19") || inherits.startsWith("1.20")) {
                 requiredJavaVersion = 17;
+            } else if (id.startsWith("1.17") || inherits.startsWith("1.17")) {
+                requiredJavaVersion = 16;
             }
         }
 
@@ -514,10 +528,54 @@ public class GameRunner {
         }
     }
 
+    private static boolean isRuleAllowed(Object rulesObj) {
+        if (rulesObj == null) return true;
+        if (rulesObj instanceof List) {
+            List<?> rulesList = (List<?>) rulesObj;
+            if (rulesList.isEmpty()) return true;
+            try {
+                String rulesJson = Tools.GLOBAL_GSON.toJson(rulesList);
+                MoJsonRule[] rules = Tools.GLOBAL_GSON.fromJson(rulesJson, MoJsonRule[].class);
+                return "allow".equals(MoJsonRule.ruleSetCheck(rules));
+            } catch (Exception e) {
+                return true;
+            }
+        } else if (rulesObj instanceof MoJsonRule[]) {
+            return "allow".equals(MoJsonRule.ruleSetCheck((MoJsonRule[]) rulesObj));
+        }
+        return true;
+    }
+
+    private static void parseArgIntoList(List<String> list, Object arg) {
+        if (arg == null) return;
+        if (arg instanceof String) {
+            list.add((String) arg);
+        } else if (arg instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) arg;
+            if (isRuleAllowed(map.get("rules"))) {
+                Object val = map.get("value");
+                if (val == null) val = map.get("values");
+                if (val instanceof String) {
+                    list.add((String) val);
+                } else if (val instanceof List) {
+                    for (Object item : (List<?>) val) {
+                        if (item != null) list.add(item.toString());
+                    }
+                }
+            }
+        } else if (arg instanceof JVersionList.Arguments.ArgValue) {
+            JVersionList.Arguments.ArgValue av = (JVersionList.Arguments.ArgValue) arg;
+            if (av.rules == null || "allow".equals(MoJsonRule.ruleSetCheck(av.rules))) {
+                if (av.value != null) list.add(av.value);
+                if (av.values != null) list.addAll(Arrays.asList(av.values));
+            }
+        }
+    }
+
     private static List<String> getMoJsonJvmArgs(String versionName) {
-        JVersionList.Version versionInfo = Tools.getVersionInfo(versionName, true);
-        // Parse Forge 1.17+ additional JVM Arguments
-        if (versionInfo.arguments == null || versionInfo.arguments.jvm == null) {
+        JVersionList.Version versionInfo = Tools.getVersionInfo(versionName, false);
+        // Parse Forge 1.17+ and NeoForge additional JVM Arguments
+        if (versionInfo == null || versionInfo.arguments == null || versionInfo.arguments.jvm == null) {
             return Collections.emptyList();
         }
 
@@ -526,14 +584,12 @@ public class GameRunner {
         varArgMap.put("library_directory", Tools.DIR_HOME_LIBRARY);
         varArgMap.put("version_name", versionInfo.id);
         varArgMap.put("natives_directory", Tools.NATIVE_LIB_DIR);
+        varArgMap.put("launcher_name", Tools.APP_NAME);
+        varArgMap.put("launcher_version", "2.00");
 
         List<String> clientVmArgs = new ArrayList<>();
-        if (versionInfo.arguments != null) {
-            for (Object arg : versionInfo.arguments.jvm) {
-                if (arg instanceof String) {
-                    clientVmArgs.add((String) arg);
-                } //TODO: implement (?maybe?)
-            }
+        for (Object arg : versionInfo.arguments.jvm) {
+            parseArgIntoList(clientVmArgs, arg);
         }
         return JSONUtils.insertJSONValueList(clientVmArgs, varArgMap);
     }
@@ -578,9 +634,7 @@ public class GameRunner {
         if (versionInfo.arguments != null && versionInfo.arguments.game != null) {
             // Support Minecraft 1.13+
             for (Object arg : versionInfo.arguments.game) {
-                if (arg instanceof String) {
-                    clientArgs.add((String) arg);
-                } //TODO: implement else clause
+                parseArgIntoList(clientArgs, arg);
             }
         }
         if(versionInfo.minecraftArguments != null){

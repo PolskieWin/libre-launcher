@@ -10,11 +10,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #define TAG __FILE_NAME__
 #include <log.h>
 
 #include <mojoexec.h>
+
+extern const void* libre_glGetString(unsigned int name);
+extern void* libre_eglGetProcAddress(const char *procname);
 
 /**
  * Basically a verbatim implementation of ndlopen(), found at
@@ -59,21 +63,42 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
 }
 
 /**
+ * Hook ndlsym to intercept glGetString and eglGetProcAddress, ensuring
+ * Libre Mobile is identified cleanly in the Minecraft F3 debug overlay.
+ */
+static jlong ndlsym_bugfix(__attribute__((unused)) JNIEnv *env,
+                           __attribute__((unused)) jclass class,
+                           jlong handle,
+                           jlong name_ptr) {
+    const char* name = (const char*) name_ptr;
+    if(name != NULL) {
+        if(strcmp(name, "glGetString") == 0) {
+            return (jlong) libre_glGetString;
+        }
+        if(strcmp(name, "eglGetProcAddress") == 0) {
+            return (jlong) libre_eglGetProcAddress;
+        }
+    }
+    return (jlong) dlsym((void*) (intptr_t) handle, name);
+}
+
+/**
  * Install the LWJGL dlopen hook. This allows us to mitigate linker bugs and add custom library overrides.
  */
 void installLwjglDlopenHook(JNIEnv *env) {
-    LOGI("Installing LWJGL dlopen() hook");
+    LOGI("Installing LWJGL dlopen() and dlsym() hooks");
     jclass dynamicLinkLoader = (*env)->FindClass(env, "org/lwjgl/system/linux/DynamicLinkLoader");
     if(dynamicLinkLoader == NULL) {
         LOGE("Failed to find the target class");
         (*env)->ExceptionClear(env);
         return;
     }
-    JNINativeMethod ndlopenMethod[] = {
-            {"ndlopen", "(JI)J", &ndlopen_bugfix}
+    JNINativeMethod loaderMethods[] = {
+            {"ndlopen", "(JI)J", (void*) &ndlopen_bugfix},
+            {"ndlsym", "(JJ)J", (void*) &ndlsym_bugfix}
     };
-    if((*env)->RegisterNatives(env, dynamicLinkLoader, ndlopenMethod, 1) != 0) {
-        LOGE("Failed to register the hooked method");
+    if((*env)->RegisterNatives(env, dynamicLinkLoader, loaderMethods, 2) != 0) {
+        LOGE("Failed to register the hooked methods");
         (*env)->ExceptionClear(env);
     }
 }

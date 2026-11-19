@@ -54,7 +54,8 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
         boolean isMali = glInfo.isArm();
         boolean isXclipse = glInfo.renderer != null && (glInfo.renderer.contains("Xclipse") || glInfo.renderer.contains("AMD"));
 
-        // Universal Core 4.6 profile over Zink
+        // Universal Core 4.6 profile over Zink with 26.4 snapshots support
+        envMap.put("LIBRE_MOBILE_ACTIVE", "1");
         envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
         envMap.put("MESA_GLSL_VERSION_OVERRIDE", "460");
         envMap.put("MESA_GL_VERSION_OVERRIDE", "4.6COMPAT");
@@ -68,7 +69,7 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
         envMap.put("allow_glsl_extension_directive_midshader", "true");
         envMap.put("glsl_zero_init", "true");
         envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
-        envMap.put("MESA_EXTENSION_OVERRIDE", "+GL_EXT_texture_filter_anisotropic +GL_ARB_buffer_storage +GL_ARB_clip_control +GL_ARB_shader_draw_parameters +GL_ARB_direct_state_access +GL_ARB_vertex_attrib_binding +GL_ARB_multi_bind +GL_ARB_gpu_shader5 +GL_EXT_clip_cull_distance");
+        envMap.put("MESA_EXTENSION_OVERRIDE", "+GL_EXT_texture_filter_anisotropic +GL_ARB_buffer_storage +GL_ARB_clip_control +GL_ARB_shader_draw_parameters +GL_ARB_direct_state_access +GL_ARB_vertex_attrib_binding +GL_ARB_multi_bind +GL_ARB_gpu_shader5 +GL_EXT_clip_cull_distance +GL_ARB_shader_storage_buffer_object +GL_ARB_compute_shader +GL_ARB_explicit_uniform_location +GL_ARB_multi_draw_indirect +GL_ARB_texture_query_levels +GL_ARB_conservative_depth +GL_ARB_shader_image_load_store +GL_ARB_shading_language_include +GL_ARB_polygon_offset_clamp +GL_ARB_texture_storage +GL_ARB_arrays_of_arrays +GL_ARB_clear_texture");
 
         // GPU-Specific Performance Tuning
         if (isAdreno) {

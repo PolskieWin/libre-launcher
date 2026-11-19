@@ -173,8 +173,16 @@ Builds:
     gradle:
       - assembleNoruntimeRelease
 
+  - versionName: '2.38'
+    versionCode: 238
+    commit: v2.38
+    subdir: app_mojo
+    submodules: true
+    gradle:
+      - assembleNoruntimeRelease
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '2.37'
-CurrentVersionCode: 237
+CurrentVersion: '2.38'
+CurrentVersionCode: 238
 ```

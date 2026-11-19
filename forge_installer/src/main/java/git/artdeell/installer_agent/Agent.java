@@ -75,18 +75,36 @@ public class Agent implements AWTEventListener {
 
 
     public AbstractButton handleForgeButton(AbstractButton abstractButton) {
-        switch(abstractButton.getText()) {
-            case "Proceed":
-            case "OK":
-                return  abstractButton; // return the button, so we can press it after processing other stuff
-            case "Install client":
-                abstractButton.doClick(); // It should be the default, but let's make sure
+        String text = abstractButton.getText();
+        if (text == null) return null;
+        String cleanText = text.replaceAll("<[^>]*>", "").trim();
+        String lower = cleanText.toLowerCase();
+
+        if (lower.contains("client") && (abstractButton.getClass().getName().contains("Radio") || abstractButton.getClass().getName().contains("Check"))) {
+            abstractButton.doClick();
+            return null;
+        }
+
+        if (lower.equals("install client")) {
+            if (abstractButton.getClass().getName().contains("Radio") || abstractButton.getClass().getName().contains("Check")) {
+                abstractButton.doClick();
+                return null;
+            } else {
+                return abstractButton;
+            }
+        }
+
+        if (lower.equals("proceed") || lower.equals("ok") || lower.equals("install") || lower.equals("finish") || lower.equals("done") || lower.equals("next")) {
+            return abstractButton;
         }
         return null;
     }
 
     public AbstractButton handleOptiFineButton(AbstractButton abstractButton) {
-        if ("Install".equals(abstractButton.getText())) {
+        String text = abstractButton.getText();
+        if (text == null) return null;
+        String cleanText = text.replaceAll("<[^>]*>", "").trim();
+        if (cleanText.equalsIgnoreCase("Install") || cleanText.equalsIgnoreCase("OK")) {
             return abstractButton;
         }
         return null;
@@ -94,15 +112,21 @@ public class Agent implements AWTEventListener {
 
     public void handleDialog(Window window) {
         List<Component> components = new ArrayList<>();
-        insertAllComponents(components, window, new DialogFilter()); // ensure that it's a JOptionPane dialog
-        if(components.size() == 1) {
-            // another common trait of them - they only have one option pane in them,
-            // so we can discard the rest of the dialog structure
-            // also allows us to discard dialogs with progress bars which older installers use
-            JOptionPane optionPane = (JOptionPane) components.get(0);
-            if(optionPane.getMessageType() == JOptionPane.INFORMATION_MESSAGE) { // forge doesn't emit information messages for other reasons yet
-                System.out.println("The install was successful!");
-                System.exit(0); // again, forge doesn't call exit for some reason, so we do that ourselves here
+        insertAllComponents(components, window, new DialogFilter());
+        for (Component component : components) {
+            if (component instanceof JOptionPane) {
+                JOptionPane optionPane = (JOptionPane) component;
+                Object msgObj = optionPane.getMessage();
+                String msg = msgObj != null ? msgObj.toString().toLowerCase() : "";
+                int msgType = optionPane.getMessageType();
+
+                if (msgType == JOptionPane.ERROR_MESSAGE || msg.contains("error") || msg.contains("fail")) {
+                    System.err.println("Installation dialog reported error: " + msg);
+                    System.exit(1);
+                } else if (msgType == JOptionPane.INFORMATION_MESSAGE || msgType == JOptionPane.PLAIN_MESSAGE || msg.contains("success") || msg.contains("complete") || msg.contains("finish") || msg.contains("installed")) {
+                    System.out.println("The install was successful!");
+                    System.exit(0);
+                }
             }
         }
     }

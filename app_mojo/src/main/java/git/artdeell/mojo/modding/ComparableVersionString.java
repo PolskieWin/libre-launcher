@@ -62,7 +62,17 @@ public class ComparableVersionString implements Comparable<ComparableVersionStri
 
     public static ComparableVersionString parse(String str) {
         if (str == null) return new ComparableVersionString("");
-        String[] split = str.trim().split("\\.");
+        String trimmed = str.trim();
+        java.util.regex.Matcher snapMatcher = java.util.regex.Pattern.compile("^(\\d{2})w(\\d{2})([a-z])", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(trimmed);
+        if (snapMatcher.find()) {
+            try {
+                int year = Integer.parseInt(snapMatcher.group(1));
+                int week = Integer.parseInt(snapMatcher.group(2));
+                int sub = snapMatcher.group(3).toLowerCase().charAt(0) - 'a' + 1;
+                return new ComparableVersionString(str, year, week, sub);
+            } catch (Exception ignored) {}
+        }
+        String[] split = trimmed.split("\\.");
         if (split.length < 2) return new ComparableVersionString(str);
 
         try {

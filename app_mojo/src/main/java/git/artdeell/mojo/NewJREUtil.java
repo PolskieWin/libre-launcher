@@ -12,6 +12,7 @@ import git.artdeell.mojo.instances.Instances;
 import git.artdeell.mojo.multirt.MultiRTUtils;
 import git.artdeell.mojo.multirt.Runtime;
 import git.artdeell.mojo.progresskeeper.DownloaderProgressWrapper;
+import git.artdeell.mojo.modding.forge.ForgelikeUtils;
 import git.artdeell.mojo.utils.DownloadUtils;
 import git.artdeell.mojo.utils.MathUtils;
 import git.artdeell.mojo.utils.SignatureCheckUtil;
@@ -162,6 +163,28 @@ public class NewJREUtil {
 
     public static void installNewJreIfNeeded(AssetManager assetManager, JVersionList.Version versionInfo) throws IOException, RuntimeSelectionException {
         //Now we have the reliable information to check if our runtime settings are good enough
+        if (versionInfo.javaVersion == null) {
+            int detectedJavaVersion = 8;
+            String id = versionInfo.id != null ? versionInfo.id.toLowerCase() : "";
+            String inherits = versionInfo.inheritsFrom != null ? versionInfo.inheritsFrom.toLowerCase() : "";
+            if (id.startsWith("neoforge-")) {
+                inherits = ForgelikeUtils.getMcVersionForNeoVersion(id.substring("neoforge-".length())).toLowerCase();
+            }
+            if (id.startsWith("26.") || id.startsWith("26w") || id.contains("26.4") || id.startsWith("25.") || id.startsWith("25w") || id.startsWith("24.") || id.startsWith("24w") || id.startsWith("1.21") || id.startsWith("1.20.5") || id.startsWith("1.20.6")
+                    || inherits.startsWith("26.") || inherits.startsWith("26w") || inherits.contains("26.4") || inherits.startsWith("25.") || inherits.startsWith("25w") || inherits.startsWith("24.") || inherits.startsWith("24w") || inherits.startsWith("1.21") || inherits.startsWith("1.20.5") || inherits.startsWith("1.20.6")) {
+                detectedJavaVersion = 21;
+            } else if (id.startsWith("1.18") || id.startsWith("1.19") || id.startsWith("1.20") || inherits.startsWith("1.18") || inherits.startsWith("1.19") || inherits.startsWith("1.20")) {
+                detectedJavaVersion = 17;
+            } else if (id.startsWith("1.17") || inherits.startsWith("1.17")) {
+                detectedJavaVersion = 16;
+            }
+            if (detectedJavaVersion > 8) {
+                versionInfo.javaVersion = new JVersionList.JavaVersionInfo();
+                versionInfo.javaVersion.majorVersion = detectedJavaVersion;
+                versionInfo.javaVersion.component = "java-runtime-alpha";
+            }
+        }
+
         if (versionInfo.javaVersion == null || "jre-legacy".equalsIgnoreCase(versionInfo.javaVersion.component)) return;
 
         int gameRequiredVersion = versionInfo.javaVersion.majorVersion;

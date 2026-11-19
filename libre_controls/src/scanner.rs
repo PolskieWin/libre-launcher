@@ -645,6 +645,82 @@ impl ManifestParser {
         }
         results
     }
+
+    pub fn parse_toml(toml_str: &str, file_name: &str, file_path: &str) -> Option<ModManifest> {
+        let mut manifest = ModManifest {
+            file_name: file_name.to_string(),
+            file_path: file_path.to_string(),
+            ..Default::default()
+        };
+
+        let mut in_mods = false;
+        let mut in_deps = false;
+        let mut found_id = false;
+
+        for line in toml_str.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with('#') {
+                continue;
+            }
+            if trimmed.starts_with("[[mods]]") || trimmed.starts_with("[mods]") {
+                in_mods = true;
+                in_deps = false;
+                continue;
+            } else if trimmed.starts_with("[[dependencies") || trimmed.starts_with("[dependencies") {
+                in_deps = true;
+                in_mods = false;
+                continue;
+            } else if trimmed.starts_with('[') {
+                in_mods = false;
+                in_deps = false;
+                continue;
+            }
+
+            if let Some((k, v)) = Self::parse_toml_key_val(trimmed) {
+                if in_deps {
+                    if k.eq_ignore_ascii_case("modId") {
+                        manifest.depends.push((v, String::new()));
+                    }
+                } else if !found_id || in_mods {
+                    if k.eq_ignore_ascii_case("modId") {
+                        manifest.id = v.clone();
+                        found_id = true;
+                    } else if k.eq_ignore_ascii_case("displayName") || k.eq_ignore_ascii_case("name") {
+                        manifest.name = v;
+                    } else if k.eq_ignore_ascii_case("version") {
+                        manifest.version = v;
+                    }
+                }
+            }
+        }
+
+        if !found_id {
+            return None;
+        }
+        if manifest.name.is_empty() {
+            manifest.name = manifest.id.clone();
+        }
+        if manifest.version.is_empty() {
+            manifest.version = "1.0.0".to_string();
+        }
+
+        Some(manifest)
+    }
+
+    fn parse_toml_key_val(line: &str) -> Option<(String, String)> {
+        let eq_idx = line.find('=')?;
+        let key = line[..eq_idx].trim().to_string();
+        let mut val = line[eq_idx + 1..].trim();
+        if let Some(comment_idx) = val.find('#') {
+            val = val[..comment_idx].trim();
+        }
+        if (val.starts_with('"') && val.ends_with('"') && val.len() >= 2)
+            || (val.starts_with('\'') && val.ends_with('\'') && val.len() >= 2)
+        {
+            val = &val[1..val.len() - 1];
+        }
+        Some((key, val.to_string()))
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -754,6 +830,14 @@ impl PrebootScanner {
                 | "mixinsquared"
                 | "fabric-language-kotlin"
                 | "fabric-language-scala"
+                | "forge"
+                | "neoforge"
+                | "fml"
+                | "minecraftforge"
+                | "net.minecraftforge"
+                | "net.neoforged"
+                | "kotlinforforge"
+                | "scalaforsmartforge"
         )
     }
 
@@ -1011,14 +1095,26 @@ impl PrebootScanner {
                 }
             }
 
-            // Manifest inspection: fabric.mod.json takes priority, then quilt.mod.json
-            if manifest.is_none() && (lower_name == "fabric.mod.json" || lower_name == "quilt.mod.json") {
-                if let Ok(content_bytes) = JarInspector::extract_entry(&mut file, entry) {
-                    if let Ok(text) = std::str::from_utf8(&content_bytes) {
-                        if lower_name == "fabric.mod.json" {
-                            manifest = ManifestParser::parse_fabric(text, file_name, file_path);
-                        } else {
-                            manifest = ManifestParser::parse_quilt(text, file_name, file_path);
+            // Manifest inspection: fabric.mod.json / quilt.mod.json / META-INF/neoforge.mods.toml / META-INF/mods.toml
+            if manifest.is_none() {
+                if lower_name == "fabric.mod.json" || lower_name == "quilt.mod.json" {
+                    if let Ok(content_bytes) = JarInspector::extract_entry(&mut file, entry) {
+                        if let Ok(text) = std::str::from_utf8(&content_bytes) {
+                            if lower_name == "fabric.mod.json" {
+                                manifest = ManifestParser::parse_fabric(text, file_name, file_path);
+                            } else {
+                                manifest = ManifestParser::parse_quilt(text, file_name, file_path);
+                            }
+                        }
+                    }
+                } else if lower_name == "meta-inf/neoforge.mods.toml"
+                    || lower_name == "meta-inf/mods.toml"
+                    || lower_name == "neoforge.mods.toml"
+                    || lower_name == "mods.toml"
+                {
+                    if let Ok(content_bytes) = JarInspector::extract_entry(&mut file, entry) {
+                        if let Ok(text) = std::str::from_utf8(&content_bytes) {
+                            manifest = ManifestParser::parse_toml(text, file_name, file_path);
                         }
                     }
                 }
@@ -1158,6 +1254,42 @@ mod tests {
         assert_eq!(manifest.version, "2.3.2");
         assert_eq!(manifest.depends.len(), 2);
         assert_eq!(manifest.depends[1].0, "pride");
+    }
+
+    #[test]
+    fn test_toml_manifest_parsing() {
+        let toml = r#"
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="embeddium"
+version="0.3.31+mc1.20.1"
+displayName="Embeddium"
+
+[[dependencies.embeddium]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47.1.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.embeddium]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.20.2)"
+    ordering="NONE"
+    side="BOTH"
+"#;
+
+        let manifest = ManifestParser::parse_toml(toml, "embeddium.jar", "/tmp/embeddium.jar").expect("parse toml");
+        assert_eq!(manifest.id, "embeddium");
+        assert_eq!(manifest.name, "Embeddium");
+        assert_eq!(manifest.version, "0.3.31+mc1.20.1");
+        assert_eq!(manifest.depends.len(), 2);
+        assert_eq!(manifest.depends[0].0, "forge");
+        assert_eq!(manifest.depends[1].0, "minecraft");
     }
 
     #[test]

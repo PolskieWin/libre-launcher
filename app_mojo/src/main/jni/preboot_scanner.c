@@ -56,7 +56,97 @@ static bool is_platform_dependency(const char* dep) {
     if (strcasecmp(dep, "mixinsquared") == 0) return true;
     if (strcasecmp(dep, "fabric-language-kotlin") == 0) return true;
     if (strcasecmp(dep, "fabric-language-scala") == 0) return true;
+    if (strcasecmp(dep, "forge") == 0) return true;
+    if (strcasecmp(dep, "neoforge") == 0) return true;
+    if (strcasecmp(dep, "fml") == 0) return true;
+    if (strcasecmp(dep, "minecraftforge") == 0) return true;
+    if (strcasecmp(dep, "net.minecraftforge") == 0) return true;
+    if (strcasecmp(dep, "net.neoforged") == 0) return true;
+    if (strcasecmp(dep, "kotlinforforge") == 0) return true;
+    if (strcasecmp(dep, "scalaforsmartforge") == 0) return true;
     return false;
+}
+
+static void parse_toml_manifest(const char* toml, ModManifest* mod) {
+    const char* p = toml;
+    bool in_mods = false;
+    bool in_deps = false;
+    bool found_id = false;
+
+    while (*p) {
+        const char* line_start = p;
+        while (*p && *p != '\n') p++;
+        size_t line_len = (size_t)(p - line_start);
+        if (*p == '\n') p++;
+
+        while (line_len > 0 && (*line_start == ' ' || *line_start == '\t' || *line_start == '\r')) {
+            line_start++;
+            line_len--;
+        }
+        if (line_len == 0 || *line_start == '#') continue;
+
+        if (strncmp(line_start, "[[mods]]", 8) == 0 || strncmp(line_start, "[mods]", 6) == 0) {
+            in_mods = true;
+            in_deps = false;
+            continue;
+        } else if (strncmp(line_start, "[[dependencies", 14) == 0 || strncmp(line_start, "[dependencies", 13) == 0) {
+            in_deps = true;
+            in_mods = false;
+            continue;
+        } else if (*line_start == '[') {
+            in_mods = false;
+            in_deps = false;
+            continue;
+        }
+
+        const char* eq = memchr(line_start, '=', line_len);
+        if (!eq) continue;
+
+        const char* k_start = line_start;
+        const char* k_end = eq;
+        while (k_end > k_start && (*(k_end - 1) == ' ' || *(k_end - 1) == '\t')) k_end--;
+        size_t k_len = (size_t)(k_end - k_start);
+
+        const char* v_start = eq + 1;
+        const char* v_end = line_start + line_len;
+        while (v_start < v_end && (*v_start == ' ' || *v_start == '\t')) v_start++;
+        const char* hash = memchr(v_start, '#', (size_t)(v_end - v_start));
+        if (hash) v_end = hash;
+        while (v_end > v_start && (*(v_end - 1) == ' ' || *(v_end - 1) == '\t' || *(v_end - 1) == '\r')) v_end--;
+
+        if (v_end > v_start + 1 && ((*v_start == '\"' && *(v_end - 1) == '\"') || (*v_start == '\'' && *(v_end - 1) == '\''))) {
+            v_start++;
+            v_end--;
+        }
+
+        size_t v_len = (size_t)(v_end - v_start);
+        char val_buf[MAX_STR_LEN];
+        size_t copy_v = v_len < sizeof(val_buf) - 1 ? v_len : sizeof(val_buf) - 1;
+        memcpy(val_buf, v_start, copy_v);
+        val_buf[copy_v] = '\0';
+
+        if (in_deps) {
+            if (k_len == 5 && strncasecmp(k_start, "modId", 5) == 0 && mod->depend_count < MAX_DEPS_PER_MOD) {
+                strncpy(mod->depends[mod->depend_count++], val_buf, MAX_STR_LEN - 1);
+            }
+        } else if (!found_id || in_mods) {
+            if (k_len == 5 && strncasecmp(k_start, "modId", 5) == 0) {
+                strncpy(mod->mod_id, val_buf, sizeof(mod->mod_id) - 1);
+                found_id = true;
+            } else if ((k_len == 11 && strncasecmp(k_start, "displayName", 11) == 0) || (k_len == 4 && strncasecmp(k_start, "name", 4) == 0)) {
+                strncpy(mod->name, val_buf, sizeof(mod->name) - 1);
+            } else if (k_len == 7 && strncasecmp(k_start, "version", 7) == 0) {
+                strncpy(mod->version, val_buf, sizeof(mod->version) - 1);
+            }
+        }
+    }
+
+    if (mod->name[0] == '\0') {
+        strncpy(mod->name, mod->mod_id, sizeof(mod->name) - 1);
+    }
+    if (mod->version[0] == '\0') {
+        strncpy(mod->version, "1.0.0", sizeof(mod->version) - 1);
+    }
 }
 
 static char* extract_json_string(const char* json, const char* key, char* out, size_t out_max) {
@@ -187,6 +277,7 @@ static bool scan_jar_file(const char* file_path, const char* file_name, ModManif
     }
 
     bool found_manifest = false;
+    bool manifest_is_toml = false;
     char manifest_json[65536];
     manifest_json[0] = '\0';
 
@@ -242,8 +333,11 @@ static bool scan_jar_file(const char* file_path, const char* file_name, ModManif
             }
         }
 
-        // Check for fabric.mod.json or quilt.mod.json
-        if (!found_manifest && (strcmp(entry_name, "fabric.mod.json") == 0 || strcmp(entry_name, "quilt.mod.json") == 0)) {
+        // Check for fabric.mod.json, quilt.mod.json, or Forge/NeoForge mods.toml
+        bool is_json_manifest = (strcmp(entry_name, "fabric.mod.json") == 0 || strcmp(entry_name, "quilt.mod.json") == 0);
+        bool is_toml_manifest = (strcasecmp(entry_name, "META-INF/neoforge.mods.toml") == 0 || strcasecmp(entry_name, "META-INF/mods.toml") == 0 || strcasecmp(entry_name, "neoforge.mods.toml") == 0 || strcasecmp(entry_name, "mods.toml") == 0);
+
+        if (!found_manifest && (is_json_manifest || is_toml_manifest)) {
             long cur_pos = ftell(f);
             fseek(f, local_offset, SEEK_SET);
             uint8_t lhdr[30];
@@ -260,11 +354,13 @@ static bool scan_jar_file(const char* file_path, const char* file_name, ModManif
                             memcpy(manifest_json, raw, copy_len);
                             manifest_json[copy_len] = '\0';
                             found_manifest = true;
+                            manifest_is_toml = is_toml_manifest;
                         } else if (method == 8) {
                             size_t out_size = 0;
                             if (decompress_deflate(raw, comp_size, (uint8_t*)manifest_json, sizeof(manifest_json) - 1, &out_size)) {
                                 manifest_json[out_size] = '\0';
                                 found_manifest = true;
+                                manifest_is_toml = is_toml_manifest;
                             }
                         }
                     }
@@ -281,28 +377,32 @@ static bool scan_jar_file(const char* file_path, const char* file_name, ModManif
         strncpy(mod->file_name, file_name, sizeof(mod->file_name) - 1);
         strncpy(mod->file_path, file_path, sizeof(mod->file_path) - 1);
 
-        char id_buf[MAX_STR_LEN] = {0};
-        if (extract_json_string(manifest_json, "id", id_buf, sizeof(id_buf))) {
-            strncpy(mod->mod_id, id_buf, sizeof(mod->mod_id) - 1);
+        if (manifest_is_toml) {
+            parse_toml_manifest(manifest_json, mod);
         } else {
-            strncpy(mod->mod_id, file_name, sizeof(mod->mod_id) - 1);
-        }
+            char id_buf[MAX_STR_LEN] = {0};
+            if (extract_json_string(manifest_json, "id", id_buf, sizeof(id_buf))) {
+                strncpy(mod->mod_id, id_buf, sizeof(mod->mod_id) - 1);
+            } else {
+                strncpy(mod->mod_id, file_name, sizeof(mod->mod_id) - 1);
+            }
 
-        char name_buf[MAX_STR_LEN] = {0};
-        if (extract_json_string(manifest_json, "name", name_buf, sizeof(name_buf))) {
-            strncpy(mod->name, name_buf, sizeof(mod->name) - 1);
-        } else {
-            strncpy(mod->name, mod->mod_id, sizeof(mod->name) - 1);
-        }
+            char name_buf[MAX_STR_LEN] = {0};
+            if (extract_json_string(manifest_json, "name", name_buf, sizeof(name_buf))) {
+                strncpy(mod->name, name_buf, sizeof(mod->name) - 1);
+            } else {
+                strncpy(mod->name, mod->mod_id, sizeof(mod->name) - 1);
+            }
 
-        char ver_buf[MAX_STR_LEN] = {0};
-        if (extract_json_string(manifest_json, "version", ver_buf, sizeof(ver_buf))) {
-            strncpy(mod->version, ver_buf, sizeof(mod->version) - 1);
-        } else {
-            strncpy(mod->version, "1.0.0", sizeof(mod->version) - 1);
-        }
+            char ver_buf[MAX_STR_LEN] = {0};
+            if (extract_json_string(manifest_json, "version", ver_buf, sizeof(ver_buf))) {
+                strncpy(mod->version, ver_buf, sizeof(mod->version) - 1);
+            } else {
+                strncpy(mod->version, "1.0.0", sizeof(mod->version) - 1);
+            }
 
-        parse_depends_object(manifest_json, mod);
+            parse_depends_object(manifest_json, mod);
+        }
         return true;
     }
 

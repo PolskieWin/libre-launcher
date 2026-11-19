@@ -434,8 +434,20 @@ public class MoJsonDownloader extends Downloader {
     private void processRawLibrary(DependentLibrary library) throws PresentableException {
         String path = library.name.toPath();
         String baseUrl = library.url;
-        if(baseUrl != null) baseUrl = baseUrl.replace("http://","https://");
-        else baseUrl = "https://libraries.minecraft.net/";
+        if(baseUrl != null) {
+            baseUrl = baseUrl.replace("http://","https://");
+        } else {
+            String provider = library.name != null && library.name.provider != null ? library.name.provider : "";
+            if (provider.startsWith("net.neoforged")) {
+                baseUrl = "https://maven.neoforged.net/releases/";
+            } else if (provider.startsWith("net.minecraftforge") || provider.startsWith("cpw.mods") || provider.startsWith("de.oceanlabs")) {
+                baseUrl = "https://maven.minecraftforge.net/";
+            } else if (provider.startsWith("org.spongepowered")) {
+                baseUrl = "https://repo.spongepowered.org/maven/";
+            } else {
+                baseUrl = "https://libraries.minecraft.net/";
+            }
+        }
         submitBareLibrary(path, baseUrl);
     }
 
