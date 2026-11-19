@@ -48,9 +48,11 @@ static bool is_platform_dependency(const char* dep) {
     if (strcasecmp(dep, "minecraft") == 0) return true;
     if (strcasecmp(dep, "java") == 0) return true;
     if (strcasecmp(dep, "fabricloader") == 0) return true;
+    if (strcasecmp(dep, "fabric-loader") == 0) return true;
     if (strcasecmp(dep, "fabric") == 0) return true;
     if (strcasecmp(dep, "fabric-api-base") == 0) return true;
     if (strcasecmp(dep, "quilt_loader") == 0) return true;
+    if (strcasecmp(dep, "quilt-loader") == 0) return true;
     if (strcasecmp(dep, "quilted_fabric_api") == 0) return true;
     if (strcasecmp(dep, "mixinextras") == 0) return true;
     if (strcasecmp(dep, "mixinsquared") == 0) return true;
@@ -58,6 +60,8 @@ static bool is_platform_dependency(const char* dep) {
     if (strcasecmp(dep, "fabric-language-scala") == 0) return true;
     if (strcasecmp(dep, "forge") == 0) return true;
     if (strcasecmp(dep, "neoforge") == 0) return true;
+    if (strcasecmp(dep, "neoforged") == 0) return true;
+    if (strcasecmp(dep, "neoforge_loader") == 0) return true;
     if (strcasecmp(dep, "fml") == 0) return true;
     if (strcasecmp(dep, "minecraftforge") == 0) return true;
     if (strcasecmp(dep, "net.minecraftforge") == 0) return true;

@@ -40,7 +40,9 @@ public class JavaRunner {
             javaArgList.add("-Dawt.toolkit=net.java.openjdk.cacio.ctc.CTCToolkit");
             javaArgList.add("-Djava.awt.graphicsenv=net.java.openjdk.cacio.ctc.CTCGraphicsEnvironment");
             StringBuilder cacioClasspath = createCacioClasspath();
-            javaArgList.add(cacioClasspath.toString());
+            if (cacioClasspath.length() > "-Xbootclasspath/p".length()) {
+                javaArgList.add(cacioClasspath.toString());
+            }
             return false;
         } else {
             File caciocavallo17AgentDir = new File(Tools.DIR_GAME_HOME, "caciocavallo17");
@@ -264,21 +266,40 @@ public class JavaRunner {
         boolean hasJavaAgent = false;
         while(iterator.hasNext()) {
             String arg = iterator.next();
+            if (arg == null || arg.trim().isEmpty()) {
+                iterator.remove();
+                continue;
+            }
             switch (arg) {
                 case "-p":
-                    arg = "--module-path";
+                case "--module-path":
+                    iterator.remove();
+                    if (iterator.hasNext()) {
+                        String argValue = iterator.next();
+                        iterator.remove();
+                        iterator.add("-Djdk.module.path=" + argValue);
+                    }
+                    break;
+                case "--upgrade-module-path":
+                    iterator.remove();
+                    if (iterator.hasNext()) {
+                        String argValue = iterator.next();
+                        iterator.remove();
+                        iterator.add("-Djdk.upgrade.module.path=" + argValue);
+                    }
+                    break;
                 case "--add-reads":
                 case "--add-exports":
                 case "--add-opens":
                 case "--add-modules":
                 case "--limit-modules":
-                case "--module-path":
                 case "--patch-module":
-                case "--upgrade-module-path":
                     iterator.remove();
-                    String argValue = iterator.next();
-                    iterator.remove();
-                    iterator.add(arg+"="+argValue);
+                    if (iterator.hasNext()) {
+                        String argValue = iterator.next();
+                        iterator.remove();
+                        iterator.add(arg + "=" + argValue);
+                    }
                     break;
                 case "-d32":
                 case "-d64":
@@ -289,14 +310,31 @@ public class JavaRunner {
                     iterator.remove();
                     break;
                 case "-cp":
-                    // remove classpath and the next argument (which is either garbage or pointless classpath definition)
+                case "-classpath":
+                case "--class-path":
                     iterator.remove();
-                    iterator.next();
-                    iterator.remove();
+                    if (iterator.hasNext()) {
+                        iterator.next();
+                        iterator.remove();
+                    }
                     break;
                 default:
-                    if(arg.startsWith("-Xms") || arg.startsWith("-Xmx") || arg.startsWith("-XX:ActiveProcessorCount")) iterator.remove();
-                    if(!hasJavaAgent && arg.startsWith("-javaagent:")) hasJavaAgent = true;
+                    if (arg.startsWith("--module-path=")) {
+                        iterator.remove();
+                        iterator.add("-Djdk.module.path=" + arg.substring("--module-path=".length()));
+                    } else if (arg.startsWith("-p=")) {
+                        iterator.remove();
+                        iterator.add("-Djdk.module.path=" + arg.substring("-p=".length()));
+                    } else if (arg.startsWith("--upgrade-module-path=")) {
+                        iterator.remove();
+                        iterator.add("-Djdk.upgrade.module.path=" + arg.substring("--upgrade-module-path=".length()));
+                    } else if (arg.startsWith("-cp=") || arg.startsWith("-classpath=") || arg.startsWith("--class-path=") || arg.startsWith("-Djava.class.path=")) {
+                        iterator.remove();
+                    } else if (arg.startsWith("-Xms") || arg.startsWith("-Xmx") || arg.startsWith("-XX:ActiveProcessorCount")) {
+                        iterator.remove();
+                    } else if (!hasJavaAgent && arg.startsWith("-javaagent:")) {
+                        hasJavaAgent = true;
+                    }
             }
         }
         return hasJavaAgent;

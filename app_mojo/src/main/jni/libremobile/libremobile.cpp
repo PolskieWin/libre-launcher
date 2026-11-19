@@ -204,10 +204,40 @@ const unsigned char* libre_glGetString(unsigned int name) {
         static const unsigned char s_libre_mobile_renderer[] = "Libre Mobile";
         return s_libre_mobile_renderer;
     }
-    if (s_real_glGetString) {
-        return s_real_glGetString(name);
+    if (!s_real_glGetString) {
+        void* gl_handle = dlopen("libGL.so", RTLD_NOLOAD);
+        if (!gl_handle) gl_handle = dlopen("libGL.so.1", RTLD_NOLOAD);
+        if (!gl_handle) gl_handle = dlopen("libGLESv2.so", RTLD_NOLOAD);
+        if (gl_handle) {
+            s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(gl_handle, "glGetString");
+        }
+        if (!s_real_glGetString && s_real_eglGetProcAddress) {
+            s_real_glGetString = (PFNGLGETSTRINGPROC)s_real_eglGetProcAddress("glGetString");
+        }
+        if (!s_real_glGetString) {
+            s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(RTLD_DEFAULT, "glGetString");
+        }
     }
-    return NULL;
+    if (s_real_glGetString) {
+        const unsigned char* str = s_real_glGetString(name);
+        if (str != NULL) return str;
+    }
+    // Safe fallbacks to prevent crashes in Minecraft 26.4 / LWJGL
+    if (name == 0x1F00 /* GL_VENDOR */) {
+        static const unsigned char s_fallback_vendor[] = "Libre Launcher";
+        return s_fallback_vendor;
+    } else if (name == 0x1F01 /* GL_RENDERER */) {
+        static const unsigned char s_fallback_renderer[] = "Libre Mobile";
+        return s_fallback_renderer;
+    } else if (name == 0x1F02 /* GL_VERSION */) {
+        static const unsigned char s_fallback_version[] = "4.6.0 Libre Mobile";
+        return s_fallback_version;
+    } else if (name == 0x8B8C /* GL_SHADING_LANGUAGE_VERSION */) {
+        static const unsigned char s_fallback_glsl[] = "4.60 Libre Mobile";
+        return s_fallback_glsl;
+    }
+    static const unsigned char s_empty_str[] = "";
+    return s_empty_str;
 }
 
 extern "C" __attribute__((visibility("default")))

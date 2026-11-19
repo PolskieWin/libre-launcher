@@ -64,7 +64,7 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
         envMap.put("LIBRE_MOBILE_ACTIVE", "1");
         envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
         envMap.put("MESA_GLSL_VERSION_OVERRIDE", "460");
-        envMap.put("MESA_GL_VERSION_OVERRIDE", "4.6COMPAT");
+        envMap.put("MESA_GL_VERSION_OVERRIDE", "4.6");
 
         // Universal Mobile Enhancements
         envMap.put("mesa_glthread", "true");

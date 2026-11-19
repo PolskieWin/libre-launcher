@@ -33,9 +33,9 @@ AntiFeatures:
   - NonFreeDep
 
 Builds:
-  - versionName: '2.50'
-    versionCode: 250
-    commit: v2.50
+  - versionName: '2.60'
+    versionCode: 260
+    commit: v2.60
     subdir: app_mojo
     submodules: true
     gradle:
@@ -44,5 +44,5 @@ Builds:
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: app_mojo/build.gradle|versionCode\s+(\d+)|app_mojo/build.gradle|versionName\s+["']([^"']+)["']
-CurrentVersion: '2.50'
-CurrentVersionCode: 250
+CurrentVersion: '2.60'
+CurrentVersionCode: 260

@@ -83,10 +83,16 @@ Architecture and feature roadmap for Libre Launcher.
 - **Complete Fastlane Metadata & Visual Assets**: Updated full upstream Fastlane directory structure (`fastlane/metadata/android/en-US/`), including high-resolution app icon, localized summaries, and complete feature screenshots (`1_home.jpg`, `2_settings.jpg`, `3_skinChangerMenu.jpg`, `4_homeFolders.jpg`).
 - **Unified Release Pipeline**: Synchronized release version tags and metadata recipes across GitHub and GitLab mirrors.
 
+### v2.60 — Forge/NeoForge Core Fixes, Snapshot 26.4 Stability & Multi-Flavor Hardening
+- **Forge & NeoForge Main Class Startup Fix**: Full recursive expansion of `@argfile` directives (`@unix_args.txt`) in HotSpot JNI launcher, comprehensive injection of Java 16+ module opens (`java.base/java.util.jar`, `java.lang.invoke`, `java.lang`, `java.lang.reflect`, `java.util`, `java.io`, `java.net`, `java.nio`, `sun.nio.ch`, `jdk.internal.loader`, `jdk.internal.misc`, `sun.security.action`), and automated fallback resolution for `cpw.mods.bootstraplauncher.BootstrapLauncher`.
+- **Minecraft 26.4 Snapshot Crash Resolution**: Aligned Mesa GL version override to `"4.6"` allowing OpenGL Core Profile context creation alongside compatibility profiles; implemented non-NULL fallback telemetry in `libre_glGetString` preventing JVM NPE during GLFW/LWJGL display init.
+- **Modern LWJGL 3.4+ Unsafe Artifact Substitution**: Normalized classifier parsing in `SubstitutionMap` to strip `:unsafe` and `-unsafe` suffixes, mapping modern LWJGL snapshots to bundled Android binaries.
+- **Multi-Flavor Runtime Integrity**: Fixed link path parameter order and pre-existing file pruning in `MultiRTUtils` runtime unarchiver; unblocked Java 8 and 17 execution in stripped flavor, and fortified Cacio `-Xbootclasspath/p` against empty parameter crashes on noruntime builds.
+
 ---
 
 ## Upcoming Milestones
 
-### v2.60 — Adaptive Vulkan Pipeline & Official Repository Inclusion
+### v2.70 — Adaptive Vulkan Pipeline & Official Repository Inclusion
 - **F-Droid Official Repository Inclusion**: Completion and merge of official F-Droid Merge Request `!58168`.
 - **Adaptive Vulkan Extension Optimizer**: Dynamic detection of Turnip driver extensions with real-time pipeline optimizations.

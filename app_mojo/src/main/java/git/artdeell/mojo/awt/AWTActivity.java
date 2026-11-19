@@ -221,9 +221,8 @@ public class AWTActivity extends BaseActivity implements View.OnTouchListener {
     }
 
     public Runtime selectRuntime(int javaVersion) {
-        if(javaVersion == -1) {
-            finalErrorDialog(getString(R.string.execute_jar_failed_to_read_file));
-            return null;
+        if(javaVersion <= 0) {
+            javaVersion = 17;
         }
         String nearestRuntime = MultiRTUtils.getNearestJreName(javaVersion);
         if(nearestRuntime == null) {
@@ -273,6 +272,9 @@ public class AWTActivity extends BaseActivity implements View.OnTouchListener {
             return;
         }
         Runtime selectedRuntime = selectRuntime(jarFileProperties.minJavaVersion);
+        if (selectedRuntime == null) {
+            return;
+        }
         launchJavaRuntime(selectedRuntime, javaArgs,  modFile, jarFileProperties.mainClass);
     }
 
@@ -386,6 +388,13 @@ public class AWTActivity extends BaseActivity implements View.OnTouchListener {
 
             if(javaArgs != null) {
                 javaArgList.addAll(javaArgs);
+            }
+
+            if (runtime != null && runtime.javaVersion >= 17) {
+                javaArgList.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
+                javaArgList.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
+                javaArgList.add("--add-opens=java.base/java.util=ALL-UNNAMED");
+                javaArgList.add("--add-opens=java.base/java.util.jar=ALL-UNNAMED");
             }
             
             if (LauncherPreferences.PREF_JAVA_SANDBOX && !mIsTrusted) {

@@ -47,7 +47,7 @@ public class RendererCache {
         String[] renderers;
         if (git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode()) {
             renderers = new String[] {
-                    LIBRE_MOBILE_RENDERER, MOBILEGLUES_RENDERER
+                    LIBRE_MOBILE_RENDERER, GL4ES_RENDERER, MOBILEGLUES_RENDERER
             };
         } else {
             renderers = new String[] {

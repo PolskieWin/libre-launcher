@@ -59,9 +59,6 @@ public class MultiRTUtils {
         File[] files = runtimeFolder.listFiles();
         if(files != null) for(File f : files) {
             Runtime r = read(f.getName());
-            if (git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode() && r.javaVersion < 21 && r.javaVersion != 0) {
-                continue;
-            }
             runtimes.add(r);
         }
         else throw new RuntimeException("The runtime directory does not exist");
@@ -358,11 +355,12 @@ public class MultiRTUtils {
                 git.artdeell.mojo.utils.FileUtils.ensureParentDirectory(destPath);
                 if (tarEntry.isSymbolicLink()) {
                     try {
-                        // android.system.Os
-                        // Libcore one support all Android versions
-                        Os.symlink(tarEntry.getName(), tarEntry.getLinkName());
+                        if (destPath.exists() || destPath.isFile()) {
+                            destPath.delete();
+                        }
+                        Os.symlink(tarEntry.getLinkName(), destPath.getAbsolutePath());
                     } catch (Throwable e) {
-                        Log.e("MultiRT", e.toString());
+                        Log.e("MultiRT", "Failed to create symlink: " + destPath.getAbsolutePath() + " -> " + tarEntry.getLinkName(), e);
                     }
                 } else if (tarEntry.isDirectory()) {
                     git.artdeell.mojo.utils.FileUtils.ensureDirectory(destPath);

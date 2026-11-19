@@ -157,14 +157,75 @@ static bool initializeJavaVM(java_vm_t* java_vm, JNIEnv *env, jstring* vmpath, h
 
 static bool executeMain(JNIEnv* vm_env, const char* mainClass, jobjectArray vm_appArgs) {
 #define EXCEPTION_CHECK if((*vm_env)->ExceptionCheck(vm_env)) {(*vm_env)->ExceptionDescribe(vm_env); return false;}
-    size_t classNameLen = strlen(mainClass) + 1;
-    char mainClassSlashed[classNameLen];
-    for(size_t i = 0; i < classNameLen; i++) {
-        char nameChar = mainClass[i];
-        if(nameChar == '.') nameChar = '/';
-        mainClassSlashed[i] = nameChar;
+    if(mainClass == NULL || mainClass[0] == '\0') {
+        LOGE("executeMain: mainClass is NULL or empty");
+        return false;
     }
-    jclass mainClassObj = (*vm_env)->FindClass(vm_env, mainClassSlashed); EXCEPTION_CHECK
+
+    const char* start = mainClass;
+    while(*start == ' ' || *start == '\t' || *start == '\r' || *start == '\n') start++;
+    size_t len = strlen(start);
+    while(len > 0 && (start[len - 1] == ' ' || start[len - 1] == '\t' || start[len - 1] == '\r' || start[len - 1] == '\n')) len--;
+
+    if(len >= 6 && strcmp(start + len - 6, ".class") == 0) {
+        len -= 6;
+    }
+
+    char mainClassSlashed[len + 1];
+    char mainClassDotted[len + 1];
+    for(size_t i = 0; i < len; i++) {
+        char c = start[i];
+        if(c == '.' || c == '/') {
+            mainClassSlashed[i] = '/';
+            mainClassDotted[i] = '.';
+        } else {
+            mainClassSlashed[i] = c;
+            mainClassDotted[i] = c;
+        }
+    }
+    mainClassSlashed[len] = '\0';
+    mainClassDotted[len] = '\0';
+
+    LOGI("Executing main class: %s (slashed: %s)", mainClassDotted, mainClassSlashed);
+
+    jclass mainClassObj = (*vm_env)->FindClass(vm_env, mainClassSlashed);
+    if(mainClassObj == NULL) {
+        if((*vm_env)->ExceptionCheck(vm_env)) {
+            (*vm_env)->ExceptionClear(vm_env);
+        }
+        LOGW("FindClass failed for %s, trying Thread context ClassLoader...", mainClassSlashed);
+        jclass threadCls = (*vm_env)->FindClass(vm_env, "java/lang/Thread");
+        if(threadCls != NULL) {
+            jmethodID currentThreadMid = (*vm_env)->GetStaticMethodID(vm_env, threadCls, "currentThread", "()Ljava/lang/Thread;");
+            jmethodID getContextClassLoaderMid = (*vm_env)->GetMethodID(vm_env, threadCls, "getContextClassLoader", "()Ljava/lang/ClassLoader;");
+            if(currentThreadMid != NULL && getContextClassLoaderMid != NULL) {
+                jobject currentThreadObj = (*vm_env)->CallStaticObjectMethod(vm_env, threadCls, currentThreadMid);
+                if(currentThreadObj != NULL) {
+                    jobject clObj = (*vm_env)->CallObjectMethod(vm_env, currentThreadObj, getContextClassLoaderMid);
+                    if(clObj != NULL) {
+                        jclass clCls = (*vm_env)->FindClass(vm_env, "java/lang/ClassLoader");
+                        if(clCls != NULL) {
+                            jmethodID loadClassMid = (*vm_env)->GetMethodID(vm_env, clCls, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+                            if(loadClassMid != NULL) {
+                                jstring dottedStr = (*vm_env)->NewStringUTF(vm_env, mainClassDotted);
+                                mainClassObj = (jclass)(*vm_env)->CallObjectMethod(vm_env, clObj, loadClassMid, dottedStr);
+                                (*vm_env)->DeleteLocalRef(vm_env, dottedStr);
+                            }
+                            (*vm_env)->DeleteLocalRef(vm_env, clCls);
+                        }
+                        (*vm_env)->DeleteLocalRef(vm_env, clObj);
+                    }
+                    (*vm_env)->DeleteLocalRef(vm_env, currentThreadObj);
+                }
+            }
+            (*vm_env)->DeleteLocalRef(vm_env, threadCls);
+        }
+    }
+    EXCEPTION_CHECK
+    if(mainClassObj == NULL) {
+        LOGE("Failed to find or load main class: %s", mainClassDotted);
+        return false;
+    }
     jmethodID mainMethod = (*vm_env)->GetStaticMethodID(vm_env, mainClassObj, "main", "([Ljava/lang/String;)V"); EXCEPTION_CHECK
     (*vm_env)->CallStaticVoidMethod(vm_env, mainClassObj, mainMethod, vm_appArgs); EXCEPTION_CHECK
     return true;
@@ -214,6 +275,14 @@ Java_git_artdeell_mojo_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass cl
     hookExec(vm_env);
 
     jobjectArray vm_appArgs = hstr_to_jni(vm_env, appArgs, true);
+
+    if(mainClass == NULL) {
+        (*java_vm.vm)->DetachCurrentThread(java_vm.vm);
+        (*java_vm.vm)->DestroyJavaVM(java_vm.vm);
+        unloadJavaVM(&java_vm);
+        throwException(env, STAGE_RUN_MAIN, JNI_ERR, "Main class name is NULL");
+        return JNI_FALSE;
+    }
 
     const char* mainClassNameBuf = (*env)->GetStringUTFChars(env, mainClass, NULL);
     size_t mainClassLen = strlen(mainClassNameBuf) + 1;

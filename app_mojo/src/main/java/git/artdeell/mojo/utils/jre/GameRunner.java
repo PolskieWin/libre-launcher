@@ -36,11 +36,15 @@ import git.artdeell.mojo.utils.SocUtils;
 import git.artdeell.mojo.modding.forge.ForgelikeUtils;
 import git.artdeell.mojo.value.MoJsonRule;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -137,11 +141,15 @@ public class GameRunner {
 
     private static boolean affectedByRenderDistanceIssue(JVersionList.Version version) throws ParseException {
         if(LauncherPreferences.PREF_USE_ANGLE || LauncherPreferences.PREF_USE_SYSTEM_ANGLE) return false;
+        String id = version != null && version.id != null ? version.id.toLowerCase() : "";
+        if (id.startsWith("26.") || id.startsWith("26w") || id.contains("26.4") || id.startsWith("25.") || id.startsWith("25w")) return false;
         GpuUtils.GLInfo info = GpuUtils.getGlInfo();
+        Date origDate = DateUtils.getOriginalReleaseDate(version);
+        if (origDate == null) return false;
         return info.isAdreno() &&
                 info.glesMajorVersion >= 3 &&
                 // 1.21.5 fixes the RD issue, released on march 25 2025
-                DateUtils.dateBefore(DateUtils.getOriginalReleaseDate(version), 2025, 2, 25);
+                DateUtils.dateBefore(origDate, 2025, 2, 25);
     }
 
     private static boolean checkRenderDistance(JVersionList.Version version, File gamedir) throws ParseException {
@@ -167,8 +175,15 @@ public class GameRunner {
     }
 
     private static boolean isCompatContext(JVersionList.Version version) throws Exception{
+        if (version == null) return false;
+        String id = version.id != null ? version.id.toLowerCase() : "";
+        if (id.startsWith("26.") || id.startsWith("26w") || id.contains("26.4") || id.startsWith("25.") || id.startsWith("25w") || id.startsWith("24.") || id.startsWith("24w") || id.startsWith("1.21") || id.startsWith("1.20") || id.startsWith("1.19") || id.startsWith("1.18") || id.startsWith("1.17")) {
+            return false;
+        }
+        Date origDate = DateUtils.getOriginalReleaseDate(version);
+        if (origDate == null) return false;
         // Day before the release date of 21w10a, the first OpenGL 3 Core Minecraft version
-        return DateUtils.dateBefore(DateUtils.getOriginalReleaseDate(version), 2021, 3, 9);
+        return DateUtils.dateBefore(origDate, 2021, 3, 9);
     }
 
     private static boolean showDialog(AppCompatActivity activity, int message) throws InterruptedException {
@@ -293,9 +308,29 @@ public class GameRunner {
                 }
             }
 
-            // Switch renderer to LTW when running 1.21.5
+            // Switch renderer when running modern versions incompatible with GL4ES
             if(!hasVm && !isGl4esCompatible(versionInfo) && isGl4es) {
-                switchRendererIfSupported(ltwSupported, ltw, gameRenderer, instance, activity, R.string.compat_version_not_supported);
+                RenderSpec lm = GameRenderer.getKnownRenderer(Renderers.LIBRE_MOBILE_RENDERER);
+                boolean lmSupported = lm != null && lm.compatibleDevice(activity);
+                if (lmSupported) {
+                    switchRendererIfSupported(true, lm, gameRenderer, instance, activity, 0);
+                } else if (ltwSupported) {
+                    switchRendererIfSupported(true, ltw, gameRenderer, instance, activity, 0);
+                } else {
+                    RenderSpec mg = GameRenderer.getKnownRenderer(Renderers.MOBILEGLUES_RENDERER);
+                    boolean mgSupported = mg != null && mg.compatibleDevice(activity);
+                    if (mgSupported) {
+                        switchRendererIfSupported(true, mg, gameRenderer, instance, activity, 0);
+                    } else {
+                        RenderSpec zink = GameRenderer.getKnownRenderer(Renderers.ZINK_RENDERER);
+                        boolean zinkSupported = zink != null && zink.compatibleDevice(activity);
+                        if (zinkSupported) {
+                            switchRendererIfSupported(true, zink, gameRenderer, instance, activity, 0);
+                        } else {
+                            switchRendererIfSupported(false, ltw, gameRenderer, instance, activity, R.string.compat_version_not_supported);
+                        }
+                    }
+                }
             }
         }
 
@@ -385,7 +420,8 @@ public class GameRunner {
         FileUtils.ensureDirectory(lwjglExtractDir);
         javaArgList.add("-Dorg.lwjgl.system.SharedLibraryExtractPath="+lwjglExtractDir.getAbsolutePath());
 
-        mergeMoJsonArgs(javaArgList, getMoJsonJvmArgs(versionId));
+        mergeMoJsonArgs(javaArgList, getMoJsonJvmArgs(versionId), gamedir);
+        ensureForgeNeoForgeArgs(javaArgList, versionId, runtime.javaVersion);
 
         versionInfo.arguments = null;
         versionInfo.minecraftArguments = null;
@@ -420,6 +456,16 @@ public class GameRunner {
         Log.i("GameRunner", "Running with "+ launchArgs.toString());
 
         String mainClass = versionInfo.mainClass;
+        if (mainClass == null || mainClass.trim().isEmpty()) {
+            String vId = versionId != null ? versionId.toLowerCase() : "";
+            if (vId.contains("neoforge") || vId.contains("forge") || vId.contains("fml")) {
+                mainClass = "cpw.mods.bootstraplauncher.BootstrapLauncher";
+            } else if (vId.contains("fabric")) {
+                mainClass = "net.fabricmc.loader.impl.launch.knot.KnotClient";
+            } else {
+                mainClass = "net.minecraft.client.main.Main";
+            }
+        }
 
         try {
             launchArgs = sanitizeQuickPlayArgs(launchArgs);
@@ -488,22 +534,212 @@ public class GameRunner {
 
     // Skip setting essential flags from the version JSON as we already override them
     private static boolean shouldSkipArg(String arg) {
+        if (arg == null || arg.trim().isEmpty()) return true;
         final String[] args = {
                 "-Djava.library.path=",
                 "-Djna.tmpdir=",
                 "-Dorg.lwjgl.system.SharedLibraryExtractPath=",
-                "-Dio.netty.native.workdir="
+                "-Dio.netty.native.workdir=",
+                "-Djava.class.path="
         };
         for(String s : args) {
             if(arg.startsWith(s)) return true;
         }
+        if (arg.equals("-cp") || arg.equals("-classpath") || arg.equals("--class-path")
+                || arg.startsWith("-cp=") || arg.startsWith("-classpath=") || arg.startsWith("--class-path=")
+                || arg.equals("${classpath}") || arg.startsWith("${classpath")) {
+            return true;
+        }
         return false;
     }
 
-    private static void mergeMoJsonArgs(List<String> userArgs, List<String> moJsonArgs) {
-        for(String arg : moJsonArgs) {
-            if(shouldSkipArg(arg)) continue;
+    private static File resolveArgFile(String rawPath, File gameDir) {
+        if (rawPath == null || rawPath.trim().isEmpty()) return null;
+        rawPath = rawPath.trim();
+        if ((rawPath.startsWith("\"") && rawPath.endsWith("\"")) || (rawPath.startsWith("'") && rawPath.endsWith("'"))) {
+            rawPath = rawPath.substring(1, rawPath.length() - 1);
+        }
+        File direct = new File(rawPath);
+        if (direct.exists()) return direct;
+        if (gameDir != null) {
+            File inGameDir = new File(gameDir, rawPath);
+            if (inGameDir.exists()) return inGameDir;
+        }
+        if (Tools.DIR_HOME_LIBRARY != null) {
+            File inLibDir = new File(Tools.DIR_HOME_LIBRARY, rawPath);
+            if (inLibDir.exists()) return inLibDir;
+        }
+        if (Tools.DIR_GAME_NEW != null) {
+            File inGameNew = new File(Tools.DIR_GAME_NEW, rawPath);
+            if (inGameNew.exists()) return inGameNew;
+        }
+        return direct;
+    }
+
+    private static List<String> tokenizeLine(String line) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        boolean inQuotes = false;
+        char quoteChar = 0;
+        boolean escaped = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (escaped) {
+                sb.append(c);
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (inQuotes) {
+                if (c == quoteChar) {
+                    inQuotes = false;
+                } else {
+                    sb.append(c);
+                }
+            } else if (c == '"' || c == '\'') {
+                inQuotes = true;
+                quoteChar = c;
+            } else if (Character.isWhitespace(c)) {
+                if (sb.length() > 0) {
+                    tokens.add(sb.toString());
+                    sb.setLength(0);
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        if (sb.length() > 0) {
+            tokens.add(sb.toString());
+        }
+        return tokens;
+    }
+
+    private static List<String> expandArgFile(File file, int depth, File gameDir) {
+        if (depth > 5 || !file.exists() || !file.canRead()) {
+            return Collections.emptyList();
+        }
+        List<String> result = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+                List<String> tokens = tokenizeLine(line);
+                for (String token : tokens) {
+                    if (token.startsWith("@")) {
+                        File nested = resolveArgFile(token.substring(1), gameDir);
+                        if (nested != null && nested.exists()) {
+                            result.addAll(expandArgFile(nested, depth + 1, gameDir));
+                        }
+                    } else {
+                        result.add(token);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            Log.w("GameRunner", "Failed to read argfile: " + file.getAbsolutePath(), e);
+        }
+        return result;
+    }
+
+    private static void mergeMoJsonArgs(List<String> userArgs, List<String> moJsonArgs, File gameDir) {
+        for (int i = 0; i < moJsonArgs.size(); i++) {
+            String arg = moJsonArgs.get(i);
+            if (arg == null || arg.trim().isEmpty()) continue;
+            if (arg.equals("-cp") || arg.equals("-classpath") || arg.equals("--class-path")) {
+                if (i + 1 < moJsonArgs.size()) i++;
+                continue;
+            }
+            if (shouldSkipArg(arg)) continue;
+            if (arg.startsWith("@")) {
+                File argFile = resolveArgFile(arg.substring(1).trim(), gameDir);
+                if (argFile != null && argFile.exists()) {
+                    List<String> expanded = expandArgFile(argFile, 0, gameDir);
+                    for (int j = 0; j < expanded.size(); j++) {
+                        String expArg = expanded.get(j);
+                        if (expArg.equals("-cp") || expArg.equals("-classpath") || expArg.equals("--class-path")) {
+                            if (j + 1 < expanded.size()) j++;
+                            continue;
+                        }
+                        if (!shouldSkipArg(expArg)) {
+                            userArgs.add(expArg);
+                        }
+                    }
+                    continue;
+                } else {
+                    Log.w("GameRunner", "Argfile not found or unreadable: " + arg);
+                    continue;
+                }
+            }
             userArgs.add(arg);
+        }
+    }
+
+    private static void addIfMissing(List<String> list, String arg) {
+        if (arg.startsWith("--add-opens=") || arg.startsWith("--add-exports=")) {
+            int eq1 = arg.indexOf('=');
+            int eq2 = arg.indexOf('=', eq1 + 1);
+            String targetKey = eq2 > 0 ? arg.substring(0, eq2) : arg;
+            for (String item : list) {
+                if (item.startsWith(targetKey + "=") || item.equals(arg)) {
+                    return;
+                }
+            }
+            list.add(arg);
+            return;
+        }
+        String prefix = arg.contains("=") ? arg.substring(0, arg.indexOf('=')) : arg;
+        for (String item : list) {
+            if (item.equals(arg) || item.startsWith(prefix + "=")) {
+                return;
+            }
+        }
+        list.add(arg);
+    }
+
+    private static void ensureForgeNeoForgeArgs(List<String> args, String versionId, int targetJavaVersion) {
+        boolean isForgeOrNeo = false;
+        String vId = versionId != null ? versionId.toLowerCase() : "";
+        if (vId.contains("forge") || vId.contains("neoforge") || vId.contains("fml")) {
+            isForgeOrNeo = true;
+        }
+        if (!isForgeOrNeo) {
+            for (String arg : args) {
+                if (arg.contains("cpw.mods") || arg.contains("bootstraplauncher") || arg.contains("modlauncher") || arg.contains("neoforge")) {
+                    isForgeOrNeo = true;
+                    break;
+                }
+            }
+        }
+        if (!isForgeOrNeo) return;
+
+        addIfMissing(args, "-Dterminal.ansi=true");
+        addIfMissing(args, "-Dterminal.jline=false");
+        addIfMissing(args, "-Djline.terminal=none");
+        addIfMissing(args, "-Dfml.earlyprogresswindow=false");
+        addIfMissing(args, "-Dfml.disableEarlyDisplay=true");
+        addIfMissing(args, "-Dneoforge.earlyprogresswindow=false");
+        addIfMissing(args, "-Dneoforge.disableEarlyDisplay=true");
+        addIfMissing(args, "-Dforge.earlyprogresswindow=false");
+        addIfMissing(args, "-Dforge.forceNoStencil=true");
+
+        if (targetJavaVersion >= 16) {
+            addIfMissing(args, "--add-modules=ALL-MODULE-PATH");
+            addIfMissing(args, "--add-opens=java.base/java.util.jar=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/java.lang=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/java.util=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/java.io=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/java.net=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/java.nio=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED");
+            addIfMissing(args, "--add-opens=java.base/sun.security.action=ALL-UNNAMED");
+            addIfMissing(args, "--add-exports=java.base/sun.security.action=ALL-UNNAMED");
+            addIfMissing(args, "--add-exports=jdk.naming.dns/com.sun.jndi.dns=java.naming");
         }
     }
 

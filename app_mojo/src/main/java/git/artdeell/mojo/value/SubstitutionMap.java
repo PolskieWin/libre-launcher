@@ -10,11 +10,25 @@ public class SubstitutionMap {
     public ExtraNameMap artifactMapping;
 
     public LibrarySubstitution findSubstitution(MavenName mavenName) {
+        if (mavenName == null) return null;
         switch (mavenName.provider) {
             case "org.lwjgl":
             case "org.lwjgl.lwjgl":
             case "net.java.jinput":
-                return libraries.get(mavenName);
+                LibrarySubstitution sub = libraries.get(mavenName);
+                if (sub != null) return sub;
+                if (mavenName.extra != null && mavenName.extra.contains("unsafe")) {
+                    MavenName cleanName = new MavenName(mavenName.provider, mavenName.module, mavenName.version, null);
+                    sub = libraries.get(cleanName);
+                    if (sub != null) return sub;
+                }
+                if (mavenName.version != null && mavenName.version.contains("unsafe")) {
+                    String cleanVer = mavenName.version.replace("-unsafe", "").replace(":unsafe", "");
+                    MavenName cleanName = new MavenName(mavenName.provider, mavenName.module, cleanVer, mavenName.extra);
+                    sub = libraries.get(cleanName);
+                    if (sub != null) return sub;
+                }
+                return null;
             default:
                 return null;
         }

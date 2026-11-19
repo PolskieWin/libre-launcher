@@ -39,12 +39,13 @@ Because Libre Launcher interacts with Microsoft authentication services and down
 
 ### Submission Steps:
 
-1. **Push commits & tag a release** on GitHub:
+1. **Push commits & tag a release** on GitHub and GitLab:
    ```bash
-   git tag -a v2.34 -m "Release v2.34"
-   git push origin v2.34
+   git tag -a v2.60 -m "Release v2.60"
+   git push origin v2.60
+   git push gitlab v2.60
    ```
-2. Ensure GitHub Actions successfully runs `.github/workflows/android.yml` and attaches:
+2. Ensure release artifacts are attached:
    - `LibreLauncher-release.apk`
    - `LibreLauncher-noruntime-release.apk`
    - `LibreLauncher-stripped-release.apk`
@@ -58,9 +59,9 @@ Because Libre Launcher interacts with Microsoft authentication services and down
 * Application Name: Libre Launcher
 * Package ID: org.libre.launcher
 * License: LGPL-3.0-or-later
-* Source Code: https://github.com/PolskieWin/libre-launcher
-* Releases: https://github.com/PolskieWin/libre-launcher/releases
-* Issue Tracker: https://github.com/PolskieWin/libre-launcher/issues
+* Source Code: https://gitlab.com/libre-group2305847/Libre-project (Mirror: https://github.com/PolskieWin/libre-launcher)
+* Releases: https://gitlab.com/libre-group2305847/Libre-project/-/releases (Mirror: https://github.com/PolskieWin/libre-launcher/releases)
+* Issue Tracker: https://gitlab.com/libre-group2305847/Libre-project/-/issues (Mirror: https://github.com/PolskieWin/libre-launcher/issues)
 
 ### Summary & Description
 * Summary: Fast Minecraft: Java Edition launcher with native Rust controls
@@ -79,7 +80,7 @@ Because Libre Launcher interacts with Microsoft authentication services and down
 * Advertising / Telemetry: None.
 
 ### APK & Build
-* Release APK is attached to GitHub releases: Yes (`LibreLauncher-release.apk` and `LibreLauncher-noruntime-release.apk`).
+* Release APK is attached to GitHub/GitLab releases: Yes (`LibreLauncher-release.apk`, `LibreLauncher-noruntime-release.apk`, and `LibreLauncher-stripped-release.apk`).
 ```
 
 ---
@@ -141,41 +142,9 @@ AntiFeatures:
   - NonFreeNet
 
 Builds:
-  - versionName: '2.34'
-    versionCode: 234
-    commit: v2.34
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.35'
-    versionCode: 235
-    commit: v2.35
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.36'
-    versionCode: 236
-    commit: v2.36
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.37'
-    versionCode: 237
-    commit: v2.37
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.38'
-    versionCode: 238
-    commit: v2.38
+  - versionName: '2.60'
+    versionCode: 260
+    commit: v2.60
     subdir: app_mojo
     submodules: true
     gradle:
@@ -183,6 +152,7 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '2.38'
-CurrentVersionCode: 238
+UpdateCheckData: app_mojo/build.gradle|versionCode\s+(\d+)|app_mojo/build.gradle|versionName\s+["']([^"']+)["']
+CurrentVersion: '2.60'
+CurrentVersionCode: 260
 ```
