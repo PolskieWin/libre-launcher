@@ -44,9 +44,16 @@ public class RendererCache {
     public static RendererCache getCompatibleRenderers(Context context) {
         if (sCompatibleRenderers != null) return sCompatibleRenderers;
         // This is the list that controls em all!
-        String[] renderers = {
-                LIBRE_MOBILE_RENDERER, GL4ES_RENDERER, ZINK_RENDERER, LTW_RENDERER, MOBILEGLUES_RENDERER, SFPEW_RENDERER, FREEDRENO_RENDERER, MESA_RENDERER, MESA_RENDERER_EXT, LEGACYZINK_RENDERER
-        };
+        String[] renderers;
+        if (git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode()) {
+            renderers = new String[] {
+                    LIBRE_MOBILE_RENDERER, MOBILEGLUES_RENDERER
+            };
+        } else {
+            renderers = new String[] {
+                    LIBRE_MOBILE_RENDERER, GL4ES_RENDERER, ZINK_RENDERER, LTW_RENDERER, MOBILEGLUES_RENDERER, SFPEW_RENDERER, FREEDRENO_RENDERER, MESA_RENDERER, MESA_RENDERER_EXT, LEGACYZINK_RENDERER
+            };
+        }
         ArrayList<String> rendererIds = new ArrayList<>(renderers.length);
         ArrayList<String> rendererNames = new ArrayList<>(rendererIds);
         for (String renderer : renderers) {
@@ -56,11 +63,13 @@ public class RendererCache {
             rendererIds.add(renderer);
             rendererNames.add(r.getDisplayName(context));
         }
-        for (RendererPlugin plugin : PluginManager.getRendererPlugins(context)) {
-            RenderSpec r = new PluginRenderSpec(plugin.packageName);
-            if (!r.compatibleDevice(context)) continue;
-            rendererIds.add(r.tag());
-            rendererNames.add(r.getDisplayName(context));
+        if (!git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode()) {
+            for (RendererPlugin plugin : PluginManager.getRendererPlugins(context)) {
+                RenderSpec r = new PluginRenderSpec(plugin.packageName);
+                if (!r.compatibleDevice(context)) continue;
+                rendererIds.add(r.tag());
+                rendererNames.add(r.getDisplayName(context));
+            }
         }
         rendererIds.trimToSize();
         rendererNames.trimToSize();

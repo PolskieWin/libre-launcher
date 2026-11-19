@@ -31,6 +31,9 @@ public class AsyncAssetManager {
      * @param am App context
      */
     public static void unpackRuntime(AssetManager am) {
+        if (git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode()) {
+            return;
+        }
         /* Check if JRE is included */
         String rt_version = null;
         String current_rt_version = MultiRTUtils.readInternalRuntimeVersion("Internal");

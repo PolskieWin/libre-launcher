@@ -27,7 +27,7 @@ def getAppVersionCode = {
         }
         return Integer.parseInt(stdout.toString().trim())
     } catch (Exception ignored) {
-        return 210
+        return 220
     }
 }
 
@@ -49,7 +49,7 @@ def getAppVersionName = {
         if (!tag.isEmpty()) return tag
     } catch (Exception ignored) {
     }
-    return "2.10"
+    return "2.20"
 }
 
 def getCFApiKey = {
@@ -130,11 +130,19 @@ android {
     productFlavors {
         full {
             dimension "runtime"
+            buildConfigField "boolean", "STRIPPED_MODE", "false"
         }
         
         noruntime {
             dimension "runtime"
             versionNameSuffix "-noruntime"
+            buildConfigField "boolean", "STRIPPED_MODE", "false"
+        }
+
+        stripped {
+            dimension "runtime"
+            versionNameSuffix "-stripped"
+            buildConfigField "boolean", "STRIPPED_MODE", "true"
         }
     }
 

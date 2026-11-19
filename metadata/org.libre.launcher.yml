@@ -32,9 +32,9 @@ AntiFeatures:
   - NonFreeNet
 
 Builds:
-  - versionName: '2.10'
-    versionCode: 210
-    commit: v2.10
+  - versionName: '2.20'
+    versionCode: 220
+    commit: v2.20
     subdir: app_mojo
     submodules: true
     gradle:
@@ -42,5 +42,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '2.10'
-CurrentVersionCode: 210
+CurrentVersion: '2.20'
+CurrentVersionCode: 220

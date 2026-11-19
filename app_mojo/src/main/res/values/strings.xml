@@ -594,6 +594,9 @@
     <string name="preference_theme_color_hex">Hex color</string>
     <string name="preference_theme_color_reset">Reset</string>
 
+    <string name="preference_stripped_mode_title">Stripped Launcher Mode</string>
+    <string name="preference_stripped_mode_summary">Restricts renderers to Libre Mobile and MobileGlues, and Java runtimes to Java 21 and 25</string>
+
     <!-- MG-ES (MobileGlues) renderer settings -->
     <string name="preference_renderer_mobileglues_settings">MobileGlues Renderer Settings</string>
     <string name="mg_renderer_glsl_cache">Max GLSL cache size</string>

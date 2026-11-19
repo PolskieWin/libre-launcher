@@ -149,7 +149,13 @@ public class NewJREUtil {
     }
 
     private static MathUtils.RankedValue<InternalRuntime> getNearestInternalRuntime(int targetVersion) {
-        List<InternalRuntime> runtimeList = Arrays.asList(InternalRuntime.values());
+        List<InternalRuntime> runtimeList = new java.util.ArrayList<>();
+        for (InternalRuntime r : InternalRuntime.values()) {
+            if (git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode() && r.majorVersion < 21) {
+                continue;
+            }
+            runtimeList.add(r);
+        }
         return MathUtils.findNearestPositive(targetVersion, runtimeList, (runtime)->runtime.majorVersion);
     }
 

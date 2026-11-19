@@ -32,7 +32,13 @@ public class LauncherPreferences {
     public static SharedPreferences DEFAULT_PREF;
     public static String PREF_RENDERER = "opengles2";
 
-	public static boolean PREF_IGNORE_NOTCH = false;
+    public static boolean PREF_STRIPPED_MODE = false;
+
+    public static boolean isStrippedMode() {
+        return BuildConfig.STRIPPED_MODE || PREF_STRIPPED_MODE;
+    }
+
+    public static boolean PREF_IGNORE_NOTCH = false;
 	public static float PREF_BUTTONSIZE = 100f;
 	public static float PREF_MOUSESCALE = 1f;
 	public static int PREF_LONGPRESS_TRIGGER = 300;
@@ -103,7 +109,15 @@ public class LauncherPreferences {
 
         PREF_DISABLE_CURSEFORGE_API = DEFAULT_PREF.getBoolean("disableCurseforgeApi", false);
         PREF_CURSEFORGE_API_KEY_OVERRIDE = DEFAULT_PREF.getString("curseforgeApiKeyOverride", "");
-        PREF_RENDERER = DEFAULT_PREF.getString("renderer", "opengles2");
+        PREF_STRIPPED_MODE = DEFAULT_PREF.getBoolean("stripped_mode", BuildConfig.STRIPPED_MODE);
+        PREF_RENDERER = DEFAULT_PREF.getString("renderer", isStrippedMode() ? git.artdeell.mojo.game.renderer.def.Renderers.LIBRE_MOBILE_RENDERER : "opengles2");
+        if (isStrippedMode()) {
+            if (!git.artdeell.mojo.game.renderer.def.Renderers.LIBRE_MOBILE_RENDERER.equals(PREF_RENDERER)
+                    && !git.artdeell.mojo.game.renderer.def.Renderers.MOBILEGLUES_RENDERER.equals(PREF_RENDERER)) {
+                PREF_RENDERER = git.artdeell.mojo.game.renderer.def.Renderers.LIBRE_MOBILE_RENDERER;
+                DEFAULT_PREF.edit().putString("renderer", PREF_RENDERER).apply();
+            }
+        }
         PREF_BUTTONSIZE = DEFAULT_PREF.getInt("buttonscale", 100);
         PREF_MOUSESCALE = DEFAULT_PREF.getInt("mousescale", 100)/100f;
         PREF_MOUSESPEED = ((float)DEFAULT_PREF.getInt("mousespeed",100))/100f;

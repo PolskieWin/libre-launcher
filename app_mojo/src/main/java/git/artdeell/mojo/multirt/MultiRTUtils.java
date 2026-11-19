@@ -57,7 +57,11 @@ public class MultiRTUtils {
         ArrayList<Runtime> runtimes = new ArrayList<>();
         File[] files = runtimeFolder.listFiles();
         if(files != null) for(File f : files) {
-            runtimes.add(read(f.getName()));
+            Runtime r = read(f.getName());
+            if (git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode() && r.javaVersion < 21 && r.javaVersion != 0) {
+                continue;
+            }
+            runtimes.add(r);
         }
         else throw new RuntimeException("The runtime directory does not exist");
 
@@ -69,6 +73,9 @@ public class MultiRTUtils {
         NewJREUtil.ExternalRuntime[] downloadableRuntimes = NewJREUtil.ExternalRuntime.values();
 
         for (NewJREUtil.ExternalRuntime downloadableruntime : downloadableRuntimes) {
+            if (git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode() && downloadableruntime.majorVersion < 21) {
+                continue;
+            }
             if(getExactJreName(downloadableruntime.majorVersion) == null){
                 // x86 isn't supported for JRE21+
                 if (!(Tools.DEVICE_ARCHITECTURE == Architecture.ARCH_X86 && downloadableruntime.majorVersion >= 21))

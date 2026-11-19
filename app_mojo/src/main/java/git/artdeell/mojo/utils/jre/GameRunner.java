@@ -236,6 +236,20 @@ public class GameRunner {
 
         RenderSpec renderer = gameRenderer.getCurrentRenderer();
 
+        if (git.artdeell.mojo.prefs.LauncherPreferences.isStrippedMode()) {
+            String currentId = renderer != null ? renderer.tag() : null;
+            if (!Renderers.LIBRE_MOBILE_RENDERER.equals(currentId) && !Renderers.MOBILEGLUES_RENDERER.equals(currentId)) {
+                RenderSpec target = GameRenderer.getKnownRenderer(Renderers.LIBRE_MOBILE_RENDERER);
+                if (target == null || !target.compatibleDevice(activity)) {
+                    target = GameRenderer.getKnownRenderer(Renderers.MOBILEGLUES_RENDERER);
+                }
+                if (target != null) {
+                    switchRendererIfSupported(true, target, gameRenderer, instance, activity, 0);
+                    renderer = gameRenderer.getCurrentRenderer();
+                }
+            }
+        }
+
         if(!versionInfo.disableRendererChecks) {
             boolean hasVm = hasVulkanMod(gamedir);
             // Switch renderer to GL4ES when running a compat context version on LTW
