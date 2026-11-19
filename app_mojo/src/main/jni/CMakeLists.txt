@@ -51,8 +51,7 @@ else()
 endif()
 
 set_target_properties(freetype PROPERTIES
-    VERSION ""
-    SOVERSION ""
+    NO_SONAME ON
     OUTPUT_NAME "freetype"
     DEBUG_POSTFIX ""
     ARCHIVE_OUTPUT_NAME "freetype"

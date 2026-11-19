@@ -71,7 +71,7 @@ See [ROADMAP.md](ROADMAP.md) for full version milestones and development plans t
   - Direct access to Custom Vulkan Drivers (Turnip / Freedreno) in Video Settings without arbitrary UI hiding.
   - Full renderer suite: GL4ES, Mesa Zink (OpenGL over Vulkan), OpenLTW, ANGLE, VirGL, and plugin renderers.
 - **Upcoming Stripped Flavor**:
-  - Standalone ultra-lightweight `stripped` APK flavor (~35–45 MB) containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes for GitHub Releases and IzzyOnDroid.
+  - Standalone ultra-lightweight `stripped` APK flavor (~35–45 MB) containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes for standalone installation and distribution.
 
 ---
 

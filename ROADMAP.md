@@ -75,7 +75,7 @@ Architecture and feature roadmap for Libre Launcher.
 - **Loopback Auth Emulation Removal**: Decommissioned `LocalSkinServer` Yggdrasil-compatible loopback HTTP server and stripped unofficial Ely.by authorization backend.
 - **Javaagent Security Neutralization**: Completely removed `authlib-injector.jar` and `NoBlocklist-1.0-SNAPSHOT-all.jar` JVM agent hooks, excised `NoBlocklist` submodule, and removed the server blocklist bypass toggle in Preferences to enforce Mojang's official blocked servers policy.
 - **F-Droid Build Compliance**: Removed legacy builds (`2.34` - `2.38`) containing cracked piracy vectors from F-Droid metadata recipes, eliminated `authlib-injector` from `srclibs` and `prebuild`, and flavor-gated in-app `UpdateManager` for `noruntime` package-managed builds.
-- **Ultra-Lightweight Stripped Flavor**: Dedicated standalone APK flavor containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes (~35–45 MB), tailored for GitHub Releases and IzzyOnDroid.
+- **Ultra-Lightweight Stripped Flavor**: Dedicated standalone APK flavor containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes (~35–45 MB), tailored for standalone distribution and community mirrors.
 
 ### v2.50 — F-Droid Compliance, Offline Noruntime Flavor & Version Metadata Alignment
 - **Strict F-Droid Offline Build Compliance**: Gated dynamic JitPack JAR dependency retrieval during `:app_mojo` configuration for `noruntime` flavor, enforcing 100% compilation from source libraries (`caciocavallo`, `pro-grade`, `MobileGlues`, `mesa`, `gl4es`, `freetype`) in F-Droid's isolated offline environment.
