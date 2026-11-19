@@ -77,10 +77,16 @@ Architecture and feature roadmap for Libre Launcher.
 - **F-Droid Build Compliance**: Removed legacy builds (`2.34` - `2.38`) containing cracked piracy vectors from F-Droid metadata recipes, eliminated `authlib-injector` from `srclibs` and `prebuild`, and flavor-gated in-app `UpdateManager` for `noruntime` package-managed builds.
 - **Ultra-Lightweight Stripped Flavor**: Dedicated standalone APK flavor containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes (~35–45 MB), tailored for GitHub Releases and IzzyOnDroid.
 
+### v2.50 — F-Droid Compliance, Offline Noruntime Flavor & Version Metadata Alignment
+- **Strict F-Droid Offline Build Compliance**: Gated dynamic JitPack JAR dependency retrieval during `:app_mojo` configuration for `noruntime` flavor, enforcing 100% compilation from source libraries (`caciocavallo`, `pro-grade`, `MobileGlues`, `mesa`, `gl4es`, `freetype`) in F-Droid's isolated offline environment.
+- **Exact Version Name Identity**: Removed `-noruntime` versionNameSuffix on the `noruntime` build flavor, guaranteeing bit-for-bit package metadata alignment (`versionName: '2.50'`, `versionCode: 250`) with F-Droid build manifests.
+- **Complete Fastlane Metadata & Visual Assets**: Updated full upstream Fastlane directory structure (`fastlane/metadata/android/en-US/`), including high-resolution app icon, localized summaries, and complete feature screenshots (`1_home.jpg`, `2_settings.jpg`, `3_skinChangerMenu.jpg`, `4_homeFolders.jpg`).
+- **Unified Release Pipeline**: Synchronized release version tags and metadata recipes across GitHub and GitLab mirrors.
+
 ---
 
 ## Upcoming Milestones
 
-### v2.50 — Adaptive Vulkan Pipeline & Official Repository Inclusion
+### v2.60 — Adaptive Vulkan Pipeline & Official Repository Inclusion
 - **F-Droid Official Repository Inclusion**: Completion and merge of official F-Droid Merge Request `!58168`.
 - **Adaptive Vulkan Extension Optimizer**: Dynamic detection of Turnip driver extensions with real-time pipeline optimizations.

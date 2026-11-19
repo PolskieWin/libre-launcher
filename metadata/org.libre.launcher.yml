@@ -35,7 +35,7 @@ AntiFeatures:
 Builds:
   - versionName: '2.50'
     versionCode: 250
-    commit: 3994d64400d3a80206b3e0bb0d9fbb2f50b7a037
+    commit: v2.50
     subdir: app_mojo
     submodules: true
     gradle:
