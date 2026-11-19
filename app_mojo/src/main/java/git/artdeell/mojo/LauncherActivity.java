@@ -324,6 +324,8 @@ public class LauncherActivity extends BaseActivity {
         checkNotificationPermission();
         if(LauncherPreferences.PREF_MIGRATION_NOTICE)
             MojoApplication.sExecutorService.submit(this::checkPreviousInstalls);
+        if(LauncherPreferences.PREF_CHECK_UPDATES)
+            git.artdeell.mojo.update.UpdateManager.checkForUpdate(this, false);
 
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         ProgressKeeper.addTaskCountListener(mDoubleLaunchPreventionListener);
@@ -377,6 +379,7 @@ public class LauncherActivity extends BaseActivity {
         super.onResume();
         ContextExecutor.setActivity(this);
         InstanceInstaller.postInstallCheck(this);
+        git.artdeell.mojo.update.UpdateManager.checkPendingInstall(this);
         updateSettingsButton();
     }
 

@@ -53,7 +53,18 @@ public class LauncherPreferenceMiscellaneousFragment extends LauncherPreferenceF
         });
         setupCacheClearPreference();
         setupMicrophoneRequestPreference();
+        setupUpdateCheckPreference();
         updateVisibility();
+    }
+
+    private void setupUpdateCheckPreference() {
+        Preference updateCheckPreference = findPreference("checkUpdatesNow");
+        if (updateCheckPreference != null) {
+            updateCheckPreference.setOnPreferenceClickListener(preference -> {
+                git.artdeell.mojo.update.UpdateManager.checkForUpdate(getActivity(), true);
+                return true;
+            });
+        }
     }
 
     private void updateVisibility(){

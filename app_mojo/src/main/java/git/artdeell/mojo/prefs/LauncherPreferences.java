@@ -89,6 +89,7 @@ public class LauncherPreferences {
     public static short PREF_BUTTON_TRANSPARENCY = 100;
     public static boolean PREF_UBWC_WORKAROUND = false;
     public static boolean PREF_DISABLE_BLOCKLIST = false;
+    public static boolean PREF_CHECK_UPDATES = true;
     public static String PREF_VULKAN_DRIVER = null;
 
     /** Experimental: when true, CurseForge is left out of content searches and Modrinth is used alone,
@@ -161,6 +162,7 @@ public class LauncherPreferences {
         PREF_BUTTON_TRANSPARENCY = (short) DEFAULT_PREF.getInt("buttonTransparency", 100);
         PREF_UBWC_WORKAROUND = DEFAULT_PREF.getBoolean("ubwcWorkaround", false);
         PREF_DISABLE_BLOCKLIST = DEFAULT_PREF.getBoolean("disableServerBlocklist", true);
+        PREF_CHECK_UPDATES = DEFAULT_PREF.getBoolean("checkUpdates", true);
         PREF_VULKAN_DRIVER = DEFAULT_PREF.getString("customVulkanDriver", null);
 
         String argLwjglLibname = "-Dorg.lwjgl.opengl.libname=";

@@ -46,6 +46,12 @@ Architecture and feature roadmap for Libre Launcher.
 - **New Custom Libre Controlmap**: Replaced legacy 2021 Pojav default layout with modern custom Libre Launcher controlmap with zero legacy references.
 - **F3 SoC Hardware Emulation**: Full SoC chipset reporting (Qualcomm Snapdragon, MediaTek Dimensity, Google Tensor, Samsung Exynos) into Minecraft F3 screen.
 
+### v2.35 — Integrated Auto-Updater & In-App Release Installer
+- **Automatic Update Checking**: Seamless background check querying GitHub Releases API on startup (`PolskieWin/libre-launcher`) with session caching and manual check support in Settings -> Miscellaneous.
+- **Material 3 Update Dialog**: Interactive dialog displaying the new version, current version, and formatted release changelog with one-tap "Update", "GitHub", or "Later" actions.
+- **In-App Download & Streamed Progress**: Direct HTTP asset downloading with 30x redirect following, real-time download progress tracking (MB downloaded / total size and percentage), and determinate progress bar.
+- **Secure FileProvider APK Installation**: Seamless transition to the Android system package installer via `androidx.core.content.FileProvider` and `REQUEST_INSTALL_PACKAGES` permission management with unknown-sources recovery.
+
 ---
 
 ## Upcoming Milestones
