@@ -211,18 +211,24 @@ public class JREUtils {
         if (!src.exists() || !targetDir.exists()) return;
         File target = new File(targetDir, src.getName());
         try {
-            try {
-                Files.deleteIfExists(target.toPath());
-            } catch (Throwable ignored) {
-                target.delete();
+            if (target.exists()) {
+                if (!Files.isSymbolicLink(target.toPath()) && target.length() == src.length()) {
+                    return;
+                }
+                try {
+                    Files.deleteIfExists(target.toPath());
+                } catch (Throwable ignored) {
+                    target.delete();
+                }
+            } else if (Files.isSymbolicLink(target.toPath())) {
+                try {
+                    Files.deleteIfExists(target.toPath());
+                } catch (Throwable ignored) {
+                    target.delete();
+                }
             }
-            try {
-                Os.symlink(src.getAbsolutePath(), target.getAbsolutePath());
-                Log.i("JREUtils", "Symlinked " + src.getName() + " to " + target.getAbsolutePath());
-            } catch (Throwable t) {
-                copyFile(src, target);
-                Log.i("JREUtils", "Copied " + src.getName() + " to " + target.getAbsolutePath());
-            }
+            copyFile(src, target);
+            Log.i("JREUtils", "Copied " + src.getName() + " to " + target.getAbsolutePath());
             try {
                 Os.chmod(target.getAbsolutePath(), 0755);
             } catch (Throwable ignored) {}

@@ -34,6 +34,8 @@ target_link_libraries(SDL3-shared PRIVATE mojoexec)
 
 # ------ FreeType ------
 
+set(DISABLE_FORCE_DEBUG_POSTFIX ON CACHE BOOL "" FORCE)
+set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "" FORCE)
 set(FT_DISABLE_ZLIB     ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_BZIP2    ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_PNG      ON CACHE BOOL "" FORCE)
@@ -42,8 +44,22 @@ set(FT_DISABLE_BROTLI   ON CACHE BOOL "" FORCE)
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/freetype/CMakeLists.txt")
     add_subdirectory(freetype)
-    set_target_properties(freetype PROPERTIES VERSION "" SOVERSION "" OUTPUT_NAME "freetype")
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../../../freetype/CMakeLists.txt")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../../freetype" freetype_build)
+else()
+    message(FATAL_ERROR "FreeType source directory not found! Ensure git submodules are checked out.")
 endif()
+
+set_target_properties(freetype PROPERTIES
+    VERSION ""
+    SOVERSION ""
+    OUTPUT_NAME "freetype"
+    DEBUG_POSTFIX ""
+    ARCHIVE_OUTPUT_NAME "freetype"
+    LIBRARY_OUTPUT_NAME "freetype"
+    ARCHIVE_OUTPUT_NAME_DEBUG "freetype"
+    LIBRARY_OUTPUT_NAME_DEBUG "freetype"
+)
 
 # ----------------------
 
@@ -70,7 +86,7 @@ add_library(mojort SHARED
 )
 
 target_include_directories(mojort PRIVATE .)
-target_link_libraries(mojort PRIVATE log mojoexec z)
+target_link_libraries(mojort PRIVATE log mojoexec z freetype)
 
 add_library(mojoawt SHARED
 		awt/awt.c

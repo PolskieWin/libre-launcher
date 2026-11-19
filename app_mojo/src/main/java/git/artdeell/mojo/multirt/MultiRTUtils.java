@@ -143,8 +143,13 @@ public class MultiRTUtils {
         if (ftIn.exists() && (!ftOut.exists() || ftIn.length() != ftOut.length())) {
             if(!ftIn.renameTo(ftOut)) throw new IOException("Failed to rename freetype");
         }
-        if (NATIVE_LIB_DIR != null) {
-            File nativeFt = new File(NATIVE_LIB_DIR, "libfreetype.so");
+        String nativeDir = NATIVE_LIB_DIR;
+        if (nativeDir == null && Tools.APP_CONTEXT != null && Tools.APP_CONTEXT.getApplicationInfo() != null) {
+            nativeDir = Tools.APP_CONTEXT.getApplicationInfo().nativeLibraryDir;
+            NATIVE_LIB_DIR = nativeDir;
+        }
+        if (nativeDir != null) {
+            File nativeFt = new File(nativeDir, "libfreetype.so");
             if (nativeFt.exists() && !ftOut.exists()) {
                 copyDummyNativeLib("libfreetype.so", libDir);
             }
@@ -254,12 +259,30 @@ public class MultiRTUtils {
 
     @SuppressWarnings("SameParameterValue")
     private static void copyDummyNativeLib(String name, File dest) throws IOException {
+        String nativeDir = NATIVE_LIB_DIR;
+        if (nativeDir == null && Tools.APP_CONTEXT != null && Tools.APP_CONTEXT.getApplicationInfo() != null) {
+            nativeDir = Tools.APP_CONTEXT.getApplicationInfo().nativeLibraryDir;
+            NATIVE_LIB_DIR = nativeDir;
+        }
+        if (nativeDir == null) return;
+        File src = new File(nativeDir, name);
+        if (!src.exists()) return;
         File fileLib = new File(dest, name);
-        FileInputStream is = new FileInputStream(new File(NATIVE_LIB_DIR, name));
-        FileOutputStream os = new FileOutputStream(fileLib);
-        IOUtils.copy(is, os);
-        is.close();
-        os.close();
+        if (fileLib.exists() && fileLib.length() == src.length() && !java.nio.file.Files.isSymbolicLink(fileLib.toPath())) {
+            return;
+        }
+        try {
+            java.nio.file.Files.deleteIfExists(fileLib.toPath());
+        } catch (Throwable ignored) {
+            fileLib.delete();
+        }
+        try (InputStream is = new FileInputStream(src);
+             OutputStream os = new FileOutputStream(fileLib)) {
+            IOUtils.copy(is, os);
+        }
+        try {
+            android.system.Os.chmod(fileLib.getAbsolutePath(), 0755);
+        } catch (Throwable ignored) {}
     }
 
     private static void installRuntimeNamedNoRemove(InputStream runtimeInputStream, File dest) throws IOException {
