@@ -32,6 +32,18 @@ set(SDL3_MAINPROJECT OFF CACHE BOOL "" FORCE)
 add_subdirectory(sdl)
 target_link_libraries(SDL3-shared PRIVATE mojoexec)
 
+# ------ FreeType ------
+
+set(FT_DISABLE_ZLIB     ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_BZIP2    ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_PNG      ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_BROTLI   ON CACHE BOOL "" FORCE)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/freetype/CMakeLists.txt")
+    add_subdirectory(freetype)
+endif()
+
 # ----------------------
 
 project("MojoLauncher")

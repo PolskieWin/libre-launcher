@@ -41,8 +41,8 @@ Because Libre Launcher interacts with Microsoft authentication services and down
 
 1. **Push commits & tag a release** on GitHub:
    ```bash
-   git tag -a v2.20 -m "Release v2.20"
-   git push origin v2.20
+   git tag -a v2.11 -m "Release v2.11"
+   git push origin v2.11
    ```
 2. Ensure GitHub Actions successfully runs `.github/workflows/android.yml` and attaches:
    - `LibreLauncher-release.apk`
@@ -140,9 +140,9 @@ AntiFeatures:
   - NonFreeNet
 
 Builds:
-  - versionName: '2.20'
-    versionCode: 220
-    commit: v2.20
+  - versionName: '2.11'
+    versionCode: 211
+    commit: v2.11
     subdir: app_mojo
     submodules: true
     gradle:
@@ -150,6 +150,6 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '2.20'
-CurrentVersionCode: 220
+CurrentVersion: '2.11'
+CurrentVersionCode: 211
 ```
