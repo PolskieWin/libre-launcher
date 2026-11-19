@@ -24,6 +24,7 @@ static int s_head = 0;
 static int s_count = 0;
 static uint64_t s_total_frames = 0;
 static uint64_t s_last_frame_time_ns = 0;
+static uint64_t s_last_native_present_ns = 0;
 
 static volatile bool s_is_afk = false;
 static volatile int s_target_fps = 5; // Default 5 FPS (200ms frame budget)
@@ -54,6 +55,7 @@ void libre_on_present_swap(void) {
     uint64_t now_ns = get_current_time_ns();
     uint64_t prev_ns = s_last_frame_time_ns;
     s_last_frame_time_ns = now_ns;
+    s_last_native_present_ns = now_ns;
 
     float delta_ms = 16.66f;
     if (prev_ns > 0 && now_ns > prev_ns) {
@@ -148,13 +150,33 @@ static void read_memory_info(uint32_t *out_used_mb, uint32_t *out_total_mb) {
     *out_used_mb = 0;
     *out_total_mb = 0;
 
+    long page_kb = sysconf(_SC_PAGESIZE) / 1024;
+    if (page_kb <= 0) page_kb = 4;
+
     FILE *f_statm = fopen("/proc/self/statm", "r");
     if (f_statm) {
         unsigned long size, resident, share, text, lib, data, dt;
         if (fscanf(f_statm, "%lu %lu %lu %lu %lu %lu %lu", &size, &resident, &share, &text, &lib, &data, &dt) >= 2) {
-            *out_used_mb = (uint32_t)((resident * 4) / 1024);
+            *out_used_mb = (uint32_t)((resident * page_kb) / 1024);
         }
         fclose(f_statm);
+    }
+
+    if (*out_used_mb == 0) {
+        FILE *f_status = fopen("/proc/self/status", "r");
+        if (f_status) {
+            char line[128];
+            while (fgets(line, sizeof(line), f_status)) {
+                if (strncmp(line, "VmRSS:", 6) == 0) {
+                    unsigned long rss_kb = 0;
+                    if (sscanf(line + 6, "%lu", &rss_kb) == 1) {
+                        *out_used_mb = (uint32_t)(rss_kb / 1024);
+                    }
+                    break;
+                }
+            }
+            fclose(f_status);
+        }
     }
 
     FILE *f_mem = fopen("/proc/meminfo", "r");
@@ -178,6 +200,12 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeRecordFrame(
         JNIEnv *env,
         jclass clazz,
         jfloat delta_ms) {
+    uint64_t now_ns = get_current_time_ns();
+    // If native present swap was invoked within 250ms, defer to native present to avoid double counting
+    if (s_last_native_present_ns > 0 && (now_ns - s_last_native_present_ns) < 250000000ULL) {
+        return;
+    }
+
     if (delta_ms <= 0.001f) delta_ms = 0.001f;
     if (delta_ms > 1000.0f) delta_ms = 1000.0f;
 
@@ -202,48 +230,55 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeComputeTelemetryPacked(
         JNIEnv *env,
         jclass clazz,
         jlongArray out_array) {
-    if (s_count == 0 || out_array == NULL) return 0;
+    if (out_array == NULL) return 0;
 
-    float sum = 0.0f;
-    float min_val = 100000.0f;
-    float max_val = 0.0f;
-    float sorted[TELEMETRY_WINDOW];
+    float fps = 0.0f;
+    float one_percent_low = 0.0f;
+    float latest_delta = 0.0f;
+    float jitter_ms = 0.0f;
 
-    for (int i = 0; i < s_count; i++) {
-        float val = s_frame_times[i];
-        sum += val;
-        if (val < min_val) min_val = val;
-        if (val > max_val) max_val = val;
-        sorted[i] = val;
-    }
+    if (s_count > 0) {
+        float sum = 0.0f;
+        float min_val = 100000.0f;
+        float max_val = 0.0f;
+        float sorted[TELEMETRY_WINDOW];
 
-    float avg_delta = sum / (float)s_count;
-    float fps = avg_delta > 0.0f ? (1000.0f / avg_delta) : 0.0f;
-
-    // Frame Jitter calculation (Mean Absolute Deviation in ms)
-    float jitter_sum = 0.0f;
-    for (int i = 0; i < s_count; i++) {
-        jitter_sum += fabsf(s_frame_times[i] - avg_delta);
-    }
-    float jitter_ms = jitter_sum / (float)s_count;
-
-    // 1% Low FPS (99th percentile worst frame time)
-    for (int i = 1; i < s_count; i++) {
-        int j = i;
-        while (j > 0 && sorted[j - 1] > sorted[j]) {
-            float tmp = sorted[j];
-            sorted[j] = sorted[j - 1];
-            sorted[j - 1] = tmp;
-            j--;
+        for (int i = 0; i < s_count; i++) {
+            float val = s_frame_times[i];
+            sum += val;
+            if (val < min_val) min_val = val;
+            if (val > max_val) max_val = val;
+            sorted[i] = val;
         }
-    }
-    int p99_idx = (int)((float)s_count * 0.99f);
-    if (p99_idx >= s_count) p99_idx = s_count - 1;
-    float p99_delta = sorted[p99_idx];
-    float one_percent_low = p99_delta > 0.0f ? (1000.0f / p99_delta) : 0.0f;
 
-    int latest_idx = (s_head + TELEMETRY_WINDOW - 1) % TELEMETRY_WINDOW;
-    float latest_delta = s_frame_times[latest_idx];
+        float avg_delta = sum / (float)s_count;
+        fps = avg_delta > 0.0f ? (1000.0f / avg_delta) : 0.0f;
+
+        // Frame Jitter calculation (Mean Absolute Deviation in ms)
+        float jitter_sum = 0.0f;
+        for (int i = 0; i < s_count; i++) {
+            jitter_sum += fabsf(s_frame_times[i] - avg_delta);
+        }
+        jitter_ms = jitter_sum / (float)s_count;
+
+        // 1% Low FPS (99th percentile worst frame time)
+        for (int i = 1; i < s_count; i++) {
+            int j = i;
+            while (j > 0 && sorted[j - 1] > sorted[j]) {
+                float tmp = sorted[j];
+                sorted[j] = sorted[j - 1];
+                sorted[j - 1] = tmp;
+                j--;
+            }
+        }
+        int p99_idx = (int)((float)s_count * 0.99f);
+        if (p99_idx >= s_count) p99_idx = s_count - 1;
+        float p99_delta = sorted[p99_idx];
+        one_percent_low = p99_delta > 0.0f ? (1000.0f / p99_delta) : 0.0f;
+
+        int latest_idx = (s_head + TELEMETRY_WINDOW - 1) % TELEMETRY_WINDOW;
+        latest_delta = s_frame_times[latest_idx];
+    }
 
     uint32_t ram_used = 0, ram_total = 0;
     read_memory_info(&ram_used, &ram_total);

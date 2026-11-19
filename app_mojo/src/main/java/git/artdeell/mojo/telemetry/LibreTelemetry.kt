@@ -58,12 +58,18 @@ object LibreTelemetry {
         try {
             val count = nativeComputeTelemetryPacked(packedBuffer)
             if (count >= 8) {
+                val ramMb = if (packedBuffer[4] > 0) {
+                    packedBuffer[4].toInt()
+                } else {
+                    val rt = Runtime.getRuntime()
+                    ((rt.totalMemory() - rt.freeMemory()) / (1024 * 1024)).toInt()
+                }
                 return TelemetrySnapshot(
                     fps = packedBuffer[0] / 100f,
                     onePercentLow = packedBuffer[1] / 100f,
                     frameTimeMs = packedBuffer[2] / 100f,
                     jitterMs = packedBuffer[3] / 100f,
-                    ramUsedMb = packedBuffer[4].toInt(),
+                    ramUsedMb = ramMb,
                     thermalHeadroom = packedBuffer[5] / 100f,
                     isHibernate = packedBuffer[6] == 1L,
                     frameCount = packedBuffer[7]

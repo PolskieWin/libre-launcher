@@ -52,6 +52,12 @@ Architecture and feature roadmap for Libre Launcher.
 - **In-App Download & Streamed Progress**: Direct HTTP asset downloading with 30x redirect following, real-time download progress tracking (MB downloaded / total size and percentage), and determinate progress bar.
 - **Secure FileProvider APK Installation**: Seamless transition to the Android system package installer via `androidx.core.content.FileProvider` and `REQUEST_INSTALL_PACKAGES` permission management with unknown-sources recovery.
 
+### v2.36 — Unlocked Telemetry & Dual-Path Real-Time Frame Metrics
+- **Telemetry Frame Pacing Restoration**: Restored `Choreographer.FrameCallback` on `TelemetryOverlayView` to guarantee frame pacing up to 120Hz/144Hz.
+- **Dual-Path Telemetry Pipeline**: Integrated native present precedence with 250ms monotonic timeout window, enabling automatic fallback to VSYNC display frame pacing when native EGL swap buffers is not directly linked.
+- **Dynamic 16KB Page-Size RAM Metrics**: Upgraded memory reader to dynamically query `sysconf(_SC_PAGESIZE)` and inspect `/proc/self/status` (`VmRSS`) with JVM runtime memory fallback.
+- **Immediate Telemetry Snapshot Dispatch**: Return populated telemetry buffers immediately upon activation instead of returning empty zero values before 120 frames have accumulated.
+
 ---
 
 ## Upcoming Milestones

@@ -27,7 +27,7 @@ def getAppVersionCode = {
         }
         return Integer.parseInt(stdout.toString().trim())
     } catch (Exception ignored) {
-        return 235
+        return 236
     }
 }
 
@@ -49,7 +49,7 @@ def getAppVersionName = {
         if (!tag.isEmpty()) return tag
     } catch (Exception ignored) {
     }
-    return "2.35"
+    return "2.36"
 }
 
 def getCFApiKey = {

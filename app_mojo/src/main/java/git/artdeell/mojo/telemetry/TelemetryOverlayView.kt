@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
+import android.view.Choreographer
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -20,7 +21,7 @@ class TelemetryOverlayView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : LinearLayout(context, attrs, defStyleAttr) {
+) : LinearLayout(context, attrs, defStyleAttr), Choreographer.FrameCallback {
 
     private val tvDragHandle: TextView
     private val tvMetrics: TextView
@@ -29,6 +30,7 @@ class TelemetryOverlayView @JvmOverloads constructor(
     var onHibernateToggle: (() -> Unit)? = null
 
     private var isRunning = false
+    private var lastFrameTimeNanos: Long = 0
 
     // Touch Dragging state
     private var dX = 0f
@@ -152,17 +154,37 @@ class TelemetryOverlayView @JvmOverloads constructor(
         }
     }
 
+    override fun doFrame(frameTimeNanos: Long) {
+        if (!isRunning) return
+        if (lastFrameTimeNanos > 0) {
+            val deltaMs = (frameTimeNanos - lastFrameTimeNanos) / 1_000_000f
+            if (deltaMs in 0.1f..1000f) {
+                LibreTelemetry.nativeRecordFrame(deltaMs)
+            }
+        }
+        lastFrameTimeNanos = frameTimeNanos
+        Choreographer.getInstance().postFrameCallback(this)
+    }
+
     fun start() {
         if (isRunning) return
         isRunning = true
         visibility = View.VISIBLE
+        lastFrameTimeNanos = 0
+        Choreographer.getInstance().postFrameCallback(this)
         post(pollRunnable)
     }
 
     fun stop() {
         isRunning = false
         visibility = View.GONE
+        Choreographer.getInstance().removeFrameCallback(this)
         removeCallbacks(pollRunnable)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        stop()
     }
 
     fun updateMetrics() {
@@ -189,11 +211,18 @@ class TelemetryOverlayView @JvmOverloads constructor(
             "NORM"
         }
 
+        val fpsText = if (snap.fps > 0f) {
+            String.format(Locale.ROOT, "%.1f FPS | 1%% %.1f", snap.fps, snap.onePercentLow)
+        } else {
+            "--.- FPS | 1% --.-"
+        }
+        val ramText = "${snap.ramUsedMb}MB"
+
         if (snap.isHibernate) {
             tvMetrics.text = String.format(
                 Locale.ROOT,
-                "%.1f FPS | 1%% %.1f | %dMB | %s [AFK 5 FPS]",
-                snap.fps, snap.onePercentLow, snap.ramUsedMb, thermalStr
+                "%s | %s | %s [AFK 5 FPS]",
+                fpsText, ramText, thermalStr
             )
             btnHibernate.text = " WAKE "
             btnHibernate.setTextColor(Color.parseColor("#F7E2D3"))
@@ -204,8 +233,8 @@ class TelemetryOverlayView @JvmOverloads constructor(
         } else {
             tvMetrics.text = String.format(
                 Locale.ROOT,
-                "%.1f FPS | 1%% %.1f | %dMB | %s",
-                snap.fps, snap.onePercentLow, snap.ramUsedMb, thermalStr
+                "%s | %s | %s",
+                fpsText, ramText, thermalStr
             )
             btnHibernate.text = " AFK "
             btnHibernate.setTextColor(Color.parseColor("#F2BC90"))
