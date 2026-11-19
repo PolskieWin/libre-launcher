@@ -162,9 +162,18 @@ public class ControlButton extends TextView implements ControlInterface {
             case MotionEvent.ACTION_CANCEL: // 3
             case MotionEvent.ACTION_POINTER_UP: // 6
                 if(properties.passThruEnabled){
-                    //Send the event to be taken as a mouse action
+                    // Send the event translated to surface coordinates
                     View gameSurface = getControlLayoutParent().getGameSurface();
-                    if(gameSurface != null) gameSurface.dispatchTouchEvent(event);
+                    if(gameSurface != null) {
+                        MotionEvent translated = MotionEvent.obtain(event);
+                        int[] btnLoc = new int[2];
+                        int[] surfLoc = new int[2];
+                        getLocationOnScreen(btnLoc);
+                        gameSurface.getLocationOnScreen(surfLoc);
+                        translated.offsetLocation(btnLoc[0] - surfLoc[0], btnLoc[1] - surfLoc[1]);
+                        gameSurface.dispatchTouchEvent(translated);
+                        translated.recycle();
+                    }
                 }
                 break;
         }
@@ -184,8 +193,10 @@ public class ControlButton extends TextView implements ControlInterface {
             case MotionEvent.ACTION_POINTER_UP: // 6
                 handleReleased();
                 break;
+            case MotionEvent.ACTION_MOVE:
+                break;
             default:
-                return false;
+                break;
         }
 
         return true;

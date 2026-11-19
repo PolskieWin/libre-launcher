@@ -4,6 +4,7 @@ import static git.artdeell.mojo.CallbackBridge.windowHeight;
 import static git.artdeell.mojo.CallbackBridge.windowWidth;
 
 import android.content.Context;
+import android.os.Build;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.TextureView;
@@ -42,7 +43,13 @@ public class TextureViewSurfaceProvider implements SurfaceProvider {
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
             if(windowWidth != 0 && windowHeight != 0)
                 surfaceTexture.setDefaultBufferSize(windowWidth, windowHeight);
-            mCallback.onSurfaceAvailable(new Surface(surfaceTexture));
+            Surface surface = new Surface(surfaceTexture);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && surface.isValid()) {
+                try {
+                    surface.setFrameRate(0f, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT);
+                } catch (Throwable ignored) {}
+            }
+            mCallback.onSurfaceAvailable(surface);
         }
 
         @Override

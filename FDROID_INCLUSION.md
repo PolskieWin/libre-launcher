@@ -41,8 +41,8 @@ Because Libre Launcher interacts with Microsoft authentication services and down
 
 1. **Push commits & tag a release** on GitHub:
    ```bash
-   git tag -a v2.32 -m "Release v2.32"
-   git push origin v2.32
+   git tag -a v2.33 -m "Release v2.33"
+   git push origin v2.33
    ```
 2. Ensure GitHub Actions successfully runs `.github/workflows/android.yml` and attaches:
    - `LibreLauncher-release.apk`

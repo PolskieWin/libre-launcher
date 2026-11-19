@@ -63,8 +63,20 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
     private TouchEventProcessor mCurrentTouchProcessor = mInGUIProcessor;
     private AndroidPointerCapture mPointerCapture;
     private boolean mLastGrabState = false;
+    private static int sCurrentViewWidth = 0;
+    private static int sCurrentViewHeight = 0;
+    private int mLastWidth = 0;
+    private int mLastHeight = 0;
     double cursorRatioX = 0;
     double cursorRatioY = 0;
+
+    public static int getCurrentViewWidth() {
+        return sCurrentViewWidth;
+    }
+
+    public static int getCurrentViewHeight() {
+        return sCurrentViewHeight;
+    }
 
     public GameView(Context context) {
         this(context, null);
@@ -128,10 +140,20 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
             // Mouse found
             // Avoid going through the JNI each time.
             if(Platform.isGrabbing()) return false;
-            Platform.cursorX = e.getX(i) / cursorRatioX;
-            Platform.cursorY = e.getY(i) / cursorRatioY;
+            float vw = getWidth();
+            float vh = getHeight();
+            if (vw > 0 && vh > 0 && windowWidth > 0 && windowHeight > 0) {
+                Platform.cursorX = (e.getX(i) / vw) * windowWidth;
+                Platform.cursorY = (e.getY(i) / vh) * windowHeight;
+            } else if (cursorRatioX > 0 && cursorRatioY > 0) {
+                Platform.cursorX = e.getX(i) / cursorRatioX;
+                Platform.cursorY = e.getY(i) / cursorRatioY;
+            }
             Platform.sendCursorPosition();
             return true; //mouse event handled successfully
+        }
+        if (git.artdeell.mojo.input.TouchBridge.isEnabled()) {
+            git.artdeell.mojo.input.TouchBridge.pushMotionEvent(e, getWidth(), getHeight(), windowWidth, windowHeight);
         }
         if (mIngameProcessor == null || mInGUIProcessor == null) return true;
         boolean ret = mCurrentTouchProcessor.processTouchEvent(e);
@@ -184,8 +206,15 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
 
         switch(event.getActionMasked()) {
             case MotionEvent.ACTION_HOVER_MOVE:
-                Platform.cursorX = event.getX(mouseCursorIndex) / cursorRatioX;
-                Platform.cursorY = event.getY(mouseCursorIndex) / cursorRatioY;
+                float hvw = getWidth();
+                float hvh = getHeight();
+                if (hvw > 0 && hvh > 0 && windowWidth > 0 && windowHeight > 0) {
+                    Platform.cursorX = (event.getX(mouseCursorIndex) / hvw) * windowWidth;
+                    Platform.cursorY = (event.getY(mouseCursorIndex) / hvh) * windowHeight;
+                } else if (cursorRatioX > 0 && cursorRatioY > 0) {
+                    Platform.cursorX = event.getX(mouseCursorIndex) / cursorRatioX;
+                    Platform.cursorY = event.getY(mouseCursorIndex) / cursorRatioY;
+                }
                 Platform.sendCursorPosition();
                 return true;
             case MotionEvent.ACTION_SCROLL:
@@ -277,6 +306,9 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
         windowWidth = newWidth;
         windowHeight = newHeight;
 
+        sCurrentViewWidth = getWidth();
+        sCurrentViewHeight = getHeight();
+
         // Update cursor ratio values
         // Mouse events are sent in the full view coordinate space, the game accepts them only in the window space
         this.cursorRatioX = (double) getWidth() / windowWidth;
@@ -289,6 +321,28 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
         windowRate = mSurface.getDisplay().getRefreshRate();
         MojoExec.setDisplayParams(windowWidth, windowHeight, windowRate);
         mSurfaceProvider.updateSize();
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        int w = getWidth();
+        int h = getHeight();
+        if (changed || w != mLastWidth || h != mLastHeight) {
+            mLastWidth = w;
+            mLastHeight = h;
+            refreshSize(true);
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w != oldw || h != oldh) {
+            mLastWidth = w;
+            mLastHeight = h;
+            refreshSize(true);
+        }
     }
 
     private void realStart(){
@@ -337,6 +391,14 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
 
     @Override
     public void onSurfaceAvailable(Surface surface) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && surface != null && surface.isValid()) {
+            try {
+                surface.setFrameRate(0f, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT);
+                Log.i("GameView", "Set surface frame rate to 0f (unlocked)");
+            } catch (Throwable t) {
+                Log.w("GameView", "Failed to setFrameRate on surface", t);
+            }
+        }
         Platform.updateSurface(surface);
         if(mRefreshOnly) return;
         realStart();
@@ -345,6 +407,7 @@ public class GameView extends FrameLayout implements PlatformGrabListener, Surfa
 
     @Override
     public void onSurfaceResized() {
+        refreshSize(true);
         if(PLATFORM != null)
             PLATFORM.surfaceUpdated();
     }

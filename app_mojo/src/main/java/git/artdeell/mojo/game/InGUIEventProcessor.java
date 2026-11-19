@@ -33,7 +33,8 @@ public class InGUIEventProcessor extends TouchEventProcessor {
             case MotionEvent.ACTION_DOWN:
                 mTracker.startTracking(motionEvent);
                 if(!touchpadDisplayed()) {
-                    sendTouchCoordinates(motionEvent.getX(), motionEvent.getY());
+                    int actionIndex = motionEvent.getActionIndex();
+                    sendTouchCoordinates(motionEvent.getX(actionIndex), motionEvent.getY(actionIndex));
                     setMoveStart(motionEvent);
                 }
                 break;
@@ -97,8 +98,9 @@ public class InGUIEventProcessor extends TouchEventProcessor {
     }
 
     private void setMoveStart(MotionEvent event) {
-        mStartX = event.getX();
-        mStartY = event.getY();
+        int actionIndex = event.getActionIndex();
+        mStartX = event.getX(actionIndex);
+        mStartY = event.getY(actionIndex);
     }
 
     private void resetMove() {

@@ -186,30 +186,38 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
             getWindow().setSustainedPerformanceMode(PREF_SUSTAINED_PERFORMANCE);
 
-        // Force 120Hz / highest available display refresh rate
-        if(LauncherPreferences.PREF_FORCE_120HZ && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        // Request maximum supported Display.Mode refresh rate (e.g. 120Hz/144Hz)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
-                android.view.Display display = getWindowManager().getDefaultDisplay();
-                android.view.Display.Mode[] modes = display.getSupportedModes();
-                android.view.Display.Mode bestMode = null;
-                float highestRate = 60.0f;
-                for(android.view.Display.Mode mode : modes) {
-                    if(mode.getRefreshRate() > highestRate) {
-                        highestRate = mode.getRefreshRate();
-                        bestMode = mode;
-                    }
+                android.view.Display display = null;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    display = getDisplay();
                 }
-                if(bestMode != null) {
-                    WindowManager.LayoutParams params = getWindow().getAttributes();
-                    params.preferredDisplayModeId = bestMode.getModeId();
-                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        params.preferredRefreshRate = highestRate;
+                if (display == null) {
+                    display = getWindowManager().getDefaultDisplay();
+                }
+                if (display != null) {
+                    android.view.Display.Mode[] modes = display.getSupportedModes();
+                    android.view.Display.Mode bestMode = null;
+                    float highestRate = 0.0f;
+                    for (android.view.Display.Mode mode : modes) {
+                        if (mode.getRefreshRate() > highestRate) {
+                            highestRate = mode.getRefreshRate();
+                            bestMode = mode;
+                        }
                     }
-                    getWindow().setAttributes(params);
-                    Log.i("GameActivity", "Forced high display refresh rate: " + highestRate + "Hz");
+                    if (bestMode != null) {
+                        WindowManager.LayoutParams params = getWindow().getAttributes();
+                        params.preferredDisplayModeId = bestMode.getModeId();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            params.preferredRefreshRate = highestRate;
+                        }
+                        getWindow().setAttributes(params);
+                        Log.i("GameActivity", "Applied maximum display refresh rate: " + highestRate + "Hz (mode " + bestMode.getModeId() + ")");
+                    }
                 }
             } catch (Throwable t) {
-                Log.w("GameActivity", "Could not force high refresh rate", t);
+                Log.w("GameActivity", "Could not set maximum refresh rate", t);
             }
         }
 
@@ -682,14 +690,6 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
             return true;
         }
         LibreTelemetry.nativeNotifyInput();
-        if (!isInEditor && mLoadingScreen == null && (drawerLayout == null || !drawerLayout.isDrawerOpen(navDrawer))) {
-            for (int i = 0; i < ev.getPointerCount(); i++) {
-                if (ev.getToolType(i) != MotionEvent.TOOL_TYPE_MOUSE) {
-                    git.artdeell.mojo.input.TouchBridge.pushMotionEvent(ev);
-                    break;
-                }
-            }
-        }
         return super.dispatchTouchEvent(ev);
     }
 

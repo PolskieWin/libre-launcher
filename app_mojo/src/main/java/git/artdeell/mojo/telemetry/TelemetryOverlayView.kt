@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
-import android.view.Choreographer
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -21,7 +20,7 @@ class TelemetryOverlayView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : LinearLayout(context, attrs, defStyleAttr), Choreographer.FrameCallback {
+) : LinearLayout(context, attrs, defStyleAttr) {
 
     private val tvDragHandle: TextView
     private val tvMetrics: TextView
@@ -30,7 +29,6 @@ class TelemetryOverlayView @JvmOverloads constructor(
     var onHibernateToggle: (() -> Unit)? = null
 
     private var isRunning = false
-    private var lastFrameTimeNanos: Long = 0
 
     // Touch Dragging state
     private var dX = 0f
@@ -154,29 +152,16 @@ class TelemetryOverlayView @JvmOverloads constructor(
         }
     }
 
-    override fun doFrame(frameTimeNanos: Long) {
-        if (!isRunning) return
-        if (lastFrameTimeNanos > 0) {
-            val deltaMs = (frameTimeNanos - lastFrameTimeNanos) / 1_000_000f
-            LibreTelemetry.nativeRecordFrame(deltaMs)
-        }
-        lastFrameTimeNanos = frameTimeNanos
-        Choreographer.getInstance().postFrameCallback(this)
-    }
-
     fun start() {
         if (isRunning) return
         isRunning = true
         visibility = View.VISIBLE
-        lastFrameTimeNanos = 0
-        Choreographer.getInstance().postFrameCallback(this)
         post(pollRunnable)
     }
 
     fun stop() {
         isRunning = false
         visibility = View.GONE
-        Choreographer.getInstance().removeFrameCallback(this)
         removeCallbacks(pollRunnable)
     }
 

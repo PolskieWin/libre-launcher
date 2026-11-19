@@ -44,7 +44,7 @@ class HibernateAfkManager(
         val scaleFactor: Float,
         val pollingIntervalMs: Long
     ) {
-        FULL_PERFORMANCE("Full Performance", 60, 1.0f, 10000L),
+        FULL_PERFORMANCE("Full Performance", 0, 1.0f, 10000L),
         WARM_MITIGATION("Warm Mitigation", 45, 0.85f, 6000L),
         THERMAL_PROTECTION("Thermal Protection", 30, 0.70f, 4000L),
         CRITICAL_PROTECTION("Critical Protection", 15, 0.50f, 2500L),

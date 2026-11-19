@@ -110,6 +110,13 @@ public class ControlJoystick extends JoystickView implements ControlInterface {
         getControlLayoutParent().addJoystickButton(data);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(android.view.MotionEvent event) {
+        super.onTouchEvent(event);
+        return true;
+    }
+
     @Override
     public void handlePressed() {/*STUB since non swipeable*/}
 

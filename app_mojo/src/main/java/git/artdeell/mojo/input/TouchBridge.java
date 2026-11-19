@@ -36,9 +36,16 @@ public final class TouchBridge {
     }
 
     public static void pushMotionEvent(MotionEvent event) {
+        pushMotionEvent(event, 0f, 0f, 0, 0);
+    }
+
+    public static void pushMotionEvent(MotionEvent event, float viewWidth, float viewHeight, int windowWidth, int windowHeight) {
         if (!isEnabled() || event == null) return;
         int actionMasked = event.getActionMasked();
         int actionIndex = event.getActionIndex();
+
+        float scaleX = (viewWidth > 0 && windowWidth > 0) ? ((float) windowWidth / viewWidth) : 1.0f;
+        float scaleY = (viewHeight > 0 && windowHeight > 0) ? ((float) windowHeight / viewHeight) : 1.0f;
 
         switch (actionMasked) {
             case MotionEvent.ACTION_DOWN:
@@ -46,7 +53,7 @@ public final class TouchBridge {
             case MotionEvent.ACTION_CANCEL: {
                 if (event.getPointerCount() > 0) {
                     int id = event.getPointerId(0);
-                    pushTouch(id, actionMasked, event.getX(0), event.getY(0), event.getPressure(0));
+                    pushTouch(id, actionMasked, event.getX(0) * scaleX, event.getY(0) * scaleY, event.getPressure(0));
                 }
                 break;
             }
@@ -54,7 +61,7 @@ public final class TouchBridge {
             case MotionEvent.ACTION_POINTER_UP: {
                 if (actionIndex >= 0 && actionIndex < event.getPointerCount()) {
                     int id = event.getPointerId(actionIndex);
-                    pushTouch(id, actionMasked, event.getX(actionIndex), event.getY(actionIndex), event.getPressure(actionIndex));
+                    pushTouch(id, actionMasked, event.getX(actionIndex) * scaleX, event.getY(actionIndex) * scaleY, event.getPressure(actionIndex));
                 }
                 break;
             }
@@ -62,7 +69,7 @@ public final class TouchBridge {
                 int count = event.getPointerCount();
                 for (int i = 0; i < count; i++) {
                     int id = event.getPointerId(i);
-                    pushTouch(id, actionMasked, event.getX(i), event.getY(i), event.getPressure(i));
+                    pushTouch(id, actionMasked, event.getX(i) * scaleX, event.getY(i) * scaleY, event.getPressure(i));
                 }
                 break;
             }

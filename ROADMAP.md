@@ -32,3 +32,25 @@ Architecture and feature roadmap for Libre Launcher.
 - **100% Material 3 Copper Architecture**: Full audit eliminating all legacy dialogs and popups in favor of unified Material 3 Copper styling across the entire launcher.
 - **Pre-Boot Mod Conflict Analyzer**: Fast static analysis scanning JAR manifests (fabric.mod.json and quilt.mod.json) for duplicate mod IDs, missing dependencies, incompatible x86 native libraries, and Android renderer conflicts with a Material 3 one-tap fix dialog.
 - **Dynamic Launch Shortcuts**: Pin Minecraft instances directly to the Android home screen launcher to launch any instance with one tap.
+
+### v2.30 — OpenJDK 21 Android 16 & F-Droid Pure Source Compliance
+- **100% F-Droid Source Compliance**: Compiled `libfreetype.so` from source submodule without prebuilt binaries or non-free blobs.
+- **Android 16 (API 36) Linker Namespace Isolation Fix**: Physical copying of native runtime libraries (`libfreetype.so`, `libawt_xawt.so`, `libgl4es_114.so`) into runtime directory with explicit execution permissions, resolving `clns-9` classloader namespace isolation failures.
+- **OpenJDK 18 + 21 Compatibility**: Flawless booting of Minecraft 1.21.x with modern Java runtimes on Android 16.
+
+### v2.33 — Precision Controls & Native Telemetry Uncap
+- **Pinpoint Touch-Click Accuracy**: Replaced legacy screen-space mapping with surface-local coordinates dynamically scaled to active Minecraft framebuffer dimensions (`windowWidth` / `windowHeight` / view dimensions) on orientation and layout updates.
+- **Virtual Control Event Isolation**: All virtual controls, buttons, drawers, and joysticks consume touch events completely (`return true`), preventing phantom clicks through to the underlying GUI canvas.
+- **Direct Native Frame Swap Present Hook**: Unlocked telemetry FPS beyond 60 FPS cap by counting actual buffer swaps in native `eglSwapBuffers` using `CLOCK_MONOTONIC` (`Instant`) rather than Android UI `Choreographer` ticks.
+- **120Hz+ Max Display Refresh Rate & Frame Rate Unlocking**: Automatic selection of highest supported `Display.Mode` refresh rate and unlocked surface frame rate (`setFrameRate(0f)`).
+- **New Custom Libre Controlmap**: Replaced legacy 2021 Pojav default layout with modern custom Libre Launcher controlmap with zero legacy references.
+- **F3 SoC Hardware Emulation**: Full SoC chipset reporting (Qualcomm Snapdragon, MediaTek Dimensity, Google Tensor, Samsung Exynos) into Minecraft F3 screen.
+
+---
+
+## Upcoming Milestones
+
+### v2.40 — Ultra-Lightweight Stripped Flavor & IzzyOnDroid Distribution
+- **Ultra-Lightweight Stripped Flavor**: Dedicated standalone APK flavor containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes (~35–45 MB), tailored for GitHub Releases and IzzyOnDroid.
+- **F-Droid Official Repository Inclusion**: Full inclusion in the official F-Droid main catalog via Merge Request `!58168`.
+- **Adaptive Vulkan Extension Optimizer**: Dynamic detection of Turnip driver extensions with real-time pipeline optimizations.

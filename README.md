@@ -19,24 +19,31 @@
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for full version milestones and development plans through v2.00.
+See [ROADMAP.md](ROADMAP.md) for full version milestones and development plans through v2.40.
 
 ## Key Improvements in Libre Launcher
 
-- **Rust Native Controls (`libre_controls`)**:
-  - Rebuilt virtual touch & motion tracking pipeline in Rust.
-  - Zero heap allocation during gameplay — eliminates garbage collection lag spikes.
-  - Non-interrupted sprint transitions when turning with virtual joystick (diagonal-to-cardinal key debounce).
-  - Exponential Moving Average (EMA) aim smoothing to remove touchscreen jitter.
+- **100% F-Droid Source Compliance & Zero Blobs**:
+  - Full F-Droid main catalog compliance (`!58168`): all native dependencies including `libfreetype.so` are compiled directly from source submodules. Zero prebuilt blobs or proprietary components.
+- **OpenJDK 18 + 21 Compatibility on Android 16 (API 36)**:
+  - Advanced linker namespace isolation workaround: copies runtime native libraries into the execution namespace with explicit permissions, resolving `clns-9` classloader isolation failures on Android 16.
+- **Rust Native Controls (`libre_controls`) & Custom Libre Controlmap**:
+  - Brand-new custom Libre Launcher controlmap replacing legacy 2021 layouts with rounded aesthetic controls.
+  - Pinpoint 1:1 touch-click accuracy: surface-local coordinates dynamically scaled to active Minecraft framebuffer dimensions across orientation and resolution scaling.
+  - Event isolation: virtual controls and buttons fully consume touch events (`return true`), eliminating phantom clicks through to the game canvas.
+  - Non-interrupted sprint transitions with diagonal-to-cardinal debounce and EMA aim smoothing.
+- **Native Frame Swap Present Hook & Unlocked 120Hz+ Telemetry**:
+  - Frame counting directly inside native `eglSwapBuffers` using monotonic `Instant` (`CLOCK_MONOTONIC`) without Android UI `Choreographer` 60 FPS caps.
+  - Automatic maximum display refresh rate selection (`preferredDisplayModeId` for 120Hz/144Hz) and unlocked game surface frame rate (`setFrameRate(0f)`).
+- **Thermal-Aware Hibernate AFK & Real SoC F3 Info**:
+  - Real-time battery and SoC thermal governor dynamically scaling down FPS, surface resolution (0.85x–0.25x), and polling when hot.
+  - Pure AMOLED black Hibernate mode (5 FPS) for long AFK sessions.
+  - Real SoC model detection (Snapdragon, Dimensity, Tensor, Exynos) in Minecraft F3 debug screen.
 - **Minecraft 26.3 & 26.4 Ready**:
   - Full support for 2026 calendar versioning (`26.1`, `26.2`, `26.3`, `26.4`, and `26w...` snapshots).
   - Fixed NeoForge 4-part version resolution (`26.x.y.z`) preventing version parsing crashes.
   - Snapshot comparator contract fix in `ComparableVersionString` preventing TimSort crash bugs.
   - Smart automatic JRE runtime fallback (Java 21/25 LTS for modern 26.x versions).
-- **Unified Rust Frame Pacing & Thermal-Aware Hibernate AFK**:
-  - Unified Rust native engine via JNI providing sub-millisecond input dispatch and lock-free ring-buffer frame pacing.
-  - Thermal governor reading Android battery temperatures and SoC thermal status to scale down FPS, surface resolution (0.85x–0.50x), and background polling when device heats up.
-  - OLED pure black Hibernate mode (5 FPS, 0.25x resolution) for minimal battery usage during AFK sessions.
 - **100% Material 3 Copper Architecture**:
   - Consistent Material 3 theme across all launcher activities, dialogs, drawers, and in-game dialogs with zero legacy popups.
 - **Native Pre-Boot Mod Compatibility Scanner**:
@@ -48,10 +55,8 @@ See [ROADMAP.md](ROADMAP.md) for full version milestones and development plans t
 - **Advanced Custom Driver & Renderer Management**:
   - Direct access to Custom Vulkan Drivers (Turnip / Freedreno) in Video Settings without arbitrary UI hiding.
   - Full renderer suite: GL4ES, Mesa Zink (OpenGL over Vulkan), OpenLTW, ANGLE, VirGL, and plugin renderers.
-- **Lightweight & Debloated**:
-  - Stripped unnecessary binder IPC logcat chatter during touch inputs.
-  - Cleaned up obsolete legacy logging tags.
-  - Optimized View touch event propagation to minimize Android UI traversal overhead.
+- **Upcoming Stripped Flavor**:
+  - Standalone ultra-lightweight `stripped` APK flavor (~35–45 MB) containing 2 essential renderers (Libre Mobile + GL4ES) and zero bundled runtimes for GitHub Releases and IzzyOnDroid.
 
 ---
 

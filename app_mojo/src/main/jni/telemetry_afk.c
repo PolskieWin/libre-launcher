@@ -8,6 +8,7 @@
 #include <time.h>
 #include <dlfcn.h>
 #include <math.h>
+#include <EGL/egl.h>
 #include <android/log.h>
 
 #define TAG "LibreTelemetry"
@@ -32,6 +33,12 @@ static uint64_t s_last_input_time_ms = 0;
 static float s_cached_thermal_headroom = 0.0f;
 static uint64_t s_last_thermal_poll_ms = 0;
 
+typedef EGLBoolean (*eglSwapBuffers_t)(EGLDisplay dpy, EGLSurface surf);
+static eglSwapBuffers_t s_real_eglSwapBuffers = NULL;
+
+typedef EGLBoolean (*eglSwapInterval_t)(EGLDisplay dpy, EGLint interval);
+static eglSwapInterval_t s_real_eglSwapInterval = NULL;
+
 static uint64_t get_current_time_ns() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -40,6 +47,73 @@ static uint64_t get_current_time_ns() {
 
 static uint64_t get_current_time_ms() {
     return get_current_time_ns() / 1000000ULL;
+}
+
+__attribute__((visibility("default")))
+void libre_on_present_swap(void) {
+    uint64_t now_ns = get_current_time_ns();
+    uint64_t prev_ns = s_last_frame_time_ns;
+    s_last_frame_time_ns = now_ns;
+
+    float delta_ms = 16.66f;
+    if (prev_ns > 0 && now_ns > prev_ns) {
+        delta_ms = (float)(now_ns - prev_ns) / 1000000.0f;
+    }
+    if (delta_ms <= 0.001f) delta_ms = 0.001f;
+    if (delta_ms > 1000.0f) delta_ms = 1000.0f;
+
+    s_frame_times[s_head] = delta_ms;
+    s_head = (s_head + 1) % TELEMETRY_WINDOW;
+    if (s_count < TELEMETRY_WINDOW) s_count++;
+    s_total_frames++;
+
+    // Hibernate pacing on render thread
+    if (s_is_afk && s_target_fps > 0) {
+        float budget_ms = 1000.0f / (float)s_target_fps;
+        if (delta_ms < budget_ms) {
+            useconds_t sleep_us = (useconds_t)((budget_ms - delta_ms) * 1000.0f);
+            usleep(sleep_us);
+            s_last_frame_time_ns = get_current_time_ns();
+        }
+    }
+}
+
+__attribute__((visibility("default")))
+EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surf) {
+    if (__builtin_expect(!s_real_eglSwapBuffers, 0)) {
+        void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
+        if (libegl) {
+            s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(libegl, "eglSwapBuffers");
+        }
+        if (!s_real_eglSwapBuffers) {
+            s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(RTLD_NEXT, "eglSwapBuffers");
+        }
+    }
+
+    libre_on_present_swap();
+
+    if (s_real_eglSwapBuffers) {
+        return s_real_eglSwapBuffers(dpy, surf);
+    }
+    return EGL_TRUE;
+}
+
+__attribute__((visibility("default")))
+EGLBoolean eglSwapInterval(EGLDisplay dpy, EGLint interval) {
+    if (__builtin_expect(!s_real_eglSwapInterval, 0)) {
+        void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
+        if (libegl) {
+            s_real_eglSwapInterval = (eglSwapInterval_t)dlsym(libegl, "eglSwapInterval");
+        }
+        if (!s_real_eglSwapInterval) {
+            s_real_eglSwapInterval = (eglSwapInterval_t)dlsym(RTLD_NEXT, "eglSwapInterval");
+        }
+    }
+
+    if (s_real_eglSwapInterval) {
+        return s_real_eglSwapInterval(dpy, interval);
+    }
+    return EGL_TRUE;
 }
 
 typedef void* (*AThermal_acquireManager_fn)(void);
@@ -117,26 +191,10 @@ JNIEXPORT jlong JNICALL
 Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeOnFramePresent(
         JNIEnv *env,
         jclass clazz) {
-    uint64_t now_ns = get_current_time_ns();
-    uint64_t prev_ns = s_last_frame_time_ns;
-    s_last_frame_time_ns = now_ns;
-
-    float delta_ms = 16.66f;
-    if (prev_ns > 0 && now_ns > prev_ns) {
-        delta_ms = (float)(now_ns - prev_ns) / 1000000.0f;
-    }
-    Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeRecordFrame(env, clazz, delta_ms);
-
-    // Hibernate pacing on render thread
-    if (s_is_afk && s_target_fps > 0) {
-        float budget_ms = 1000.0f / (float)s_target_fps;
-        if (delta_ms < budget_ms) {
-            useconds_t sleep_us = (useconds_t)((budget_ms - delta_ms) * 1000.0f);
-            usleep(sleep_us);
-            s_last_frame_time_ns = get_current_time_ns();
-        }
-    }
-    return (jlong)(delta_ms * 1000000.0f);
+    (void)env;
+    (void)clazz;
+    libre_on_present_swap();
+    return (jlong)s_total_frames;
 }
 
 JNIEXPORT jint JNICALL
@@ -276,7 +334,7 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeSetAfk(
         jint target_fps) {
     if (active) {
         s_is_afk = true;
-        s_target_fps = target_fps > 0 && target_fps <= 30 ? target_fps : 5;
+        s_target_fps = target_fps > 0 ? target_fps : 5;
         setpriority(PRIO_PROCESS, 0, 10); // Relax priority
         make_all_cores_affine();          // Relax core affinity
         LOGI("Entered Hibernate AFK mode (%d target FPS, nice 10)", s_target_fps);

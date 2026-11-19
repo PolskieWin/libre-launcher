@@ -82,7 +82,7 @@ pub extern "C" fn libre_on_frame_present() -> u64 {
 /// Configure Hibernate (Low-Power AFK) mode and target frame rate (e.g. 5 FPS = 200ms frame budget)
 #[no_mangle]
 pub extern "C" fn libre_set_hibernate(enabled: bool, target_fps: u32) {
-    let fps = target_fps.clamp(1, 60);
+    let fps = target_fps.clamp(1, 1000);
     let budget_ns = 1_000_000_000u64 / (fps as u64);
     HIBERNATE_BUDGET_NS.store(budget_ns, Ordering::Release);
     HIBERNATE_TARGET_FPS.store(fps, Ordering::Release);
