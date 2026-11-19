@@ -200,6 +200,8 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeRecordFrame(
         JNIEnv *env,
         jclass clazz,
         jfloat delta_ms) {
+    (void)env;
+    (void)clazz;
     uint64_t now_ns = get_current_time_ns();
     // If native present swap was invoked within 250ms, defer to native present to avoid double counting
     if (s_last_native_present_ns > 0 && (now_ns - s_last_native_present_ns) < 250000000ULL) {

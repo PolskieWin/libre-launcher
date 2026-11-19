@@ -316,18 +316,6 @@ public class UpdateManager {
         MojoApplication.sExecutorService.submit(() -> {
             File cacheDir = activity.getExternalCacheDir() != null ? activity.getExternalCacheDir() : activity.getCacheDir();
             File updatesDir = new File(cacheDir, "updates");
-            FileUtils.ensureDirectory(updatesDir);
-
-            // Clean older apk files in updates directory
-            File[] existingFiles = updatesDir.listFiles();
-            if (existingFiles != null) {
-                for (File f : existingFiles) {
-                    if (f.getName().endsWith(".apk")) {
-                        f.delete();
-                    }
-                }
-            }
-
             File targetApk = new File(updatesDir, asset.name != null ? asset.name : "LibreLauncher-update.apk");
 
             HttpURLConnection connection = null;
@@ -335,6 +323,18 @@ public class UpdateManager {
             FileOutputStream outputStream = null;
 
             try {
+                FileUtils.ensureDirectory(updatesDir);
+
+                // Clean older apk files in updates directory
+                File[] existingFiles = updatesDir.listFiles();
+                if (existingFiles != null) {
+                    for (File f : existingFiles) {
+                        if (f.getName().endsWith(".apk")) {
+                            f.delete();
+                        }
+                    }
+                }
+
                 String currentUrl = asset.browserDownloadUrl;
                 int redirects = 0;
 

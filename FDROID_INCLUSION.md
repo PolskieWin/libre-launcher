@@ -157,8 +157,24 @@ Builds:
     gradle:
       - assembleNoruntimeRelease
 
+  - versionName: '2.36'
+    versionCode: 236
+    commit: v2.36
+    subdir: app_mojo
+    submodules: true
+    gradle:
+      - assembleNoruntimeRelease
+
+  - versionName: '2.37'
+    versionCode: 237
+    commit: v2.37
+    subdir: app_mojo
+    submodules: true
+    gradle:
+      - assembleNoruntimeRelease
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '2.35'
-CurrentVersionCode: 235
+CurrentVersion: '2.37'
+CurrentVersionCode: 237
 ```

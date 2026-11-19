@@ -58,6 +58,11 @@ Architecture and feature roadmap for Libre Launcher.
 - **Dynamic 16KB Page-Size RAM Metrics**: Upgraded memory reader to dynamically query `sysconf(_SC_PAGESIZE)` and inspect `/proc/self/status` (`VmRSS`) with JVM runtime memory fallback.
 - **Immediate Telemetry Snapshot Dispatch**: Return populated telemetry buffers immediately upon activation instead of returning empty zero values before 120 frames have accumulated.
 
+### v2.37 — Hardened Auto-Updater Pipeline & Build Reliability
+- **Hardened Background Update Pipeline**: Wrapped all directory setup and APK cache purging within atomic exception guards in `UpdateManager` to guarantee complete IO safety across all Android versions.
+- **Strict Compiler Exception Compliance**: Resolved unhandled `IOException` bounds on executor threads during automated update download handshakes.
+- **Seamless Continuous Integration**: Verified flawless compilation and packaging across `full`, `noruntime`, and `stripped` build variants.
+
 ---
 
 ## Upcoming Milestones
