@@ -1,6 +1,7 @@
 package git.artdeell.mojo.utils.jre;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Log;
 import android.widget.Toast;
@@ -409,27 +410,60 @@ public class GameRunner {
 
         File versionSpecificNativesDir = new File(Tools.DIR_CACHE, "natives/"+versionId);
         FileUtils.ensureDirectory(versionSpecificNativesDir);
-        String dirPath = versionSpecificNativesDir.getAbsolutePath();
 
         File lwjglExtractDir = new File(Tools.DIR_CACHE, "lwjgl_native/"+versionId);
         FileUtils.ensureDirectory(lwjglExtractDir);
-        String lwjglExtractPath = lwjglExtractDir.getAbsolutePath();
 
-        String nativeLibDir = Tools.NATIVE_LIB_DIR != null ? Tools.NATIVE_LIB_DIR : "";
-        String fullLibraryPath = dirPath + ":" + nativeLibDir + ":" + lwjglExtractPath;
+        String nativeLibDir = Tools.NATIVE_LIB_DIR;
+        if (nativeLibDir == null || nativeLibDir.isEmpty()) {
+            if (Tools.APP_CONTEXT != null && Tools.APP_CONTEXT.getApplicationInfo() != null) {
+                nativeLibDir = Tools.APP_CONTEXT.getApplicationInfo().nativeLibraryDir;
+            }
+        }
+
+        List<String> validLibDirs = new ArrayList<>();
+        if (versionSpecificNativesDir.exists() && versionSpecificNativesDir.isDirectory()) {
+            validLibDirs.add(versionSpecificNativesDir.getAbsolutePath());
+        }
+        if (nativeLibDir != null && !nativeLibDir.isEmpty()) {
+            File nld = new File(nativeLibDir);
+            if (nld.exists() && nld.isDirectory()) {
+                validLibDirs.add(nld.getAbsolutePath());
+            }
+        }
+        if (lwjglExtractDir.exists() && lwjglExtractDir.isDirectory()) {
+            validLibDirs.add(lwjglExtractDir.getAbsolutePath());
+        }
+
+        String fullLibraryPath = TextUtils.join(File.pathSeparator, validLibDirs);
+        if (fullLibraryPath.isEmpty() && nativeLibDir != null && !nativeLibDir.isEmpty()) {
+            fullLibraryPath = nativeLibDir;
+        }
 
         javaArgList.add("-Djava.library.path=" + fullLibraryPath);
         javaArgList.add("-Djna.boot.library.path=" + fullLibraryPath);
         javaArgList.add("-Dorg.lwjgl.librarypath=" + fullLibraryPath);
-        javaArgList.add("-Dorg.lwjgl.system.SharedLibraryExtractPath=" + lwjglExtractPath);
+        javaArgList.add("-Dorg.lwjgl.system.SharedLibraryExtractPath=" + lwjglExtractDir.getAbsolutePath());
 
-        File shadercFile = new File(nativeLibDir, "libshaderc.so");
-        if (shadercFile.exists()) {
-            javaArgList.add("-Dorg.lwjgl.shaderc.libname=" + shadercFile.getAbsolutePath());
-        }
-        File spvcFile = new File(nativeLibDir, "libspirv-cross-c-shared.so");
-        if (spvcFile.exists()) {
-            javaArgList.add("-Dorg.lwjgl.spvc.libname=" + spvcFile.getAbsolutePath());
+        if (nativeLibDir != null && !nativeLibDir.isEmpty()) {
+            File shadercFile = new File(nativeLibDir, "libshaderc.so");
+            if (shadercFile.exists()) {
+                javaArgList.add("-Dorg.lwjgl.shaderc.libname=" + shadercFile.getAbsolutePath());
+            }
+            File spvcFile = new File(nativeLibDir, "libspirv-cross-c-shared.so");
+            if (!spvcFile.exists()) {
+                spvcFile = new File(nativeLibDir, "libspvc.so");
+            }
+            if (spvcFile.exists()) {
+                javaArgList.add("-Dorg.lwjgl.spvc.libname=" + spvcFile.getAbsolutePath());
+            }
+            File vmaFile = new File(nativeLibDir, "liblwjgl_vma.so");
+            if (!vmaFile.exists()) {
+                vmaFile = new File(nativeLibDir, "libvma.so");
+            }
+            if (vmaFile.exists()) {
+                javaArgList.add("-Dorg.lwjgl.vma.libname=" + vmaFile.getAbsolutePath());
+            }
         }
 
         mergeMoJsonArgs(javaArgList, getMoJsonJvmArgs(versionId), gamedir);

@@ -73,7 +73,7 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
                 }
             }
 
-            // 3. Known aliases for LWJGL 3.4.3 / MC 26.3
+            // 3. Known aliases for LWJGL 3.4.3 / MC 26.3+ bootstrap
             if(handle == NULL && strstr(baseName, "shaderc") != NULL) {
                 snprintf(pathBuf, sizeof(pathBuf), "%s/libshaderc.so", nativeLibDir);
                 handle = dlopen(pathBuf, mode);
@@ -81,6 +81,37 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
             if(handle == NULL && (strstr(baseName, "spvc") != NULL || strstr(baseName, "spirv-cross") != NULL)) {
                 snprintf(pathBuf, sizeof(pathBuf), "%s/libspirv-cross-c-shared.so", nativeLibDir);
                 handle = dlopen(pathBuf, mode);
+                if (handle == NULL) {
+                    snprintf(pathBuf, sizeof(pathBuf), "%s/libspvc.so", nativeLibDir);
+                    handle = dlopen(pathBuf, mode);
+                }
+            }
+            if(handle == NULL && (strstr(baseName, "vma") != NULL || strstr(baseName, "lwjgl_vma") != NULL)) {
+                snprintf(pathBuf, sizeof(pathBuf), "%s/liblwjgl_vma.so", nativeLibDir);
+                handle = dlopen(pathBuf, mode);
+                if (handle == NULL) {
+                    snprintf(pathBuf, sizeof(pathBuf), "%s/libvma.so", nativeLibDir);
+                    handle = dlopen(pathBuf, mode);
+                }
+            }
+            if(handle == NULL && (strstr(baseName, "SDL") != NULL || strstr(baseName, "sdl") != NULL)) {
+                snprintf(pathBuf, sizeof(pathBuf), "%s/libSDL3.so", nativeLibDir);
+                handle = dlopen(pathBuf, mode);
+            }
+        }
+
+        // 4. Global process fallback for critical bootstrap libraries
+        if(handle == NULL) {
+            const char* baseName = strrchr(filename, '/');
+            baseName = baseName ? baseName + 1 : filename;
+            if(strstr(baseName, "shaderc") != NULL || strstr(baseName, "spvc") != NULL ||
+               strstr(baseName, "spirv-cross") != NULL || strstr(baseName, "vma") != NULL ||
+               strstr(baseName, "lwjgl_vma") != NULL || strstr(baseName, "SDL") != NULL ||
+               strstr(baseName, "sdl") != NULL) {
+                handle = dlopen(NULL, RTLD_NOW);
+                if (handle != NULL) {
+                    printf("LWJGL linkerhook: fell back to global handle for %s\n", filename);
+                }
             }
         }
         if(handle != NULL) {

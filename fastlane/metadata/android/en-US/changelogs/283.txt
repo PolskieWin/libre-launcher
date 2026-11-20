@@ -1,0 +1,1 @@
+v2.83: Build shaderc, spvc, and vma from source for LWJGL 3.4.3 and Minecraft 26.3+, fix java.library.path directory validation, enforce release debuggable false.
