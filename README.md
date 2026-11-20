@@ -1,19 +1,30 @@
-<h1 align="center">Libre Launcher</h1>
+# Libre Launcher (Android)
 
 <p align="center">
-  <img src="./app_mojo/src/main/ic_launcher-playstore.png" width="128" height="128" alt="Libre Launcher logo"><br>
-  <b>A lightweight, high-performance Minecraft: Java Edition launcher for Android</b><br>
-  <i>Forked from Copper Launcher, powered by Rust native controls and full Minecraft 26.3 & 26.4 support.</i>
+  <img src="./app_mojo/src/main/ic_launcher-playstore.png" width="128" height="128" alt="Libre Launcher (Android) logo"><br>
+  <b>A lightweight, open-source Minecraft: Java Edition launcher for Android</b><br>
+  <i>Developed by PolskieWin &bull; Powered by Rust native controls and full Minecraft 26.x support</i>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/platform-Android-brightgreen" alt="Platform">
-  <img src="https://img.shields.io/badge/engine-Rust%20%2B%20Java%20%2F%20C-orange" alt="Engine">
-  <img src="https://img.shields.io/badge/license-LGPLv3-blue" alt="License">
-  <img src="https://img.shields.io/badge/Minecraft-rd--132211%20to%2026.4-green" alt="Minecraft Versions">
-  <a href="ROADMAP.md"><img src="https://img.shields.io/badge/Roadmap-v1.50--v2.00-blueviolet" alt="Roadmap"></a>
+  <a href="https://github.com/PolskieWin/libre-launcher/releases"><img src="https://img.shields.io/badge/Platform-Android%20(arm64--v8a)-brightgreen?logo=android" alt="Platform: Android"></a>
+  <a href="https://github.com/PolskieWin/libre-launcher/releases"><img src="https://img.shields.io/github/v/release/PolskieWin/libre-launcher?label=Release&color=blue" alt="GitHub Release"></a>
+  <a href="https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58168"><img src="https://img.shields.io/badge/F--Droid-MR%20!58168-blue?logo=f-droid" alt="F-Droid MR"></a>
+  <a href="https://codeberg.org/Polskie/libre-launcher"><img src="https://img.shields.io/badge/Codeberg-Mirror-2185D0?logo=codeberg" alt="Codeberg Mirror"></a>
   <a href="https://discord.gg/KJpCVzRzRy"><img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <img src="https://img.shields.io/badge/License-LGPLv3-blue" alt="License: LGPLv3">
 </p>
+
+Libre Launcher (Android) is a lightweight, open-source Minecraft: Java Edition launcher for Android (`arm64-v8a`), developed by PolskieWin. Built with native Rust controls, the `LibreMobile` renderer, bundled Java 21 & Java 25 runtimes in a ~21 MB stripped APK, Modrinth mod/shader integration, and Material You home-screen widgets.
+
+> [!NOTE]
+> **Distinction from Desktop PC Launchers**: Libre Launcher (Android) is specifically engineered and optimized for Android mobile devices (`arm64-v8a`). It is an independent project developed by PolskieWin and is completely unrelated to desktop PC launchers or multi-platform desktop clients that share the "LibreLauncher" name.
+
+## Downloads & Links
+- **GitHub Releases (Official Builds & APKs)**: [PolskieWin/libre-launcher/releases](https://github.com/PolskieWin/libre-launcher/releases)
+- **F-Droid Package (Main Catalog Inclusion)**: [F-Droid Merge Request !58168](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58168)
+- **Codeberg Mirror**: [codeberg.org/Polskie/libre-launcher](https://codeberg.org/Polskie/libre-launcher)
+- **Official Community Discord**: [discord.gg/KJpCVzRzRy](https://discord.gg/KJpCVzRzRy)
 
 ---
 
