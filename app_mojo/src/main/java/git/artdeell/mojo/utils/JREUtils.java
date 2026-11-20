@@ -94,6 +94,10 @@ public class JREUtils {
         if(LauncherPreferences.PREF_BIG_CORE_AFFINITY) envMap.put("POJAV_BIG_CORE_AFFINITY", "1");
         if(LauncherPreferences.PREF_ALSOFT_FORCE_OPENSL) envMap.put("ALSOFT_DRIVERS", "opensl");
 
+        String existingPreload = System.getenv("LD_PRELOAD");
+        String utxentShim = Tools.NATIVE_LIB_DIR + "/libutxent_shim.so";
+        envMap.put("LD_PRELOAD", (existingPreload != null && !existingPreload.isEmpty()) ? (utxentShim + ":" + existingPreload) : utxentShim);
+
         overrideEnvVars(envMap);
 
         for (Map.Entry<String, String> env : envMap.entrySet()) {

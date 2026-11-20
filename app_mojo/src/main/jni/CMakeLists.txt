@@ -251,4 +251,5 @@ target_link_libraries(shaderc PRIVATE
     log dl m
 )
 
-
+add_library(utxent_shim SHARED utxent_shim.c)
+target_link_libraries(utxent_shim PRIVATE dl)

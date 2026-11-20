@@ -57,13 +57,18 @@ static pfn_APerformanceHint_closeSession s_pfn_closeSession = NULL;
 
 static APerformanceHintManager* s_adpf_manager = NULL;
 static APerformanceHintSession* s_adpf_session = NULL;
-static int64_t s_adpf_target_duration_ns = 16666667LL;
+static int64_t s_adpf_target_duration_ns = 8333333LL;
 static struct timespec s_last_swap_time = {0, 0};
 
 // Flagship SoC Lookup Table (< 4 KB)
 static const uint16_t s_flagship_soc_ids[] = {
+    // Flagship 8xx & 7+ Gen Series
     339, 356, 361, 362, 367, 393, 400, 415, 439, 456, 457, 459, 482,
-    501, 502, 519, 530, 531, 536, 540, 552, 557, 577, 603, 619, 621, 623, 693
+    501, 502, 519, 530, 531, 536, 540, 552, 557, 577, 603, 619, 621, 623,
+    673, 674, 693, 709, 710,
+    // Mid-range 7xx & 6 Gen 1/3/4 Series (excludes low-end 4xx & 680/685/695)
+    475, 499, 506, 507, 537, 538, 546, 591, 592, 608, 609,
+    645, 646, 649, 655, 656, 681, 682, 686, 687, 697
 };
 static const size_t s_flagship_soc_count = sizeof(s_flagship_soc_ids) / sizeof(s_flagship_soc_ids[0]);
 
@@ -73,8 +78,13 @@ static const uint16_t s_adreno_7xx_8xx_soc_ids[] = {
 static const size_t s_adreno_7xx_8xx_soc_count = sizeof(s_adreno_7xx_8xx_soc_ids) / sizeof(s_adreno_7xx_8xx_soc_ids[0]);
 
 static const char* const s_flagship_platform_names[] = {
-    "sm8150", "sm8250", "sm8350", "sm8450", "sm8475", "sm8550", "sm8650", "sm8750",
-    "sm7475", "sm7675", "kona", "lahaina", "taro", "kalama", "pineapple", "sun"
+    // Flagships
+    "sm8150", "sm8250", "sm8350", "sm8450", "sm8475", "sm8550", "sm8650", "sm8735", "sm8750", "sm8850",
+    "sm7475", "sm7675", "kona", "lahaina", "taro", "kalama", "pineapple", "sun", "canoe",
+    // Mid-range 7-series & 6 Gen 1/3/4 (excludes low-end 4xx / 680 / 685 / 695)
+    "sm7325", "sm7350", "sm7435", "sm7450", "sm7550", "sm7635", "sm7750",
+    "sm6435", "sm6450", "sm6475", "sm6635",
+    "yupik", "cedros", "cape", "parrot", "crow", "volcano", "cliffs"
 };
 static const size_t s_flagship_platform_count = sizeof(s_flagship_platform_names) / sizeof(s_flagship_platform_names[0]);
 
@@ -301,8 +311,10 @@ static void apply_common_mobile_optimizations() {
     setenv("allow_glsl_extension_directive_midshader", "true", 1);
     setenv("MESA_NO_ERROR", "1", 1);
     setenv("LIBGL_NOERROR", "1", 1);
-    setenv("glsl_zero_init", "true", 1);
-    setenv("ZINK_DESCRIPTORS", "lazy", 1);
+    setenv("glsl_zero_init", "false", 1);
+    setenv("mesa_glthread", "false", 1);
+    setenv("vblank_mode", "0", 1);
+    setenv("ZINK_DESCRIPTORS", "auto", 1);
 
     setenv("MESA_EXTENSION_OVERRIDE",
            "+GL_EXT_texture_filter_anisotropic "
@@ -354,9 +366,7 @@ Java_git_artdeell_mojo_game_renderer_impl_LibreMobileRenderSpec_nativeSetupMobil
         if (isFlagship) {
             LOGI("Configuring Flagship Tuned Turnip profile (7xx/8xx=%d)", is7xx8xx);
             setenv("MESA_VK_WSI_PRESENT_MODE", "mailbox", 1);
-            if (is7xx8xx) {
-                setenv("FD_DEV_FEATURES", "enable_tp_ubwc_flag_hint=1", 1);
-            }
+            unsetenv("FD_DEV_FEATURES");
             unsetenv("TU_DEBUG");
         } else {
             LOGI("Configuring Mid-Range Standard Turnip profile");

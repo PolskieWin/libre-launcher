@@ -38,18 +38,17 @@ Because Libre Launcher interacts with Microsoft authentication services and down
 
 To submit directly to the official F-Droid build server repository:
 
-1. **Push release tag** to GitHub and GitLab mirrors:
+1. **Push release tag** to GitHub:
    ```bash
-   git tag -a v2.60 -m "Release v2.60"
-   git push origin v2.60
-   git push gitlab v2.60
+   git tag -a v3.00 -m "Release v3.00"
+   git push origin v3.00
    ```
 
 2. **Fork [fdroiddata](https://gitlab.com/fdroid/fdroiddata)** on GitLab.
 
 3. **Create a feature branch**:
    ```bash
-   git checkout -b add-org-libre-launcher
+   git checkout -b org.libre.launcher
    ```
 
 4. **Copy the recipe** into your `fdroiddata` clone:
@@ -59,15 +58,14 @@ To submit directly to the official F-Droid build server repository:
 
 5. **Verify the recipe locally** using the `fdroid` build tools:
    ```bash
-   fdroid checkupdates org.libre.launcher
    fdroid lint org.libre.launcher
-   fdroid build --stop --test org.libre.launcher:260
+   fdroid build --stop --test org.libre.launcher:300
    ```
 
 6. **Submit a Merge Request**:
-   - Push your branch to your GitLab fork: `git push origin add-org-libre-launcher`
+   - Push your branch to your GitLab fork: `git push origin org.libre.launcher`
    - Open a Merge Request at [GitLab fdroid/fdroiddata Merge Requests](https://gitlab.com/fdroid/fdroiddata/-/merge_requests).
-   - Reference the official F-Droid inclusion MR (`!58168`).
+   - Title must be: `New app: Libre Launcher`
 
 ---
 
@@ -75,51 +73,45 @@ To submit directly to the official F-Droid build server repository:
 
 ```yaml
 Categories:
-  - Games
+  - Game Helper
 License: LGPL-3.0-or-later
 AuthorName: Libre Launcher Contributors
-SourceCode: https://gitlab.com/libre-group2305847/Libre-project
-IssueTracker: https://gitlab.com/libre-group2305847/Libre-project/-/issues
-Changelog: https://gitlab.com/libre-group2305847/Libre-project/-/releases
+SourceCode: https://github.com/PolskieWin/libre-launcher
+IssueTracker: https://github.com/PolskieWin/libre-launcher/issues
+Changelog: https://github.com/PolskieWin/libre-launcher/releases
 
 AutoName: Libre Launcher
 
-Summary: Fast Minecraft: Java Edition launcher with native Rust controls
-
-Description: |-
-  Libre Launcher is an open-source, lightweight, high-performance Minecraft:
-  Java Edition launcher for Android.
-
-  Features:
-  * Native Rust touch controls and aim smoothing (libre_controls)
-  * Thermal-aware AFK hibernate mode (5 FPS, pure-black OLED display)
-  * Pre-boot mod compatibility scanner (Fabric, NeoForge, Quilt)
-  * Custom Vulkan Turnip / Freedreno drivers and Mesa Zink renderer
-  * 100% Material 3 design with home-screen pinned instance shortcuts
-  * Zero telemetry, ads, or tracking SDKs
-
-  DISCLAIMER: NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED
-  WITH MOJANG OR MICROSOFT. Minecraft is a trademark of Mojang AB.
+AntiFeatures:
+  NonFreeNet:
+    en-US: Connects to Microsoft/Mojang authentication endpoints and downloads
+      official Minecraft game assets from Mojang/Microsoft content delivery networks.
+  NonFreeDep:
+    en-US: Requires a valid Microsoft account and proprietary Minecraft Java Edition
+      game files to function.
 
 RepoType: git
-Repo: https://gitlab.com/libre-group2305847/Libre-project.git
-
-AntiFeatures:
-  - NonFreeNet
-  - NonFreeDep
+Repo: https://github.com/PolskieWin/libre-launcher.git
 
 Builds:
-  - versionName: '2.60'
-    versionCode: 260
-    commit: v2.60
+  - versionName: '3.00'
+    versionCode: 300
+    commit: v3.00
     subdir: app_mojo
     submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y cmake ninja-build
     gradle:
-      - assembleNoruntimeRelease
+      - noruntimeRelease
+    ndk: 29.0.14206865
+    scandelete:
+      - app_mojo/libs/
+    prebuild:
+      - rm -rf libs/*.aar libs/*.jar
 
 AutoUpdateMode: Version
-UpdateCheckMode: Tags
-UpdateCheckData: app_mojo/build.gradle|versionCode\s+(\d+)|app_mojo/build.gradle|versionName\s+["']([^"']+)["']
-CurrentVersion: '2.60'
-CurrentVersionCode: 260
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: '3.00'
+CurrentVersionCode: 300
 ```

@@ -121,3 +121,10 @@ JNIEnv* get_attached_env(JavaVM* jvm) {
     }
     return jvm_env;
 }
+
+// Android Bionic omits legacy utmp functions; stub them so Java 25 FFM OSHI (MC 26.4+) resolves CPU info
+__attribute__((weak, visibility("default"), used)) void setutxent(void) {}
+__attribute__((weak, visibility("default"), used)) void* getutxent(void) { return NULL; }
+__attribute__((weak, visibility("default"), used)) void endutxent(void) {}
+
+// Android Bionic omits legacy utmp functions; stub them so Java 25 FFM OSHI (MC 26.4+) resolves CPU info

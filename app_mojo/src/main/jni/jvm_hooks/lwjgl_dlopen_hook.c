@@ -206,6 +206,73 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
  * Libre Mobile is identified cleanly in the Minecraft F3 debug overlay,
  * and ensuring shaderc and spvc symbols always resolve cleanly.
  */
+
+// Vulkan F3 driverInfo trimmer: shortens "Vulkan 1.4.363 turnip Mesa driver (...)" to "Vulkan 1.4.363"
+typedef struct {
+    int32_t sType;
+    void* pNext;
+} LibreVkBaseOutStructure;
+
+typedef struct {
+    int32_t sType;
+    void* pNext;
+    uint32_t driverID;
+    char driverName[256];
+    char driverInfo[256];
+    uint8_t conformanceVersion[4];
+} LibreVkPhysicalDeviceDriverProperties;
+
+typedef void (*PFN_vkVoidFunction_libre)(void);
+typedef PFN_vkVoidFunction_libre (*PFN_vkGetInstanceProcAddr_libre)(void* instance, const char* pName);
+typedef void (*PFN_vkGetPhysicalDeviceProperties2_libre)(void* physicalDevice, void* pProperties);
+
+static PFN_vkGetInstanceProcAddr_libre s_orig_vkGetInstanceProcAddr = NULL;
+static PFN_vkGetPhysicalDeviceProperties2_libre s_orig_vkGetPhysicalDeviceProperties2 = NULL;
+static PFN_vkGetPhysicalDeviceProperties2_libre s_orig_vkGetPhysicalDeviceProperties2KHR = NULL;
+
+static void libre_trim_vk_driver_props(void* pProperties) {
+    if (pProperties == NULL) return;
+    LibreVkBaseOutStructure* cur = ((LibreVkBaseOutStructure*)pProperties)->pNext;
+    while (cur != NULL) {
+        // VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES = 1000196001
+        if (cur->sType == 1000196001) {
+            LibreVkPhysicalDeviceDriverProperties* dp = (LibreVkPhysicalDeviceDriverProperties*)cur;
+            dp->driverInfo[0] = '\0';
+        }
+        cur = cur->pNext;
+    }
+}
+
+static void libre_vkGetPhysicalDeviceProperties2(void* physicalDevice, void* pProperties) {
+    if (s_orig_vkGetPhysicalDeviceProperties2) {
+        s_orig_vkGetPhysicalDeviceProperties2(physicalDevice, pProperties);
+        libre_trim_vk_driver_props(pProperties);
+    }
+}
+
+static void libre_vkGetPhysicalDeviceProperties2KHR(void* physicalDevice, void* pProperties) {
+    if (s_orig_vkGetPhysicalDeviceProperties2KHR) {
+        s_orig_vkGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
+        libre_trim_vk_driver_props(pProperties);
+    }
+}
+
+static PFN_vkVoidFunction_libre libre_vkGetInstanceProcAddr(void* instance, const char* pName) {
+    if (s_orig_vkGetInstanceProcAddr == NULL) return NULL;
+    PFN_vkVoidFunction_libre fn = s_orig_vkGetInstanceProcAddr(instance, pName);
+    if (fn != NULL && pName != NULL) {
+        if (strcmp(pName, "vkGetPhysicalDeviceProperties2") == 0) {
+            s_orig_vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2_libre)fn;
+            return (PFN_vkVoidFunction_libre)libre_vkGetPhysicalDeviceProperties2;
+        }
+        if (strcmp(pName, "vkGetPhysicalDeviceProperties2KHR") == 0) {
+            s_orig_vkGetPhysicalDeviceProperties2KHR = (PFN_vkGetPhysicalDeviceProperties2_libre)fn;
+            return (PFN_vkVoidFunction_libre)libre_vkGetPhysicalDeviceProperties2KHR;
+        }
+    }
+    return fn;
+}
+
 static jlong ndlsym_bugfix(__attribute__((unused)) JNIEnv *env,
                            __attribute__((unused)) jclass class,
                            jlong handle_val,
@@ -280,7 +347,26 @@ static jlong ndlsym_bugfix(__attribute__((unused)) JNIEnv *env,
 /**
  * Install the LWJGL dlopen hook. This allows us to mitigate linker bugs and add custom library overrides.
  */
+
+__attribute__((visibility("default"), used)) void setutxent(void) {}
+__attribute__((visibility("default"), used)) void* getutxent(void) { return NULL; }
+__attribute__((visibility("default"), used)) void endutxent(void) {}
+
 void installLwjglDlopenHook(JNIEnv *env) {
+    // Promote libmojort.so to RTLD_GLOBAL so Java 25 FFM SymbolLookup.defaultLookup() finds setutxent/getutxent/endutxent
+    dlopen("libmojort.so", RTLD_NOLOAD | RTLD_GLOBAL);
+    const char* libDir = mojo_get_native_lib_dir();
+    if (libDir != NULL && libDir[0] != '\0') {
+        char mojortPath[512];
+        snprintf(mojortPath, sizeof(mojortPath), "%s/libmojort.so", libDir);
+        dlopen(mojortPath, RTLD_NOLOAD | RTLD_GLOBAL);
+        mojoexec_dlopen(mojortPath, RTLD_NOW | RTLD_GLOBAL);
+        char shimPath[512];
+        snprintf(shimPath, sizeof(shimPath), "%s/libutxent_shim.so", libDir);
+        dlopen(shimPath, RTLD_NOW | RTLD_GLOBAL);
+        mojoexec_dlopen(shimPath, RTLD_NOW | RTLD_GLOBAL);
+    }
+
     LOGI("Installing LWJGL dlopen() and dlsym() hooks");
     jclass dynamicLinkLoader = (*env)->FindClass(env, "org/lwjgl/system/linux/DynamicLinkLoader");
     if(dynamicLinkLoader == NULL) {

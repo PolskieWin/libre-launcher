@@ -8,73 +8,35 @@ Changelog: https://github.com/PolskieWin/libre-launcher/releases
 
 AutoName: Libre Launcher
 
-Summary: 'Fast Minecraft: Java Edition launcher with native Rust controls'
-
-Description: |-
-  Libre Launcher is an open-source, lightweight, high-performance Minecraft:
-  Java Edition launcher for Android.
-
-  Features:
-  * Native Rust touch controls and aim smoothing (libre_controls)
-  * Thermal-aware AFK hibernate mode (5 FPS, pure-black OLED display)
-  * Pre-boot mod compatibility scanner (Fabric, NeoForge, Quilt)
-  * Custom Vulkan Turnip / Freedreno drivers and Mesa Zink renderer
-  * 100% Material 3 design with home-screen pinned instance shortcuts
-  * Zero telemetry, ads, or tracking SDKs
-
-  DISCLAIMER: NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED
-  WITH MOJANG OR MICROSOFT. Minecraft is a trademark of Mojang AB.
+AntiFeatures:
+  NonFreeNet:
+    en-US: Connects to Microsoft/Mojang authentication endpoints and downloads
+      official Minecraft game assets from Mojang/Microsoft content delivery networks.
+  NonFreeDep:
+    en-US: Requires a valid Microsoft account and proprietary Minecraft Java Edition
+      game files to function.
 
 RepoType: git
 Repo: https://github.com/PolskieWin/libre-launcher.git
 
-AntiFeatures:
-  - NonFreeNet
-  - NonFreeDep
-
 Builds:
-  - versionName: '2.60'
-    versionCode: 260
-    commit: v2.60
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.70'
-    versionCode: 270
-    commit: v2.70
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.80'
-    versionCode: 280
-    commit: v2.80
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
-  - versionName: '2.90'
-    versionCode: 290
-    commit: v2.90
-    subdir: app_mojo
-    submodules: true
-    gradle:
-      - assembleNoruntimeRelease
-
   - versionName: '3.00'
     versionCode: 300
     commit: v3.00
     subdir: app_mojo
     submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y cmake ninja-build
     gradle:
-      - assembleNoruntimeRelease
+      - noruntimeRelease
+    ndk: 29.0.14206865
+    scandelete:
+      - app_mojo/libs/
+    prebuild:
+      - rm -rf libs/*.aar libs/*.jar
 
 AutoUpdateMode: Version
-UpdateCheckMode: Tags
-UpdateCheckData: app_mojo/build.gradle|versionCode\s+(\d+)|app_mojo/build.gradle|versionName\s+["']([^"']+)["']
+UpdateCheckMode: Tags ^v[0-9.]+$
 CurrentVersion: '3.00'
 CurrentVersionCode: 300

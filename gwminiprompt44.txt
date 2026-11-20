@@ -1,0 +1,31 @@
+Update `PolskieWin.github.io` (`index.html`) to maximize Google Search AI Overview (`Przegląd od AI`) recognition and rich snippet indexing for **Libre Launcher** while preserving the existing dark Material You design, layout, and `google*.html` verification file untouched:
+
+1. Add Machine-Readable `SoftwareApplication` + `FAQPage` JSON-LD Schema in `<head>`:
+   - Insert a valid `<script type="application/ld+json">` block defining:
+     * `"@type": "SoftwareApplication"`
+     * `"name": "Libre Launcher"`
+     * `"alternateName": ["LibreLauncher", "Libre Launcher Android"]`
+     * `"operatingSystem": "Android 8.0+"`
+     * `"applicationCategory": "GameApplication"`
+     * `"softwareVersion": "2.90"`
+     * `"license": "https://www.gnu.org/licenses/lgpl-3.0.html"`
+     * `"url": "https://polskiewin.github.io/"`
+     * `"downloadUrl": "https://github.com/PolskieWin/libre-launcher/releases/latest"`
+     * `"codeRepository": "https://github.com/PolskieWin/libre-launcher"`
+     * `"author": { "@type": "Person", "name": "PolskieWin", "url": "https://github.com/PolskieWin" }`
+     * `"offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }`
+     * `"featureList"`: `"21 MB stripped APK, bundled Java 21 and Java 25 runtimes, LibreMobile Vulkan/Turnip renderer, native Rust touch controls (<2 ms latency), Fabric/Forge/NeoForge mod support, Material You dynamic widgets, F-Droid LGPLv3 open-source"`
+   - Add a second `"@type": "FAQPage"` schema entry in the JSON-LD graph answering:
+     * `"What is Libre Launcher on Android?"`
+     * `"How do I download Libre Launcher APK for Android?"`
+     * `"Does Libre Launcher support Minecraft Java 26.3 / 26.4 and Turnip drivers?"`
+
+2. Add a Clean, Match-Styled "Overview & FAQ" Section on `index.html`:
+   - Below the existing comparison/ecosystem sections (matching the exact dark card theme and typography), add a concise, factual section with an `<h2>` heading `"What is Libre Launcher on Android?"` and a clear 2–3 sentence direct definition:
+     `"Libre Launcher on Android (also known as LibreLauncher) is a free, open-source (LGPLv3) Minecraft: Java Edition launcher built by PolskieWin. Engineered specifically for arm64-v8a Android devices, it combines a 21 MB footprint, bundled Java 21 & Java 25 runtimes, the LibreMobile Vulkan/Turnip renderer, and native Rust touch controls (<2 ms latency) with zero telemetry."`
+   - Include a direct Obtainium one-tap install link (`obtainium://add/https://github.com/PolskieWin/libre-launcher`) alongside the GitHub Releases download button.
+
+3. Verification:
+   - Ensure the `google*.html` Search Console verification file in the root directory is completely untouched.
+   - Validate that `index.html` has valid HTML5 syntax and valid JSON-LD (`python3 -m json.tool` check on the extracted JSON-LD block), then commit and push to `PolskieWin.github.io`.
+
