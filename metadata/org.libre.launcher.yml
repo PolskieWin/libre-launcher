@@ -1,0 +1,38 @@
+AntiFeatures:
+  NonFreeNet:
+    en-US: Connects to Microsoft/Mojang authentication endpoints and downloads official Minecraft game assets from Mojang/Microsoft content delivery networks.
+  NonFreeDep:
+    en-US: Requires a valid Microsoft account and proprietary Minecraft Java Edition game files to function.
+Categories:
+  - Game Helper
+License: LGPL-3.0-or-later
+AuthorName: Libre Launcher Contributors
+SourceCode: https://github.com/PolskieWin/libre-launcher
+IssueTracker: https://github.com/PolskieWin/libre-launcher/issues
+Changelog: https://github.com/PolskieWin/libre-launcher/releases
+
+AutoName: Libre Launcher
+
+RepoType: git
+Repo: https://github.com/PolskieWin/libre-launcher.git
+
+Builds:
+  - versionName: '3.00'
+    versionCode: 300
+    commit: v3.00
+    subdir: app_mojo
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y cmake ninja-build
+    gradle:
+      - noruntimeRelease
+    prebuild: rm -rf libs/*.aar libs/*.jar
+    scandelete:
+      - app_mojo/libs/
+    ndk: 29.0.14206865
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: '3.00'
+CurrentVersionCode: 300
