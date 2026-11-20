@@ -26,10 +26,6 @@
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4_homeFolders.jpg" width="23%" alt="Instance Folders">
 </p>
 
-<p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5_ingameControls.jpg" width="95%" alt="In-Game Rust Virtual Touch Controls (libre_controls)">
-</p>
-
 ---
 
 ## Roadmap
