@@ -1,0 +1,1 @@
+v2.81: Remove in-app APK self-updater for F-Droid compliance, streamline noruntime build variant for source compilation, and bump to version 2.81.

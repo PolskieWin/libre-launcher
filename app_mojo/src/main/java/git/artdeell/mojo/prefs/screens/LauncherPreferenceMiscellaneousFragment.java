@@ -14,7 +14,6 @@ import androidx.preference.Preference;
 
 import com.kdt.mcgui.ProgressLayout;
 
-import git.artdeell.mojo.BuildConfig;
 import git.artdeell.mojo.R;
 
 import git.artdeell.mojo.LauncherActivity;
@@ -54,22 +53,7 @@ public class LauncherPreferenceMiscellaneousFragment extends LauncherPreferenceF
         });
         setupCacheClearPreference();
         setupMicrophoneRequestPreference();
-        setupUpdateCheckPreference();
         updateVisibility();
-    }
-
-    private void setupUpdateCheckPreference() {
-        Preference updateCheckPreference = findPreference("checkUpdatesNow");
-        if (updateCheckPreference != null) {
-            if ("noruntime".equalsIgnoreCase(BuildConfig.FLAVOR)) {
-                updateCheckPreference.setVisible(false);
-            } else {
-                updateCheckPreference.setOnPreferenceClickListener(preference -> {
-                    git.artdeell.mojo.update.UpdateManager.checkForUpdate(getActivity(), true);
-                    return true;
-                });
-            }
-        }
     }
 
     private void updateVisibility(){
