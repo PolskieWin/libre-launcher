@@ -10,7 +10,6 @@
   <a href="https://github.com/PolskieWin/libre-launcher/releases"><img src="https://img.shields.io/badge/Platform-Android%20(arm64--v8a)-brightgreen?logo=android" alt="Platform: Android"></a>
   <a href="https://github.com/PolskieWin/libre-launcher/releases"><img src="https://img.shields.io/github/v/release/PolskieWin/libre-launcher?label=Release&color=blue" alt="GitHub Release"></a>
   <a href="https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58168"><img src="https://img.shields.io/badge/F--Droid-MR%20!58168-blue?logo=f-droid" alt="F-Droid MR"></a>
-  <a href="https://codeberg.org/Polskie/libre-launcher"><img src="https://img.shields.io/badge/Codeberg-Mirror-2185D0?logo=codeberg" alt="Codeberg Mirror"></a>
   <a href="https://discord.gg/KJpCVzRzRy"><img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
   <img src="https://img.shields.io/badge/License-LGPLv3-blue" alt="License: LGPLv3">
 </p>
@@ -23,7 +22,6 @@ Libre Launcher (Android) is a lightweight, open-source Minecraft: Java Edition l
 ## Downloads & Links
 - **GitHub Releases (Official Builds & APKs)**: [PolskieWin/libre-launcher/releases](https://github.com/PolskieWin/libre-launcher/releases)
 - **F-Droid Package (Main Catalog Inclusion)**: [F-Droid Merge Request !58168](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58168)
-- **Codeberg Mirror**: [codeberg.org/Polskie/libre-launcher](https://codeberg.org/Polskie/libre-launcher)
 - **Official Community Discord**: [discord.gg/KJpCVzRzRy](https://discord.gg/KJpCVzRzRy)
 
 ---
