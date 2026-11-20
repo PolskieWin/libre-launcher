@@ -1,0 +1,1 @@
+v2.82: Fix Minecraft 26.3 and LWJGL 3.4.3 library search path and libshaderc.so resolution on Android 16.

@@ -51,12 +51,42 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
 
     int mode = (int)jmode;
     void* handle = dlopen(filename, mode);
-    if(handle == NULL && filename != NULL && filename[0] != '/') {
+    if(handle == NULL && filename != NULL) {
         char pathBuf[512];
         const char* nativeLibDir = getenv("POJAV_NATIVE_LIB_DIR");
-        if(nativeLibDir != NULL) {
-            snprintf(pathBuf, sizeof(pathBuf), "%s/%s", nativeLibDir, filename);
+        if(nativeLibDir != NULL && nativeLibDir[0] != '\0') {
+            const char* baseName = strrchr(filename, '/');
+            baseName = baseName ? baseName + 1 : filename;
+
+            // 1. Direct match with basename in nativeLibDir
+            snprintf(pathBuf, sizeof(pathBuf), "%s/%s", nativeLibDir, baseName);
             handle = dlopen(pathBuf, mode);
+
+            // 2. Try prefixing "lib" and/or suffixing ".so" if missing
+            if(handle == NULL) {
+                if(strncmp(baseName, "lib", 3) != 0) {
+                    snprintf(pathBuf, sizeof(pathBuf), "%s/lib%s.so", nativeLibDir, baseName);
+                    handle = dlopen(pathBuf, mode);
+                } else if(strstr(baseName, ".so") == NULL) {
+                    snprintf(pathBuf, sizeof(pathBuf), "%s/%s.so", nativeLibDir, baseName);
+                    handle = dlopen(pathBuf, mode);
+                }
+            }
+
+            // 3. Known aliases for LWJGL 3.4.3 / MC 26.3
+            if(handle == NULL && strstr(baseName, "shaderc") != NULL) {
+                snprintf(pathBuf, sizeof(pathBuf), "%s/libshaderc.so", nativeLibDir);
+                handle = dlopen(pathBuf, mode);
+            }
+            if(handle == NULL && (strstr(baseName, "spvc") != NULL || strstr(baseName, "spirv-cross") != NULL)) {
+                snprintf(pathBuf, sizeof(pathBuf), "%s/libspirv-cross-c-shared.so", nativeLibDir);
+                handle = dlopen(pathBuf, mode);
+            }
+        }
+        if(handle != NULL) {
+            printf("LWJGL linkerhook: resolved %s from nativeLibDir (%s)\n", filename, pathBuf);
+        } else {
+            printf("LWJGL linkerhook: dlopen failed for %s: %s\n", filename, dlerror());
         }
     }
     return (jlong) handle;

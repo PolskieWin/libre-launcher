@@ -115,7 +115,8 @@ public class JavaRunner {
                 "-Duser.timezone=" + TimeZone.getDefault().getID(),
 
                 "-Dorg.lwjgl.vulkan.libname=libvulkan.so",
-                "-Dorg.lwjgl.spvc.libname=spirv-cross-c-shared",
+                "-Dorg.lwjgl.shaderc.libname=" + new File(NATIVE_LIB_DIR, "libshaderc.so").getAbsolutePath(),
+                "-Dorg.lwjgl.spvc.libname=" + new File(NATIVE_LIB_DIR, "libspirv-cross-c-shared.so").getAbsolutePath(),
                 "-Dorg.lwjgl.sdl.libname=" + new File(NATIVE_LIB_DIR, "libSDL3.so").getAbsolutePath(),
                 "-Dorg.lwjgl.system.allocator=system",
                 //LWJGL 3 DEBUG FLAGS

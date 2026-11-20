@@ -408,17 +408,29 @@ public class GameRunner {
         versionInfo.logging = null;
 
         File versionSpecificNativesDir = new File(Tools.DIR_CACHE, "natives/"+versionId);
-        if(versionSpecificNativesDir.exists()) {
-            String dirPath = versionSpecificNativesDir.getAbsolutePath();
-            javaArgList.add("-Djava.library.path="+dirPath+":"+Tools.NATIVE_LIB_DIR);
-            javaArgList.add("-Djna.boot.library.path="+dirPath);
-            // Sometimes, the game can extract natives itself onto this path
-            javaArgList.add("-Dorg.lwjgl.librarypath="+dirPath);
-        }
+        FileUtils.ensureDirectory(versionSpecificNativesDir);
+        String dirPath = versionSpecificNativesDir.getAbsolutePath();
 
         File lwjglExtractDir = new File(Tools.DIR_CACHE, "lwjgl_native/"+versionId);
         FileUtils.ensureDirectory(lwjglExtractDir);
-        javaArgList.add("-Dorg.lwjgl.system.SharedLibraryExtractPath="+lwjglExtractDir.getAbsolutePath());
+        String lwjglExtractPath = lwjglExtractDir.getAbsolutePath();
+
+        String nativeLibDir = Tools.NATIVE_LIB_DIR != null ? Tools.NATIVE_LIB_DIR : "";
+        String fullLibraryPath = dirPath + ":" + nativeLibDir + ":" + lwjglExtractPath;
+
+        javaArgList.add("-Djava.library.path=" + fullLibraryPath);
+        javaArgList.add("-Djna.boot.library.path=" + fullLibraryPath);
+        javaArgList.add("-Dorg.lwjgl.librarypath=" + fullLibraryPath);
+        javaArgList.add("-Dorg.lwjgl.system.SharedLibraryExtractPath=" + lwjglExtractPath);
+
+        File shadercFile = new File(nativeLibDir, "libshaderc.so");
+        if (shadercFile.exists()) {
+            javaArgList.add("-Dorg.lwjgl.shaderc.libname=" + shadercFile.getAbsolutePath());
+        }
+        File spvcFile = new File(nativeLibDir, "libspirv-cross-c-shared.so");
+        if (spvcFile.exists()) {
+            javaArgList.add("-Dorg.lwjgl.spvc.libname=" + spvcFile.getAbsolutePath());
+        }
 
         mergeMoJsonArgs(javaArgList, getMoJsonJvmArgs(versionId), gamedir);
         ensureForgeNeoForgeArgs(javaArgList, versionId, runtime.javaVersion);
@@ -539,6 +551,7 @@ public class GameRunner {
                 "-Djava.library.path=",
                 "-Djna.tmpdir=",
                 "-Dorg.lwjgl.system.SharedLibraryExtractPath=",
+                "-Dorg.lwjgl.librarypath=",
                 "-Dio.netty.native.workdir=",
                 "-Djava.class.path="
         };
