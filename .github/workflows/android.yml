@@ -16,10 +16,12 @@ jobs:
       UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_NEXT_KEYSTORE_PASSWORD }}
       MOJOPUB_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_NEXT_KEYSTORE_PASSWORD }}
       CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+      GRADLE_OPTS: "-Dorg.gradle.workers.max=4 -Dorg.gradle.jvmargs=-Xmx4096M"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
+          fetch-depth: 1
           submodules: true
 
       - name: Get LTW
@@ -41,17 +43,16 @@ jobs:
             gh run download --repo CopperLauncher/Mesa-AAR-Builder --name mesa.aar --dir app_mojo/libs || true
           fi
 
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.14.5"
-
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Create out directory
-        run: mkdir out
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.5"
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Cache Shaderc Static Libraries
         id: cache-shaderc
@@ -96,95 +97,51 @@ jobs:
             echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > app_mojo/mojo_upload_next.jks
           fi
 
-      - name: Build Publishing .aab
-        if: github.repository_owner == 'CopperLauncher' && (github.ref == 'refs/heads/v3_openjdk' || startsWith(github.ref, 'refs/tags/v'))
+      - name: Build all variants
         run: |
-          ./gradlew :app_mojo:bundleFullGplay --parallel --build-cache
-          mv app_mojo/build/outputs/bundle/fullGplay/app_mojo-full-gplay.aab out/app-gplay.aab
+          mkdir -p out
 
-      - name: Build Launcher APKs
-        run: |
           TASKS=":app_mojo:assembleFullDebug :app_mojo:assembleNoruntimeDebug :app_mojo:assembleStrippedDebug"
-          if [ "${{ github.repository_owner }}" = "PolskieWin" ] || [ "${{ github.repository_owner }}" = "CopperLauncher" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+
+          IS_OWNER="false"
+          if [ "${{ github.repository_owner }}" = "PolskieWin" ] || [ "${{ github.repository_owner }}" = "CopperLauncher" ]; then
+            IS_OWNER="true"
+          fi
+
+          if [ "$IS_OWNER" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
             TASKS="$TASKS :app_mojo:assembleFullPubRelease :app_mojo:assembleNoruntimePubRelease :app_mojo:assembleStrippedPubRelease"
           fi
-          ./gradlew $TASKS --parallel --build-cache
 
+          if [ "${{ github.repository_owner }}" = "CopperLauncher" ]; then
+            if [ "${{ github.ref }}" = "refs/heads/v3_openjdk" ] || [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+              TASKS="$TASKS :app_mojo:bundleFullGplay"
+            fi
+          fi
+
+          ./gradlew $TASKS --parallel --build-cache --configuration-cache
+
+      - name: Collect outputs
+        run: |
           mv app_mojo/build/outputs/apk/full/debug/app_mojo-full-debug.apk out/LibreLauncher-debug-full.apk
           mv app_mojo/build/outputs/apk/noruntime/debug/app_mojo-noruntime-debug.apk out/LibreLauncher-debug-noruntime.apk
           mv app_mojo/build/outputs/apk/stripped/debug/app_mojo-stripped-debug.apk out/LibreLauncher-debug-stripped.apk
-          if [ -f app_mojo/build/outputs/apk/full/pubRelease/app_mojo-full-pubRelease.apk ]; then
-            mv app_mojo/build/outputs/apk/full/pubRelease/app_mojo-full-pubRelease.apk out/LibreLauncher-release.apk
-          fi
-          if [ -f app_mojo/build/outputs/apk/noruntime/pubRelease/app_mojo-noruntime-pubRelease.apk ]; then
-            mv app_mojo/build/outputs/apk/noruntime/pubRelease/app_mojo-noruntime-pubRelease.apk out/LibreLauncher-noruntime-release.apk
-          fi
-          if [ -f app_mojo/build/outputs/apk/stripped/pubRelease/app_mojo-stripped-pubRelease.apk ]; then
-            mv app_mojo/build/outputs/apk/stripped/pubRelease/app_mojo-stripped-pubRelease.apk out/LibreLauncher-stripped-release.apk
-          fi
 
-      - name: Gen md5sums
-        run: |
-          md5sum out/LibreLauncher-debug-full.apk > out/LibreLauncher-debug-full.md5
-          md5sum out/LibreLauncher-debug-noruntime.apk > out/LibreLauncher-debug-noruntime.md5
-          if [ -f out/LibreLauncher-debug-stripped.apk ]; then
-            md5sum out/LibreLauncher-debug-stripped.apk > out/LibreLauncher-debug-stripped.md5
-          fi
-          if [ -f out/LibreLauncher-release.apk ]; then
-            md5sum out/LibreLauncher-release.apk > out/LibreLauncher-release.md5
-          fi
-          if [ -f out/LibreLauncher-noruntime-release.apk ]; then
-            md5sum out/LibreLauncher-noruntime-release.apk > out/LibreLauncher-noruntime-release.md5
-          fi
-          if [ -f out/LibreLauncher-stripped-release.apk ]; then
-            md5sum out/LibreLauncher-stripped-release.apk > out/LibreLauncher-stripped-release.md5
-          fi
+          [ -f app_mojo/build/outputs/apk/full/pubRelease/app_mojo-full-pubRelease.apk ] && \
+            mv app_mojo/build/outputs/apk/full/pubRelease/app_mojo-full-pubRelease.apk out/LibreLauncher-release.apk || true
+          [ -f app_mojo/build/outputs/apk/noruntime/pubRelease/app_mojo-noruntime-pubRelease.apk ] && \
+            mv app_mojo/build/outputs/apk/noruntime/pubRelease/app_mojo-noruntime-pubRelease.apk out/LibreLauncher-noruntime-release.apk || true
+          [ -f app_mojo/build/outputs/apk/stripped/pubRelease/app_mojo-stripped-pubRelease.apk ] && \
+            mv app_mojo/build/outputs/apk/stripped/pubRelease/app_mojo-stripped-pubRelease.apk out/LibreLauncher-stripped-release.apk || true
+          [ -f app_mojo/build/outputs/bundle/fullGplay/app_mojo-full-gplay.aab ] && \
+            mv app_mojo/build/outputs/bundle/fullGplay/app_mojo-full-gplay.aab out/app-gplay.aab || true
 
-      - name: Upload Debug APK
+          cd out && for f in *.apk *.aab; do [ -f "$f" ] && md5sum "$f" > "${f%.*}.md5"; done
+
+      - name: Upload all build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: LibreLauncher-debug
-          path: out/LibreLauncher-debug-full.apk
-
-      - name: Upload Debug APK (No runtime)
-        uses: actions/upload-artifact@v4
-        with:
-          name: LibreLauncher-debug-noruntime
-          path: out/LibreLauncher-debug-noruntime.apk
-
-      - name: Upload Debug APK (Stripped)
-        uses: actions/upload-artifact@v4
-        with:
-          name: LibreLauncher-debug-stripped
-          path: out/LibreLauncher-debug-stripped.apk
-
-      - name: Upload Release APK
-        if: (github.repository_owner == 'PolskieWin' || github.repository_owner == 'CopperLauncher') && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: LibreLauncher-release
-          path: out/LibreLauncher-release.apk
-
-      - name: Upload Noruntime Release APK
-        if: (github.repository_owner == 'PolskieWin' || github.repository_owner == 'CopperLauncher') && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: LibreLauncher-noruntime-release
-          path: out/LibreLauncher-noruntime-release.apk
-
-      - name: Upload Stripped Release APK
-        if: (github.repository_owner == 'PolskieWin' || github.repository_owner == 'CopperLauncher') && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: LibreLauncher-stripped-release
-          path: out/LibreLauncher-stripped-release.apk
-
-      - name: Upload AAB
-        if: github.repository_owner == 'CopperLauncher' && (github.ref == 'refs/heads/v3_openjdk' || startsWith(github.ref, 'refs/tags/v'))
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-aab
-          path: out/app-gplay.aab
+          name: LibreLauncher-all
+          path: out/
 
       # Only v3_openjdk publishes the nightly release, other branches just upload the APK as an artifact
       - name: Release Nightly APK
