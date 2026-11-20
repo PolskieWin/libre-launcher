@@ -416,3 +416,7 @@ dependencies {
 
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
 }
+
+tasks.matching { it.name.startsWith("unzipComponent") }.configureEach { unzipTask ->
+    mustRunAfter(tasks.matching { it.name.startsWith("downloadComponent") })
+}
