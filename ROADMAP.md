@@ -89,10 +89,15 @@ Architecture and feature roadmap for Libre Launcher.
 - **Modern LWJGL 3.4+ Unsafe Artifact Substitution**: Normalized classifier parsing in `SubstitutionMap` to strip `:unsafe` and `-unsafe` suffixes, mapping modern LWJGL snapshots to bundled Android binaries.
 - **Multi-Flavor Runtime Integrity**: Fixed link path parameter order and pre-existing file pruning in `MultiRTUtils` runtime unarchiver; unblocked Java 8 and 17 execution in stripped flavor, and fortified Cacio `-Xbootclasspath/p` against empty parameter crashes on noruntime builds.
 
+### v2.70 — JNI Native Linkage Hardening & Release Stability
+- **MojoExec Native JNI Linkage Fix**: Added static initializer with `System.loadLibrary("mojoexec")` in `MojoExec.java` ensuring native methods including `setUseBigCoreAffinity` resolve reliably prior to invocation in stripped release builds; wrapped `GameRenderer` affinity setup with defensive boundary exception handling.
+- **ProGuard / R8 Obfuscation Defense**: Enforced explicit keep rules for `git.artdeell.mojoexec.**` across `app_mojo/proguard-rules.pro` and `mojoexec:jni_bindings` consumer rules, preventing signature stripping during release optimization.
+- **Build Pipeline Verification**: Verified dynamic JNI symbol tables (`Java_git_artdeell_mojoexec_MojoExec_setUseBigCoreAffinity`) and APK packaging integrity across stripped and noruntime flavors.
+
 ---
 
 ## Upcoming Milestones
 
-### v2.70 — Adaptive Vulkan Pipeline & Official Repository Inclusion
+### v2.80 — Adaptive Vulkan Pipeline & Official Repository Inclusion
 - **F-Droid Official Repository Inclusion**: Completion and merge of official F-Droid Merge Request `!58168`.
 - **Adaptive Vulkan Extension Optimizer**: Dynamic detection of Turnip driver extensions with real-time pipeline optimizations.

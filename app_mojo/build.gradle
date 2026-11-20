@@ -27,7 +27,7 @@ def getAppVersionCode = {
         }
         return Integer.parseInt(stdout.toString().trim())
     } catch (Exception ignored) {
-        return 260
+        return 270
     }
 }
 
@@ -49,7 +49,7 @@ def getAppVersionName = {
         if (!tag.isEmpty()) return tag
     } catch (Exception ignored) {
     }
-    return "2.60"
+    return "2.70"
 }
 
 def getCFApiKey = {
@@ -118,8 +118,8 @@ android {
         applicationId "org.libre.launcher"
         minSdkVersion 23
         targetSdkVersion 36
-        versionCode 260
-        versionName "2.60"
+        versionCode 270
+        versionName "2.70"
         multiDexEnabled false //important
         resValue 'string', 'curseforge_api_key', getCFApiKey()
         resValue 'string', 'group_id', 'git.artdeell'
@@ -408,6 +408,7 @@ dependencies {
     implementation 'net.java.dev.jna:jna:5.14.0@aar'
 
     implementation project(":glfw:jni_bindings")
+    implementation project(":mojoexec:jni_bindings")
     implementation project(":sdl:jni_bindings")
     // implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.0'
 

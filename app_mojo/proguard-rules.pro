@@ -8,6 +8,7 @@
 
 # Launcher core classes, UI controllers, and reflection targets
 -keep class git.artdeell.mojo.** { *; }
+-keep class git.artdeell.mojoexec.** { *; }
 -keep class com.kdt.mcgui.** { *; }
 -keep class org.lwjgl.** { *; }
 -keep class java.awt.** { *; }
