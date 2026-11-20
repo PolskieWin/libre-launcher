@@ -160,7 +160,12 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
                 (account.accessToken != null && !account.accessToken.equals("0") && !account.accessToken.trim().isEmpty())
                 || (account.refreshToken != null && !account.refreshToken.equals("0") && !account.refreshToken.trim().isEmpty())
         );
-        if(account == null || account.authType != AuthType.MICROSOFT || !account.isMicrosoft || !hasToken) {
+        boolean hasValidProfile = account != null
+                && account.username != null && !account.username.trim().isEmpty()
+                && !account.username.equals("0") && !account.username.equals("Steve") && !account.username.equals("Demo.Player")
+                && account.profileId != null && !account.profileId.trim().isEmpty()
+                && !account.profileId.equals("00000000-0000-0000-0000-000000000000");
+        if(account == null || account.authType != AuthType.MICROSOFT || !account.isMicrosoft || !hasToken || !hasValidProfile) {
             Toast.makeText(this, R.string.ms_auth_required_launch, Toast.LENGTH_LONG).show();
             finish();
             return;

@@ -218,8 +218,13 @@ public class GameRunner {
                 (account.accessToken != null && !account.accessToken.equals("0") && !account.accessToken.trim().isEmpty())
                 || (account.refreshToken != null && !account.refreshToken.equals("0") && !account.refreshToken.trim().isEmpty())
         );
-        if (account == null || account.authType != AuthType.MICROSOFT || !account.isMicrosoft || !hasToken) {
-            throw new IllegalStateException("Valid Microsoft authentication is strictly required to launch Minecraft: Java Edition.");
+        boolean hasValidProfile = account != null
+                && account.username != null && !account.username.trim().isEmpty()
+                && !account.username.equals("0") && !account.username.equals("Steve") && !account.username.equals("Demo.Player")
+                && account.profileId != null && !account.profileId.trim().isEmpty()
+                && !account.profileId.equals("00000000-0000-0000-0000-000000000000");
+        if (account == null || account.authType != AuthType.MICROSOFT || !account.isMicrosoft || !hasToken || !hasValidProfile) {
+            throw new IllegalStateException("Valid Microsoft authentication and verified Minecraft: Java Edition ownership are strictly required to launch Minecraft: Java Edition.");
         }
 
         int freeDeviceMemory = Tools.getFreeDeviceMemory(activity);

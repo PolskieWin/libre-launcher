@@ -148,37 +148,7 @@ target_link_libraries(mobileglues_info_getter
         dl
 )
 
-# ------ LWJGL 3.4.3 / Minecraft 26.3+ Native Libraries (shaderc, spvc, vma) ------
-
-add_library(shaderc SHARED
-        shaderc/shaderc_shim.c
-)
-set_target_properties(shaderc PROPERTIES
-        OUTPUT_NAME "shaderc"
-)
-target_compile_options(shaderc PRIVATE -Oz -fdata-sections -ffunction-sections)
-target_link_options(shaderc PRIVATE -Wl,--gc-sections -Wl,--strip-all)
-target_link_libraries(shaderc PRIVATE log)
-
-add_library(spirv-cross-c-shared SHARED
-        spvc/spvc_shim.c
-)
-set_target_properties(spirv-cross-c-shared PROPERTIES
-        OUTPUT_NAME "spirv-cross-c-shared"
-)
-target_compile_options(spirv-cross-c-shared PRIVATE -Oz -fdata-sections -ffunction-sections)
-target_link_options(spirv-cross-c-shared PRIVATE -Wl,--gc-sections -Wl,--strip-all)
-target_link_libraries(spirv-cross-c-shared PRIVATE log)
-
-add_library(spvc SHARED
-        spvc/spvc_shim.c
-)
-set_target_properties(spvc PROPERTIES
-        OUTPUT_NAME "spvc"
-)
-target_compile_options(spvc PRIVATE -Oz -fdata-sections -ffunction-sections)
-target_link_options(spvc PRIVATE -Wl,--gc-sections -Wl,--strip-all)
-target_link_libraries(spvc PRIVATE log)
+# ------ LWJGL 3.4.3 / Minecraft 26.3+ Native Libraries (vma) ------
 
 add_library(lwjgl_vma SHARED
         vma/vma_shim.c

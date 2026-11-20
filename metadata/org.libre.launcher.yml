@@ -8,7 +8,7 @@ Changelog: https://github.com/PolskieWin/libre-launcher/releases
 
 AutoName: Libre Launcher
 
-Summary: Fast Minecraft: Java Edition launcher with native Rust controls
+Summary: 'Fast Minecraft: Java Edition launcher with native Rust controls'
 
 Description: |-
   Libre Launcher is an open-source, lightweight, high-performance Minecraft:
@@ -57,8 +57,16 @@ Builds:
     gradle:
       - assembleNoruntimeRelease
 
+  - versionName: '2.90'
+    versionCode: 290
+    commit: v2.90
+    subdir: app_mojo
+    submodules: true
+    gradle:
+      - assembleNoruntimeRelease
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: app_mojo/build.gradle|versionCode\s+(\d+)|app_mojo/build.gradle|versionName\s+["']([^"']+)["']
-CurrentVersion: '2.80'
-CurrentVersionCode: 280
+CurrentVersion: '2.90'
+CurrentVersionCode: 290

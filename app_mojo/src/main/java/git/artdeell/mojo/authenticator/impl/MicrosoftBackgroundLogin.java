@@ -88,13 +88,11 @@ public class MicrosoftBackgroundLogin implements BackgroundLogin {
                 checkProfile(token);
                 fetchOwnedItems(token);
 
-                if (!hasProfile && doesOwnGame) {
+                if (!doesOwnGame) {
+                    throw new PresentableException(R.string.mc_not_owned);
+                }
+                if (!hasProfile || mcName == null || mcUuid == null || mcName.trim().isEmpty() || mcUuid.trim().isEmpty() || mcUuid.equals("00000000-0000-0000-0000-000000000000") || mcName.equals("Demo.Player") || mcName.equals("Steve")) {
                     throw new PresentableException(R.string.minecraft_no_username_set);
-                } else if (!doesOwnGame) {
-                    mcName = "Demo.Player";
-                    mcUuid = "00000000-0000-0000-0000-000000000000";
-                } else if (mcName == null || mcUuid == null) {
-                    throw new IllegalStateException("This should never happen, please report this as a bug");
                 }
 
                 msXsts = xsts[0];
@@ -147,7 +145,10 @@ public class MicrosoftBackgroundLogin implements BackgroundLogin {
     @Override
     public void refreshAccount(@NonNull LoginListener loginListener, Account account) {
         acquireAccountDetails(loginListener, () -> {
-            if (doesOwnGame) fillAccount(account);
+            if (!doesOwnGame || !hasProfile) {
+                throw new PresentableException(R.string.mc_not_owned);
+            }
+            fillAccount(account);
             account.save();
             Accounts.setCurrent(account);
             Tools.runOnUiThread(() -> loginListener.onLoginDone(account));
@@ -295,6 +296,9 @@ public class MicrosoftBackgroundLogin implements BackgroundLogin {
 
     private void checkProfile(String mcAccessToken) throws IOException, JSONException, PresentableException {
         URL url = new URL(mcProfileUrl);
+        hasProfile = false;
+        mcName = null;
+        mcUuid = null;
 
         for (int retryCount = 0; retryCount < 5; ++retryCount) {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -307,36 +311,36 @@ public class MicrosoftBackgroundLogin implements BackgroundLogin {
                 conn.disconnect();
                 Log.i("MicrosoftLogin", "profile:" + s);
                 JSONObject jsonObject = new JSONObject(s);
-                String name = (String) jsonObject.get("name");
-                String uuid = (String) jsonObject.get("id");
-                String uuidDashes = uuid.replaceFirst(
-                        "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"
-                );
-                doesOwnGame = true;
-                hasProfile = true;
-                Log.i("MicrosoftLogin", "UserName = " + name);
-                Log.i("MicrosoftLogin", "Uuid Minecraft = " + uuidDashes);
-                mcName = name;
-                mcUuid = uuidDashes;
+                String name = jsonObject.optString("name", null);
+                String uuid = jsonObject.optString("id", null);
+                if (name != null && !name.trim().isEmpty() && uuid != null && !uuid.trim().isEmpty()) {
+                    String uuidDashes = uuid.replaceFirst(
+                            "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"
+                    );
+                    if (!uuidDashes.equals("00000000-0000-0000-0000-000000000000")) {
+                        hasProfile = true;
+                        mcName = name;
+                        mcUuid = uuidDashes;
+                    }
+                }
                 break;
             } else if (conn.getResponseCode() == 404) {
-                Log.i("MicrosoftLogin", "It seems that this Microsoft Account does not have a Minecraft profile, checking for ownership.");
+                Log.i("MicrosoftLogin", "Account does not have a Minecraft Java profile set.");
                 hasProfile = false;
                 break;
             } else if (conn.getResponseCode() == 401) {
-                Log.e("MicrosoftLogin", "You screwed up the auth code somewhere");
                 throw getResponseThrowable(conn);
             } else if (retryCount == 4) {
                 throw getResponseThrowable(conn);
             }
             try {
-                Thread.sleep(500L * (1L << retryCount)); // 0.5s, 1s, 2s, 4s, 8s
+                Thread.sleep(500L * (1L << retryCount));
             } catch (InterruptedException ignored) {}
         }
     }
 
     private void fetchOwnedItems(String mcAccessToken) throws IOException, PresentableException {
-        if (hasProfile) return;
+        doesOwnGame = false;
         URL url = new URL(mcStoreUrl);
         String s = "";
 
@@ -349,44 +353,70 @@ public class MicrosoftBackgroundLogin implements BackgroundLogin {
                 s = Tools.read(conn.getInputStream());
                 conn.disconnect();
                 break;
+            } else if (conn.getResponseCode() == 401 || conn.getResponseCode() == 403 || conn.getResponseCode() == 404) {
+                conn.disconnect();
+                doesOwnGame = false;
+                return;
             } else if (retryCount == 4) {
                 throw getResponseThrowable(conn);
             }
             try {
-                Thread.sleep(500L * (1L << retryCount)); // 0.5s, 1s, 2s, 4s, 8s
+                Thread.sleep(500L * (1L << retryCount));
             } catch (InterruptedException ignored) {}
         }
-        try {
-            String jwtSignature = new JSONObject(s).getString("signature");
-            String jwtBody = jwtSignature.split("\\.")[1];
 
-            String signature = new String(
-                    Base64.decode(jwtBody, Base64.DEFAULT),
-                    StandardCharsets.UTF_8
-            );
-            JSONObject jsonSignature = new JSONObject(signature);
-            JSONArray entitlements = jsonSignature.getJSONArray("entitlements");
-            for (int i = 0; i < entitlements.length(); ++i) {
-                switch (entitlements.getString(i)) {
-                    case "product_minecraft":
-                    case "game_minecraft":
-                    case "product_minecraft_bedrock":
-                    case "game_minecraft_bedrock":
-                        doesOwnGame = true;
-                        break;
-                    case "product_game_pass_pc":
-                    case "product_game_pass_ultimate":
-                        break;
-                    case "product_dungeons":
-                    case "game_dungeons":
-                    case "product_legends":
-                    case "game_legends":
-                    default:
-                        break;
+        if (s == null || s.trim().isEmpty()) {
+            doesOwnGame = false;
+            return;
+        }
+
+        try {
+            JSONObject root = new JSONObject(s);
+
+            JSONArray items = root.optJSONArray("items");
+            if (items != null) {
+                for (int i = 0; i < items.length(); ++i) {
+                    JSONObject item = items.optJSONObject(i);
+                    if (item != null) {
+                        String name = item.optString("name", "");
+                        if ("product_minecraft".equalsIgnoreCase(name) || "game_minecraft".equalsIgnoreCase(name)) {
+                            doesOwnGame = true;
+                            return;
+                        }
+                    }
                 }
             }
-        } catch (JSONException e) {
-            Log.w("MicrosoftLogin", "Either the Auth API was changed or this account does not own Minecraft! Assuming the latter.");
+
+            String jwtSignature = root.optString("signature", null);
+            if (jwtSignature != null && jwtSignature.contains(".")) {
+                String[] parts = jwtSignature.split("\\.");
+                if (parts.length >= 2) {
+                    String jwtBody = parts[1];
+                    String signature = new String(
+                            Base64.decode(jwtBody, Base64.DEFAULT),
+                            StandardCharsets.UTF_8
+                    );
+                    JSONObject jsonSignature = new JSONObject(signature);
+                    JSONArray entitlements = jsonSignature.optJSONArray("entitlements");
+                    if (entitlements != null) {
+                        for (int i = 0; i < entitlements.length(); ++i) {
+                            String entName = null;
+                            JSONObject entObj = entitlements.optJSONObject(i);
+                            if (entObj != null) {
+                                entName = entObj.optString("name", null);
+                            } else {
+                                entName = entitlements.optString(i, null);
+                            }
+                            if (entName != null && ("product_minecraft".equalsIgnoreCase(entName) || "game_minecraft".equalsIgnoreCase(entName))) {
+                                doesOwnGame = true;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w("MicrosoftLogin", "Failed to parse Minecraft store entitlements response", e);
             doesOwnGame = false;
         }
     }

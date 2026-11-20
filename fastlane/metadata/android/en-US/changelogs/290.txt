@@ -1,0 +1,1 @@
+v2.90: Compile real libshaderc from Android NDK sources with valid SPIR-V bytecode generation, integrate SPIRV-Cross reflection, and strictly harden Microsoft entitlement verification.

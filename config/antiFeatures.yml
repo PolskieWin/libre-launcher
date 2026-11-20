@@ -1,0 +1,6 @@
+NonFreeNet:
+  name: NonFreeNet
+  description: Network service is non-free
+NonFreeDep:
+  name: NonFreeDep
+  description: Depends on non-free app

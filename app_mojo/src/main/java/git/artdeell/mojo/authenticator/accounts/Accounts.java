@@ -84,7 +84,11 @@ public class Accounts {
 		}
 		boolean hasValidToken = (acc.accessToken != null && !acc.accessToken.equals("0") && !acc.accessToken.trim().isEmpty())
 				|| (acc.refreshToken != null && !acc.refreshToken.equals("0") && !acc.refreshToken.trim().isEmpty());
-		if (acc.authType != AuthType.MICROSOFT || !acc.isMicrosoft || !hasValidToken) {
+		boolean hasValidProfile = acc.username != null && !acc.username.trim().isEmpty()
+				&& !acc.username.equals("0") && !acc.username.equals("Steve") && !acc.username.equals("Demo.Player")
+				&& acc.profileId != null && !acc.profileId.trim().isEmpty()
+				&& !acc.profileId.equals("00000000-0000-0000-0000-000000000000");
+		if (acc.authType != AuthType.MICROSOFT || !acc.isMicrosoft || !hasValidToken || !hasValidProfile) {
 			return null;
 		}
 		return acc;
