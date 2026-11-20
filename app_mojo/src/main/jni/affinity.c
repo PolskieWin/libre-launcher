@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <sched.h>
 #include <string.h>
+#include <jni.h>
 
 static _Thread_local bool big_core_affine = false;
 
@@ -100,4 +101,13 @@ void make_all_cores_affine() {
     sched_setaffinity(0, CPU_SETSIZE, &all_cores);
     big_core_affine = false;
     printf("bigcore: relaxed affinity to all cores for low-power operation\n");
+}
+
+__attribute__((visibility("default"))) JNIEXPORT void JNICALL
+Java_git_artdeell_mojoexec_MojoExec_setUseBigCoreAffinity(JNIEnv *env, jclass clazz, jboolean useBigCore) {
+    if(useBigCore == JNI_TRUE) {
+        make_big_core_affine();
+    } else {
+        make_all_cores_affine();
+    }
 }

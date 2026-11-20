@@ -53,7 +53,7 @@ static void *logger_thread(void* param) {
 }
 
 
-JNIEXPORT void JNICALL
+__attribute__((visibility("default"))) JNIEXPORT void JNICALL
 Java_git_artdeell_mojo_Logger_begin(JNIEnv *env, __attribute((unused)) jclass clazz, jstring logPath) {
     if(latestlog_fd != -1) {
         int localfd = latestlog_fd;
@@ -97,7 +97,7 @@ Java_git_artdeell_mojo_Logger_begin(JNIEnv *env, __attribute((unused)) jclass cl
     pthread_detach(logger);
 }
 
-JNIEXPORT void JNICALL Java_git_artdeell_mojo_Logger_appendToLog(JNIEnv *env, __attribute((unused)) jclass clazz, jstring text) {
+__attribute__((visibility("default"))) JNIEXPORT void JNICALL Java_git_artdeell_mojo_Logger_appendToLog(JNIEnv *env, __attribute((unused)) jclass clazz, jstring text) {
     jsize appendStringLength = (*env)->GetStringUTFLength(env, text);
     char newChars[appendStringLength+2];
     (*env)->GetStringUTFRegion(env, text, 0, (*env)->GetStringLength(env, text), newChars);
@@ -108,7 +108,7 @@ JNIEXPORT void JNICALL Java_git_artdeell_mojo_Logger_appendToLog(JNIEnv *env, __
     }
 }
 
-JNIEXPORT void JNICALL
+__attribute__((visibility("default"))) JNIEXPORT void JNICALL
 Java_git_artdeell_mojo_Logger_setLogListener(JNIEnv *env, __attribute((unused)) jclass clazz, jobject log_listener) {
     jobject logListenerLocal = logListener;
     if(log_listener == NULL) {

@@ -76,6 +76,16 @@ public class AWTActivity extends BaseActivity implements View.OnTouchListener {
         setContentView(R.layout.activity_java_gui_launcher);
 
         try {
+            System.loadLibrary("mojoexec");
+        } catch (Throwable ignored) {}
+        try {
+            System.loadLibrary("freetype");
+        } catch (Throwable ignored) {}
+        try {
+            System.loadLibrary("mojort");
+        } catch (Throwable ignored) {}
+
+        try {
             File latestLogFile = new File(Tools.DIR_GAME_HOME, "latestlog.txt");
             if (!latestLogFile.exists() && !latestLogFile.createNewFile())
                 throw new IOException("Failed to create a new log file");

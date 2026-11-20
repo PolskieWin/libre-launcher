@@ -94,10 +94,15 @@ Architecture and feature roadmap for Libre Launcher.
 - **ProGuard / R8 Obfuscation Defense**: Enforced explicit keep rules for `git.artdeell.mojoexec.**` across `app_mojo/proguard-rules.pro` and `mojoexec:jni_bindings` consumer rules, preventing signature stripping during release optimization.
 - **Build Pipeline Verification**: Verified dynamic JNI symbol tables (`Java_git_artdeell_mojoexec_MojoExec_setUseBigCoreAffinity`) and APK packaging integrity across stripped and noruntime flavors.
 
+### v2.80 — Multi-Process JNI Linkage & UnsatisfiedLinkError Hardening
+- **Logger & MojoExec Multi-Process JNI Linkage**: Added static initializers loading `mojort` and `mojoexec` before any native JNI method invocation, ensuring correct symbol resolution across isolated `:game` and `:gui_installer` processes.
+- **Dynamic CPU Core Affinity & Freetype Soname Normalization**: Fully implemented dynamic big-core affinity scheduling and all-core restoration in `MojoExec.setUseBigCoreAffinity` (`sched_setaffinity`), exported `Java_*` JNI bindings across native libraries, and eliminated static build directory paths from `libmojort.so` DT_NEEDED headers by restoring unversioned soname targets.
+- **F-Droid Build Compliance**: Ensured 100% source-built NDK pipeline compliance with zero precompiled binary blobs.
+
 ---
 
 ## Upcoming Milestones
 
-### v2.80 — Adaptive Vulkan Pipeline & Official Repository Inclusion
+### v2.90 — Adaptive Vulkan Pipeline & Official Repository Inclusion
 - **F-Droid Official Repository Inclusion**: Completion and merge of official F-Droid Merge Request `!58168`.
 - **Adaptive Vulkan Extension Optimizer**: Dynamic detection of Turnip driver extensions with real-time pipeline optimizations.

@@ -140,6 +140,15 @@ public class GameActivity extends BaseActivity implements ControlButtonMenuListe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            System.loadLibrary("mojoexec");
+        } catch (Throwable ignored) {}
+        try {
+            System.loadLibrary("freetype");
+        } catch (Throwable ignored) {}
+        try {
+            System.loadLibrary("mojort");
+        } catch (Throwable ignored) {}
         instance = Instances.loadSelectedInstance();
         account = Accounts.getCurrent();
         if(instance == null) {

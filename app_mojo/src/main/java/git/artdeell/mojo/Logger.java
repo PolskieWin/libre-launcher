@@ -7,6 +7,18 @@ import androidx.annotation.Keep;
  */
 @Keep
 public class Logger {
+    static {
+        try {
+            System.loadLibrary("mojoexec");
+        } catch (Throwable ignored) {
+        }
+        try {
+            System.loadLibrary("freetype");
+        } catch (Throwable ignored) {
+        }
+        System.loadLibrary("mojort");
+    }
+
     /** Print the text to the log file if not censored */
     public static native void appendToLog(String text);
 

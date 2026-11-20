@@ -49,8 +49,16 @@ Builds:
     gradle:
       - assembleNoruntimeRelease
 
+  - versionName: '2.80'
+    versionCode: 280
+    commit: v2.80
+    subdir: app_mojo
+    submodules: true
+    gradle:
+      - assembleNoruntimeRelease
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: app_mojo/build.gradle|versionCode\s+(\d+)|app_mojo/build.gradle|versionName\s+["']([^"']+)["']
-CurrentVersion: '2.70'
-CurrentVersionCode: 270
+CurrentVersion: '2.80'
+CurrentVersionCode: 280

@@ -59,6 +59,7 @@ set_target_properties(freetype PROPERTIES
     ARCHIVE_OUTPUT_NAME_DEBUG "freetype"
     LIBRARY_OUTPUT_NAME_DEBUG "freetype"
 )
+target_link_options(freetype PRIVATE "-Wl,-soname,libfreetype.so")
 
 # ----------------------
 
