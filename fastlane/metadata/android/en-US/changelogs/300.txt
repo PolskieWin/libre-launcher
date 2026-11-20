@@ -1,0 +1,1 @@
+v3.00: Compile libshaderc 100% from source via CMake with full symbol export and hardened active linker namespace dlsym resolution.

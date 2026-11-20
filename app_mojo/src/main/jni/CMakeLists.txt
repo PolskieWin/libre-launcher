@@ -87,7 +87,7 @@ add_library(mojort SHARED
 
 set_source_files_properties(libremobile/libremobile.cpp PROPERTIES COMPILE_FLAGS "-Oz -flto -ffunction-sections -fdata-sections -fvisibility=hidden -fvisibility-inlines-hidden -fno-rtti -fno-exceptions")
 
-target_include_directories(mojort PRIVATE .)
+target_include_directories(mojort PRIVATE . mojoexec/include mojoexec)
 target_compile_options(mojort PRIVATE -fdata-sections -ffunction-sections)
 target_link_options(mojort PRIVATE -Wl,--gc-sections -Wl,--strip-all)
 target_link_libraries(mojort PRIVATE log mojoexec z freetype dl android)
@@ -169,4 +169,73 @@ set_target_properties(vma PROPERTIES
 target_compile_options(vma PRIVATE -Oz -fdata-sections -ffunction-sections)
 target_link_options(vma PRIVATE -Wl,--gc-sections -Wl,--strip-all)
 target_link_libraries(vma PRIVATE log)
+
+# ------ LWJGL 3.4.3 / Minecraft 26.3+ Native Libraries (shaderc) ------
+
+if(NOT DEFINED ANDROID_NDK)
+    if(DEFINED CMAKE_ANDROID_NDK)
+        set(ANDROID_NDK "${CMAKE_ANDROID_NDK}")
+    elseif(DEFINED ENV{ANDROID_NDK_HOME})
+        set(ANDROID_NDK "$ENV{ANDROID_NDK_HOME}")
+    elseif(DEFINED ENV{ANDROID_NDK})
+        set(ANDROID_NDK "$ENV{ANDROID_NDK}")
+    elseif(DEFINED ENV{ANDROID_NDK_ROOT})
+        set(ANDROID_NDK "$ENV{ANDROID_NDK_ROOT}")
+    else()
+        set(ANDROID_NDK "/data/data/com.termux/files/home/termux-ndk")
+    endif()
+endif()
+
+set(SHADERC_SRC_DIR "${ANDROID_NDK}/sources/third_party/shaderc")
+set(SHADERC_STATIC_LIB "${SHADERC_SRC_DIR}/libs/c++_static/${ANDROID_ABI}/libshaderc.a")
+
+if(NOT EXISTS "${SHADERC_STATIC_LIB}")
+    message(STATUS "Building shaderc static library for ${ANDROID_ABI} from ${SHADERC_SRC_DIR}...")
+    execute_process(
+        COMMAND "${ANDROID_NDK}/ndk-build"
+            -C "${SHADERC_SRC_DIR}"
+            NDK_PROJECT_PATH=.
+            APP_BUILD_SCRIPT=Android.mk
+            APP_STL=c++_static
+            APP_ABI=${ANDROID_ABI}
+            APP_PLATFORM=android-23
+            libshaderc_combined
+            -j4
+        RESULT_VARIABLE SHADERC_BUILD_RES
+    )
+    if(NOT SHADERC_BUILD_RES EQUAL 0)
+        message(FATAL_ERROR "Failed to build shaderc static library for ${ANDROID_ABI} (exit code: ${SHADERC_BUILD_RES})")
+    endif()
+endif()
+
+add_library(shaderc SHARED
+    shaderc/shaderc_export.cpp
+)
+set_target_properties(shaderc PROPERTIES
+    OUTPUT_NAME "shaderc"
+    LINKER_LANGUAGE CXX
+)
+target_compile_definitions(shaderc PRIVATE
+    SHADERC_SHAREDLIB
+    SHADERC_IMPLEMENTATION
+)
+target_compile_options(shaderc PRIVATE
+    -fvisibility=default
+    -Oz
+    -fdata-sections
+    -ffunction-sections
+)
+target_include_directories(shaderc PRIVATE
+    "${SHADERC_SRC_DIR}/libshaderc/include"
+    "${SHADERC_SRC_DIR}/libshaderc_util/include"
+)
+target_link_options(shaderc PRIVATE
+    -Wl,--gc-sections
+    -Wl,--whole-archive "${SHADERC_STATIC_LIB}" -Wl,--no-whole-archive
+    -static-libstdc++
+)
+target_link_libraries(shaderc PRIVATE
+    log dl m
+)
+
 

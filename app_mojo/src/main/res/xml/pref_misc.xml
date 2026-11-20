@@ -62,4 +62,27 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="@string/preference_category_version_info"
+        android:key="category_version_info_misc">
+
+        <Preference
+            android:key="pref_misc_launcher_version"
+            android:title="@string/preference_version_title"
+            android:icon="@drawable/ic_px_info"
+            android:persistent="false" />
+
+        <Preference
+            android:key="pref_misc_launcher_variant"
+            android:title="@string/preference_variant_title"
+            android:icon="@drawable/ic_px_runtime_mgr"
+            android:persistent="false" />
+
+        <Preference
+            android:key="pref_misc_launcher_build_type"
+            android:title="@string/preference_build_type_title"
+            android:icon="@drawable/ic_px_zap"
+            android:persistent="false" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

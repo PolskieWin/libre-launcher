@@ -10,19 +10,27 @@ import git.artdeell.mojo.utils.AnimationManager;
 import git.artdeell.mojo.utils.ThemeColors;
 import android.Manifest;
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
+import git.artdeell.mojo.BuildConfig;
 import git.artdeell.mojo.LauncherActivity;
 import git.artdeell.mojo.R;
+import git.artdeell.mojo.Tools;
 import git.artdeell.mojo.prefs.LauncherPreferences;
 import git.artdeell.mojo.utils.ThemeManager;
+
+import java.io.File;
 
 /**
  * Preference for the main screen, any sub-screen should inherit this class for consistent behavior,
@@ -47,6 +55,7 @@ public class LauncherPreferenceFragment extends PreferenceFragmentCompat impleme
         // The right pane of the two-pane settings has its own back button
         if(isSettingsListPane()) removeBackButton();
         setupNotificationRequestPreference();
+        setupVersionSection("pref_launcher_version", "pref_launcher_variant", "pref_launcher_build_type");
     }
 
     /** @return whether this is the list of categories inside the left pane of the two-pane settings */
@@ -141,5 +150,89 @@ public class LauncherPreferenceFragment extends PreferenceFragmentCompat impleme
     }
     protected LauncherActivity getLauncherActivity(){
         return ((LauncherActivity) getActivity());
+    }
+
+    protected void setupVersionSection(String versionKey, String variantKey, String buildTypeKey) {
+        Preference versionPref = findPreference(versionKey);
+        Preference variantPref = findPreference(variantKey);
+        Preference buildTypePref = findPreference(buildTypeKey);
+
+        if (versionPref == null && variantPref == null && buildTypePref == null) return;
+
+        final String versionName = BuildConfig.VERSION_NAME;
+        final int versionCode = BuildConfig.VERSION_CODE;
+        final String buildType = BuildConfig.BUILD_TYPE;
+        final String flavor = BuildConfig.FLAVOR;
+        final boolean isDebug = BuildConfig.DEBUG || "debug".equalsIgnoreCase(buildType);
+        final boolean isStripped = BuildConfig.STRIPPED_MODE
+                || (flavor != null && flavor.equalsIgnoreCase("stripped"))
+                || versionName.toLowerCase().contains("stripped");
+        final boolean isNoRuntime = (flavor != null && flavor.equalsIgnoreCase("noruntime"))
+                || versionName.toLowerCase().contains("noruntime")
+                || versionName.toLowerCase().contains("no-runtime");
+
+        String versionSummary = versionName + " (" + versionCode + ")";
+
+        String variantSummary;
+        if (isStripped) {
+            variantSummary = getString(R.string.preference_variant_stripped);
+        } else if (isNoRuntime) {
+            variantSummary = getString(R.string.preference_variant_noruntime);
+        } else if ("full".equalsIgnoreCase(flavor)) {
+            variantSummary = getString(R.string.preference_variant_full);
+        } else {
+            if (Tools.DIR_DATA != null) {
+                File runtimesDir = new File(Tools.DIR_DATA, "runtimes");
+                if (!runtimesDir.exists() || runtimesDir.list() == null || runtimesDir.list().length == 0) {
+                    variantSummary = getString(R.string.preference_variant_noruntime);
+                } else {
+                    variantSummary = getString(R.string.preference_variant_full);
+                }
+            } else {
+                variantSummary = getString(R.string.preference_variant_noruntime);
+            }
+        }
+
+        String buildTypeSummary = isDebug
+                ? getString(R.string.preference_build_debug)
+                : getString(R.string.preference_build_release);
+
+        final String diagnosticInfo = "Libre Launcher v" + versionName + " (" + versionCode + ") • "
+                + variantSummary + " • " + buildTypeSummary;
+
+        if (versionPref != null) {
+            versionPref.setSummary(versionSummary);
+            versionPref.setOnPreferenceClickListener(pref -> {
+                copyVersionInfoToClipboard(diagnosticInfo);
+                return true;
+            });
+        }
+
+        if (variantPref != null) {
+            variantPref.setSummary(variantSummary);
+            variantPref.setOnPreferenceClickListener(pref -> {
+                copyVersionInfoToClipboard(diagnosticInfo);
+                return true;
+            });
+        }
+
+        if (buildTypePref != null) {
+            buildTypePref.setSummary(buildTypeSummary);
+            buildTypePref.setOnPreferenceClickListener(pref -> {
+                copyVersionInfoToClipboard(diagnosticInfo);
+                return true;
+            });
+        }
+    }
+
+    private void copyVersionInfoToClipboard(String info) {
+        Context context = getContext();
+        if (context == null) return;
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            ClipData clip = ClipData.newPlainText(getString(R.string.preference_category_version_info), info);
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(context, R.string.preference_version_copied, Toast.LENGTH_SHORT).show();
+        }
     }
 }

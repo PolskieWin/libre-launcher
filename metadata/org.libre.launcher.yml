@@ -65,8 +65,16 @@ Builds:
     gradle:
       - assembleNoruntimeRelease
 
+  - versionName: '3.00'
+    versionCode: 300
+    commit: v3.00
+    subdir: app_mojo
+    submodules: true
+    gradle:
+      - assembleNoruntimeRelease
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: app_mojo/build.gradle|versionCode\s+(\d+)|app_mojo/build.gradle|versionName\s+["']([^"']+)["']
-CurrentVersion: '2.90'
-CurrentVersionCode: 290
+CurrentVersion: '3.00'
+CurrentVersionCode: 300

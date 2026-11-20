@@ -60,6 +60,13 @@
             android:summary="@string/preference_experimental_description"
             android:fragment="git.artdeell.mojo.prefs.screens.LauncherPreferenceExperimentalFragment"
             android:icon="@drawable/ic_px_experiment"/>
+
+        <Preference
+            android:key="about_screen_setting"
+            android:title="@string/preference_about_title"
+            android:summary="@string/preference_about_description"
+            android:fragment="git.artdeell.mojo.prefs.screens.LauncherPreferenceAboutFragment"
+            android:icon="@drawable/ic_px_info"/>
     </PreferenceCategory>
 
     <SwitchPreferenceCompat
@@ -75,6 +82,29 @@
         android:key="notification_permission_request"
         android:icon="@drawable/ic_px_bell"
         />
+
+    <PreferenceCategory
+        android:title="@string/preference_category_version_info"
+        android:key="category_version_info">
+
+        <Preference
+            android:key="pref_launcher_version"
+            android:title="@string/preference_version_title"
+            android:icon="@drawable/ic_px_info"
+            android:persistent="false" />
+
+        <Preference
+            android:key="pref_launcher_variant"
+            android:title="@string/preference_variant_title"
+            android:icon="@drawable/ic_px_runtime_mgr"
+            android:persistent="false" />
+
+        <Preference
+            android:key="pref_launcher_build_type"
+            android:title="@string/preference_build_type_title"
+            android:icon="@drawable/ic_px_zap"
+            android:persistent="false" />
+    </PreferenceCategory>
 
 
 

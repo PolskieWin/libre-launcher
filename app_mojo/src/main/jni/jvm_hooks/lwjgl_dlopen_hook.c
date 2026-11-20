@@ -20,16 +20,85 @@
 extern const void* libre_glGetString(unsigned int name);
 extern void* libre_eglGetProcAddress(const char *procname);
 
+static void* s_shaderc_handle = NULL;
+static void* s_spvc_handle = NULL;
+
+static const char* mojo_get_native_lib_dir(void) {
+    const char* nativeLibDir = getenv("POJAV_NATIVE_LIB_DIR");
+    if(nativeLibDir != NULL && nativeLibDir[0] != '\0') {
+        return nativeLibDir;
+    }
+    if(mojoexec_native_dir != NULL && mojoexec_native_dir[0] != '\0') {
+        return mojoexec_native_dir;
+    }
+    return NULL;
+}
+
+static void* mojo_try_dlopen(const char* path, int mode) {
+    if(path == NULL || path[0] == '\0') return NULL;
+    void* h = dlopen(path, mode);
+    if(h == NULL) {
+        h = mojoexec_dlopen(path, mode);
+    }
+    return h;
+}
+
+static void* mojo_load_shaderc(int mode) {
+    if(s_shaderc_handle != NULL) return s_shaderc_handle;
+    const char* nativeLibDir = mojo_get_native_lib_dir();
+    char pathBuf[512];
+    void* handle = NULL;
+
+    if(nativeLibDir != NULL && nativeLibDir[0] != '\0') {
+        snprintf(pathBuf, sizeof(pathBuf), "%s/libshaderc.so", nativeLibDir);
+        handle = mojo_try_dlopen(pathBuf, mode | RTLD_GLOBAL);
+    }
+    if(handle == NULL) {
+        handle = mojo_try_dlopen("libshaderc.so", mode | RTLD_GLOBAL);
+    }
+    if(handle != NULL) {
+        s_shaderc_handle = handle;
+    }
+    return handle;
+}
+
+static void* mojo_load_spvc(int mode) {
+    if(s_spvc_handle != NULL) return s_spvc_handle;
+    const char* nativeLibDir = mojo_get_native_lib_dir();
+    char pathBuf[512];
+    void* handle = NULL;
+
+    if(nativeLibDir != NULL && nativeLibDir[0] != '\0') {
+        snprintf(pathBuf, sizeof(pathBuf), "%s/libspirv-cross-c-shared.so", nativeLibDir);
+        handle = mojo_try_dlopen(pathBuf, mode | RTLD_GLOBAL);
+        if(handle == NULL) {
+            snprintf(pathBuf, sizeof(pathBuf), "%s/libspvc.so", nativeLibDir);
+            handle = mojo_try_dlopen(pathBuf, mode | RTLD_GLOBAL);
+        }
+    }
+    if(handle == NULL) {
+        handle = mojo_try_dlopen("libspirv-cross-c-shared.so", mode | RTLD_GLOBAL);
+        if(handle == NULL) {
+            handle = mojo_try_dlopen("libspvc.so", mode | RTLD_GLOBAL);
+        }
+    }
+    if(handle != NULL) {
+        s_spvc_handle = handle;
+    }
+    return handle;
+}
+
 /**
  * Basically a verbatim implementation of ndlopen(), found at
  * https://github.com/PojavLauncherTeam/lwjgl3/blob/3.3.1/modules/lwjgl/core/src/generated/c/linux/org_lwjgl_system_linux_DynamicLinkLoader.c#L11
- * but with our own additions for stuff like vulkanmod.
+ * with robust active-namespace loading for shaderc and spvc.
  */
 static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
                      __attribute__((unused)) jclass class,
                      jlong filename_ptr,
                      jint jmode) {
     const char* filename = (const char*) filename_ptr;
+    if(filename == NULL) return 0;
 
     // Override vulkan loading to let us load vulkan ourselves
     if(strstr(filename, "libvulkan.so") != NULL || strcmp(filename, "vulkan") == 0) {
@@ -42,74 +111,83 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
         return (jlong) mojoexec_acq_egl_handle();
     }
 
-    // This hook also serves the task of mitigating a bug: the idea is that since, on Android 10 and
-    // earlier, the linker doesn't really do namespace nesting.
-    // It is not a problem as most of the libraries are in the launcher path, but when you try to run
-    // VulkanMod which loads shaderc outside of the default jni libs directory through this method,
-    // it can't load it because the path is not in the allowed paths for the anonymous namesapce.
-    // This method fixes the issue by being in libpojavexec, and thus being in the classloader namespace
-
     int mode = (int)jmode;
-    void* handle = dlopen(filename, mode);
-    if(handle == NULL && filename != NULL) {
-        char pathBuf[512];
-        const char* nativeLibDir = getenv("POJAV_NATIVE_LIB_DIR");
-        if(nativeLibDir != NULL && nativeLibDir[0] != '\0') {
-            const char* baseName = strrchr(filename, '/');
-            baseName = baseName ? baseName + 1 : filename;
+    const char* baseName = strrchr(filename, '/');
+    baseName = baseName ? baseName + 1 : filename;
 
+    // Handle shaderc: open in active linker namespace and cache handle
+    if(strstr(baseName, "shaderc") != NULL) {
+        void* handle = mojo_try_dlopen(filename, mode | RTLD_GLOBAL);
+        if(handle == NULL) {
+            handle = mojo_load_shaderc(mode);
+        } else {
+            s_shaderc_handle = handle;
+        }
+        if(handle != NULL) {
+            printf("LWJGL linkerhook: resolved shaderc handle %p for %s\n", handle, filename);
+            return (jlong) handle;
+        }
+        printf("LWJGL linkerhook: failed to load shaderc for %s: %s\n", filename, dlerror());
+        return 0;
+    }
+
+    // Handle spvc: open in active linker namespace and cache handle
+    if(strstr(baseName, "spvc") != NULL || strstr(baseName, "spirv-cross") != NULL) {
+        void* handle = mojo_try_dlopen(filename, mode | RTLD_GLOBAL);
+        if(handle == NULL) {
+            handle = mojo_load_spvc(mode);
+        } else {
+            s_spvc_handle = handle;
+        }
+        if(handle != NULL) {
+            printf("LWJGL linkerhook: resolved spvc handle %p for %s\n", handle, filename);
+            return (jlong) handle;
+        }
+        printf("LWJGL linkerhook: failed to load spvc for %s: %s\n", filename, dlerror());
+        return 0;
+    }
+
+    void* handle = mojo_try_dlopen(filename, mode);
+    if(handle == NULL) {
+        char pathBuf[512];
+        const char* nativeLibDir = mojo_get_native_lib_dir();
+        if(nativeLibDir != NULL && nativeLibDir[0] != '\0') {
             // 1. Direct match with basename in nativeLibDir
             snprintf(pathBuf, sizeof(pathBuf), "%s/%s", nativeLibDir, baseName);
-            handle = dlopen(pathBuf, mode);
+            handle = mojo_try_dlopen(pathBuf, mode);
 
             // 2. Try prefixing "lib" and/or suffixing ".so" if missing
             if(handle == NULL) {
                 if(strncmp(baseName, "lib", 3) != 0) {
                     snprintf(pathBuf, sizeof(pathBuf), "%s/lib%s.so", nativeLibDir, baseName);
-                    handle = dlopen(pathBuf, mode);
+                    handle = mojo_try_dlopen(pathBuf, mode);
                 } else if(strstr(baseName, ".so") == NULL) {
                     snprintf(pathBuf, sizeof(pathBuf), "%s/%s.so", nativeLibDir, baseName);
-                    handle = dlopen(pathBuf, mode);
+                    handle = mojo_try_dlopen(pathBuf, mode);
                 }
             }
 
-            // 3. Known aliases for LWJGL 3.4.3 / MC 26.3+ bootstrap
-            if(handle == NULL && strstr(baseName, "shaderc") != NULL) {
-                snprintf(pathBuf, sizeof(pathBuf), "%s/libshaderc.so", nativeLibDir);
-                handle = dlopen(pathBuf, mode);
-            }
-            if(handle == NULL && (strstr(baseName, "spvc") != NULL || strstr(baseName, "spirv-cross") != NULL)) {
-                snprintf(pathBuf, sizeof(pathBuf), "%s/libspirv-cross-c-shared.so", nativeLibDir);
-                handle = dlopen(pathBuf, mode);
-                if (handle == NULL) {
-                    snprintf(pathBuf, sizeof(pathBuf), "%s/libspvc.so", nativeLibDir);
-                    handle = dlopen(pathBuf, mode);
-                }
-            }
+            // 3. Known aliases for other libraries (vma, SDL)
             if(handle == NULL && (strstr(baseName, "vma") != NULL || strstr(baseName, "lwjgl_vma") != NULL)) {
                 snprintf(pathBuf, sizeof(pathBuf), "%s/liblwjgl_vma.so", nativeLibDir);
-                handle = dlopen(pathBuf, mode);
-                if (handle == NULL) {
+                handle = mojo_try_dlopen(pathBuf, mode);
+                if(handle == NULL) {
                     snprintf(pathBuf, sizeof(pathBuf), "%s/libvma.so", nativeLibDir);
-                    handle = dlopen(pathBuf, mode);
+                    handle = mojo_try_dlopen(pathBuf, mode);
                 }
             }
             if(handle == NULL && (strstr(baseName, "SDL") != NULL || strstr(baseName, "sdl") != NULL)) {
                 snprintf(pathBuf, sizeof(pathBuf), "%s/libSDL3.so", nativeLibDir);
-                handle = dlopen(pathBuf, mode);
+                handle = mojo_try_dlopen(pathBuf, mode);
             }
         }
 
-        // 4. Global process fallback for critical bootstrap libraries
+        // 4. Global process fallback for other bootstrap libraries (excluding shaderc and spvc)
         if(handle == NULL) {
-            const char* baseName = strrchr(filename, '/');
-            baseName = baseName ? baseName + 1 : filename;
-            if(strstr(baseName, "shaderc") != NULL || strstr(baseName, "spvc") != NULL ||
-               strstr(baseName, "spirv-cross") != NULL || strstr(baseName, "vma") != NULL ||
-               strstr(baseName, "lwjgl_vma") != NULL || strstr(baseName, "SDL") != NULL ||
-               strstr(baseName, "sdl") != NULL) {
+            if(strstr(baseName, "vma") != NULL || strstr(baseName, "lwjgl_vma") != NULL ||
+               strstr(baseName, "SDL") != NULL || strstr(baseName, "sdl") != NULL) {
                 handle = dlopen(NULL, RTLD_NOW);
-                if (handle != NULL) {
+                if(handle != NULL) {
                     printf("LWJGL linkerhook: fell back to global handle for %s\n", filename);
                 }
             }
@@ -125,22 +203,68 @@ static jlong ndlopen_bugfix(__attribute__((unused)) JNIEnv *env,
 
 /**
  * Hook ndlsym to intercept glGetString and eglGetProcAddress, ensuring
- * Libre Mobile is identified cleanly in the Minecraft F3 debug overlay.
+ * Libre Mobile is identified cleanly in the Minecraft F3 debug overlay,
+ * and ensuring shaderc and spvc symbols always resolve cleanly.
  */
 static jlong ndlsym_bugfix(__attribute__((unused)) JNIEnv *env,
                            __attribute__((unused)) jclass class,
-                           jlong handle,
+                           jlong handle_val,
                            jlong name_ptr) {
     const char* name = (const char*) name_ptr;
-    if(name != NULL) {
-        if(strcmp(name, "glGetString") == 0) {
-            return (jlong) libre_glGetString;
-        }
-        if(strcmp(name, "eglGetProcAddress") == 0) {
-            return (jlong) libre_eglGetProcAddress;
-        }
+    if(name == NULL) return 0;
+
+    if(strcmp(name, "glGetString") == 0) {
+        return (jlong) libre_glGetString;
     }
-    return (jlong) dlsym((void*) (intptr_t) handle, name);
+    if(strcmp(name, "eglGetProcAddress") == 0) {
+        return (jlong) libre_eglGetProcAddress;
+    }
+
+    void* handle = (void*) (intptr_t) handle_val;
+    void* sym = NULL;
+
+    // Check target handle first if non-null and not RTLD_DEFAULT
+    if(handle != NULL && handle != RTLD_DEFAULT) {
+        sym = dlsym(handle, name);
+        if(sym != NULL) return (jlong) sym;
+    }
+
+    // Shaderc function resolution fallback
+    if(strncmp(name, "shaderc_", 8) == 0) {
+        if(s_shaderc_handle != NULL) {
+            sym = dlsym(s_shaderc_handle, name);
+        }
+        if(sym == NULL) {
+            s_shaderc_handle = mojo_load_shaderc(RTLD_NOW);
+            if(s_shaderc_handle != NULL) {
+                sym = dlsym(s_shaderc_handle, name);
+            }
+        }
+        if(sym != NULL) {
+            return (jlong) sym;
+        }
+        printf("LWJGL linkerhook: shaderc symbol lookup failed for %s\n", name);
+    }
+
+    // SPVC / SPIRV-Cross function resolution fallback
+    if(strncmp(name, "spvc_", 5) == 0 || strncmp(name, "spirv_", 6) == 0) {
+        if(s_spvc_handle != NULL) {
+            sym = dlsym(s_spvc_handle, name);
+        }
+        if(sym == NULL) {
+            s_spvc_handle = mojo_load_spvc(RTLD_NOW);
+            if(s_spvc_handle != NULL) {
+                sym = dlsym(s_spvc_handle, name);
+            }
+        }
+        if(sym != NULL) {
+            return (jlong) sym;
+        }
+        printf("LWJGL linkerhook: spvc symbol lookup failed for %s\n", name);
+    }
+
+    // Global handle fallback
+    return (jlong) dlsym(handle ? handle : RTLD_DEFAULT, name);
 }
 
 /**

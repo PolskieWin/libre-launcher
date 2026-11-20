@@ -53,6 +53,7 @@ public class LauncherPreferenceMiscellaneousFragment extends LauncherPreferenceF
         });
         setupCacheClearPreference();
         setupMicrophoneRequestPreference();
+        setupVersionSection("pref_misc_launcher_version", "pref_misc_launcher_variant", "pref_misc_launcher_build_type");
         updateVisibility();
     }
 

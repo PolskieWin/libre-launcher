@@ -999,4 +999,19 @@
     <string name="pin_to_home_action">Pin to Home Screen</string>
     <string name="pin_to_home_shortcut_desc">Launch %s directly with one tap</string>
     <string name="edit_instance">Edit instance</string>
+
+    <!-- Launcher Version & Build Info -->
+    <string name="preference_category_version_info">Version &amp; Build</string>
+    <string name="preference_about_title">About &amp; Version</string>
+    <string name="preference_about_description">Launcher version, runtime variant, build type, and wiki</string>
+    <string name="preference_version_title">Version</string>
+    <string name="preference_variant_title">Runtime Variant</string>
+    <string name="preference_build_type_title">Build Type</string>
+    <string name="preference_version_copied">Build information copied to clipboard</string>
+    <string name="preference_variant_noruntime">Non-Runtime</string>
+    <string name="preference_variant_stripped">Stripped</string>
+    <string name="preference_variant_full">Full Release</string>
+    <string name="preference_build_debug">Debug</string>
+    <string name="preference_build_release">Release</string>
+    <string name="preference_about_wiki_summary">Lineage, performance specs, and open-source history</string>
 </resources>

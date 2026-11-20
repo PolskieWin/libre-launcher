@@ -27,7 +27,7 @@ def getAppVersionCode = {
         }
         return Integer.parseInt(stdout.toString().trim())
     } catch (Exception ignored) {
-        return 290
+        return 300
     }
 }
 
@@ -49,7 +49,7 @@ def getAppVersionName = {
         if (!tag.isEmpty()) return tag
     } catch (Exception ignored) {
     }
-    return "2.90"
+    return "3.00"
 }
 
 def getCFApiKey = {
@@ -118,8 +118,8 @@ android {
         applicationId "org.libre.launcher"
         minSdkVersion 23
         targetSdkVersion 36
-        versionCode 290
-        versionName "2.90"
+        versionCode 300
+        versionName "3.00"
         multiDexEnabled false //important
         resValue 'string', 'curseforge_api_key', getCFApiKey()
         resValue 'string', 'group_id', 'git.artdeell'
