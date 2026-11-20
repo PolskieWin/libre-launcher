@@ -45,7 +45,7 @@ public class GameOptionsUtils {
     private static void disableFullscreen() {
         String fullscreen = MCOptionUtils.get("fullscreen");
         if(fullscreen == null) return;
-        if(fullscreen.equals("true")) MCOptionUtils.set("fullscreen", "false");
+        if(fullscreen.equals("true") || fullscreen.equals("off")) MCOptionUtils.set("fullscreen", "false");
         else if(fullscreen.equals("1")) MCOptionUtils.set("fullscreen","0");
     }
 

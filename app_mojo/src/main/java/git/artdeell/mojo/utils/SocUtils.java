@@ -153,7 +153,7 @@ public class SocUtils {
         if (entries != null) {
             for (File entry : entries) {
                 String name = entry.getName();
-                if ("cpuinfo".equals(name)) continue;
+                if ("cpuinfo".equals(name) || "stat".equals(name) || "version".equals(name) || "uptime".equals(name)) continue;
                 File link = new File(fakeProcDir, name);
                 if (!link.exists()) {
                     try {
@@ -163,28 +163,94 @@ public class SocUtils {
             }
         }
 
+        File statFile = new File(fakeProcDir, "stat");
+        if (statFile.exists() && (!statFile.isFile() || statFile.length() == 0)) {
+            statFile.delete();
+        }
+        File versionFile = new File(fakeProcDir, "version");
+        if (versionFile.exists() && (!versionFile.isFile() || versionFile.length() == 0)) {
+            versionFile.delete();
+        }
+        File uptimeFile = new File(fakeProcDir, "uptime");
+        if (uptimeFile.exists() && (!uptimeFile.isFile() || uptimeFile.length() == 0)) {
+            uptimeFile.delete();
+        }
+
+        if (!versionFile.exists() || versionFile.length() == 0) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(versionFile))) {
+                String kernelVer = System.getProperty("os.version", "5.10.0");
+                writer.write("Linux version " + kernelVer + "-android (android-build@google) (Android clang version 14.0.6) #1 SMP PREEMPT\n");
+            } catch (Throwable t) {
+                Log.w(TAG, "Failed to create fake /proc/version", t);
+            }
+        }
+
+        if (!statFile.exists() || statFile.length() == 0) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(statFile))) {
+                int cpus = Runtime.getRuntime().availableProcessors();
+                if (cpus <= 0) cpus = 8;
+                writer.write("cpu  100000 5000 20000 8000000 10000 1000 2000 0 0 0\n");
+                for (int i = 0; i < cpus; i++) {
+                    writer.write("cpu" + i + " " + (100000 / cpus) + " 500 2000 " + (8000000 / cpus) + " 1000 100 200 0 0 0\n");
+                }
+                writer.write("intr 10000000 0 0 0 0 0 0 0\n");
+                writer.write("ctxt 50000000\n");
+                writer.write("btime " + (System.currentTimeMillis() / 1000L - 3600L) + "\n");
+                writer.write("processes 10000\n");
+                writer.write("procs_running 1\n");
+                writer.write("procs_blocked 0\n");
+                writer.write("softirq 500000 0 0 0 0 0 0 0 0 0 0\n");
+            } catch (Throwable t) {
+                Log.w(TAG, "Failed to create fake /proc/stat", t);
+            }
+        }
+
+        if (!uptimeFile.exists() || uptimeFile.length() == 0) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(uptimeFile))) {
+                long uptimeSec = android.os.SystemClock.elapsedRealtime() / 1000L;
+                writer.write(uptimeSec + ".00 " + (uptimeSec * 4) + ".00\n");
+            } catch (Throwable t) {
+                Log.w(TAG, "Failed to create fake /proc/uptime", t);
+            }
+        }
+
         String soc = getSocModel();
         File cpuinfoReal = new File("/proc/cpuinfo");
         File cpuinfoOut = new File(fakeProcDir, "cpuinfo");
-        try (BufferedReader reader = new BufferedReader(new FileReader(cpuinfoReal));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(cpuinfoOut))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("processor\t") || line.startsWith("processor ")) {
-                    writer.write(line);
-                    writer.newLine();
-                    writer.write("model name\t: " + soc);
-                    writer.newLine();
-                } else if (!line.startsWith("model name") && !line.startsWith("Hardware")) {
-                    writer.write(line);
+        try {
+            if (cpuinfoReal.canRead()) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(cpuinfoReal));
+                     BufferedWriter writer = new BufferedWriter(new FileWriter(cpuinfoOut))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("processor\t") || line.startsWith("processor ")) {
+                            writer.write(line);
+                            writer.newLine();
+                            writer.write("model name\t: " + soc);
+                            writer.newLine();
+                        } else if (!line.startsWith("model name") && !line.startsWith("Hardware")) {
+                            writer.write(line);
+                            writer.newLine();
+                        }
+                    }
+                    writer.write("Hardware\t: " + soc);
                     writer.newLine();
                 }
+            } else {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(cpuinfoOut))) {
+                    int cpus = Runtime.getRuntime().availableProcessors();
+                    if (cpus <= 0) cpus = 8;
+                    for (int i = 0; i < cpus; i++) {
+                        writer.write("processor\t: " + i + "\n");
+                        writer.write("model name\t: " + soc + "\n");
+                        writer.write("Features\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp sve2 sveaes svepmull svesha3 svesm4 flagm2 frint i8mm bf16 bti\n");
+                        writer.write("CPU implementer\t: 0x51\nCPU architecture: 8\nCPU variant\t: 0x1\nCPU part\t: 0x001\nCPU revision\t: 1\n\n");
+                    }
+                    writer.write("Hardware\t: " + soc + "\n");
+                }
             }
-            writer.write("Hardware\t: " + soc);
-            writer.newLine();
         } catch (Throwable t) {
             Log.w(TAG, "Failed to create fake cpuinfo", t);
-            return null;
         }
 
         return fakeProcDir;

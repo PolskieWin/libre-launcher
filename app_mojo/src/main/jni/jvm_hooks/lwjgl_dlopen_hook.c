@@ -240,10 +240,15 @@ static jlong ndlsym_bugfix(__attribute__((unused)) JNIEnv *env,
                 sym = dlsym(s_shaderc_handle, name);
             }
         }
+        if(sym == NULL) {
+            sym = dlsym(RTLD_DEFAULT, name);
+        }
         if(sym != NULL) {
             return (jlong) sym;
         }
-        printf("LWJGL linkerhook: shaderc symbol lookup failed for %s\n", name);
+        const char* err = dlerror();
+        LOGE("LWJGL linkerhook: shaderc symbol lookup failed for %s (%s)", name, err ? err : "not found");
+        printf("LWJGL linkerhook: shaderc symbol lookup failed for %s (%s)\n", name, err ? err : "not found");
     }
 
     // SPVC / SPIRV-Cross function resolution fallback
@@ -257,10 +262,15 @@ static jlong ndlsym_bugfix(__attribute__((unused)) JNIEnv *env,
                 sym = dlsym(s_spvc_handle, name);
             }
         }
+        if(sym == NULL) {
+            sym = dlsym(RTLD_DEFAULT, name);
+        }
         if(sym != NULL) {
             return (jlong) sym;
         }
-        printf("LWJGL linkerhook: spvc symbol lookup failed for %s\n", name);
+        const char* err = dlerror();
+        LOGE("LWJGL linkerhook: spvc symbol lookup failed for %s (%s)", name, err ? err : "not found");
+        printf("LWJGL linkerhook: spvc symbol lookup failed for %s (%s)\n", name, err ? err : "not found");
     }
 
     // Global handle fallback

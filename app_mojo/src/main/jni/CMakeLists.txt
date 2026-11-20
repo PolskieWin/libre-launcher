@@ -222,6 +222,7 @@ endif()
 
 add_library(shaderc SHARED
     shaderc/shaderc_export.cpp
+    shaderc/shaderc_lwj343_compat.cpp
 )
 set_target_properties(shaderc PROPERTIES
     OUTPUT_NAME "shaderc"
