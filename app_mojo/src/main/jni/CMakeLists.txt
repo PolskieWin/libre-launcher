@@ -187,10 +187,21 @@ if(NOT DEFINED ANDROID_NDK)
 endif()
 
 set(SHADERC_SRC_DIR "${ANDROID_NDK}/sources/third_party/shaderc")
-set(SHADERC_STATIC_LIB "${SHADERC_SRC_DIR}/libs/c++_static/${ANDROID_ABI}/libshaderc.a")
+if(EXISTS "${SHADERC_SRC_DIR}/libs/c++_static/${ANDROID_ABI}/libshaderc.a")
+    set(SHADERC_STATIC_LIB "${SHADERC_SRC_DIR}/libs/c++_static/${ANDROID_ABI}/libshaderc.a")
+elseif(EXISTS "${SHADERC_SRC_DIR}/obj/local/${ANDROID_ABI}/libshaderc_combined.a")
+    set(SHADERC_STATIC_LIB "${SHADERC_SRC_DIR}/obj/local/${ANDROID_ABI}/libshaderc_combined.a")
+else()
+    set(SHADERC_STATIC_LIB "${SHADERC_SRC_DIR}/libs/c++_static/${ANDROID_ABI}/libshaderc.a")
+endif()
 
 if(NOT EXISTS "${SHADERC_STATIC_LIB}")
-    message(STATUS "Building shaderc static library for ${ANDROID_ABI} from ${SHADERC_SRC_DIR}...")
+    include(ProcessorCount)
+    ProcessorCount(NCORES)
+    if(NCORES EQUAL 0)
+        set(NCORES 2)
+    endif()
+    message(STATUS "Building shaderc static library for ${ANDROID_ABI} from ${SHADERC_SRC_DIR} with ${NCORES} threads...")
     execute_process(
         COMMAND "${ANDROID_NDK}/ndk-build"
             -C "${SHADERC_SRC_DIR}"
@@ -200,8 +211,9 @@ if(NOT EXISTS "${SHADERC_STATIC_LIB}")
             APP_ABI=${ANDROID_ABI}
             APP_PLATFORM=android-23
             libshaderc_combined
-            -j4
+            -j${NCORES}
         RESULT_VARIABLE SHADERC_BUILD_RES
+        COMMAND_ECHO STDOUT
     )
     if(NOT SHADERC_BUILD_RES EQUAL 0)
         message(FATAL_ERROR "Failed to build shaderc static library for ${ANDROID_ABI} (exit code: ${SHADERC_BUILD_RES})")
