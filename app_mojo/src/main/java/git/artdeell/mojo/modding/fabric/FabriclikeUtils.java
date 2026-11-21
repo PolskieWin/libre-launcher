@@ -11,6 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.Arrays;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -117,7 +118,33 @@ public class FabriclikeUtils {
             }
             fabricVersions[i] = fabricVersion;
         }
+        Arrays.sort(fabricVersions, (a, b) -> compareSemVerDesc(a.version, b.version));
         return fabricVersions;
+    }
+
+    private static int compareSemVerDesc(String v1, String v2) {
+        String[] s1 = v1.split("-", 2);
+        String[] s2 = v2.split("-", 2);
+        String[] p1 = s1[0].split("\\.");
+        String[] p2 = s2[0].split("\\.");
+        int len = Math.max(p1.length, p2.length);
+        for (int i = 0; i < len; i++) {
+            int n1 = i < p1.length ? parseIntSafe(p1[i]) : 0;
+            int n2 = i < p2.length ? parseIntSafe(p2[i]) : 0;
+            if (n1 != n2) return Integer.compare(n2, n1);
+        }
+        if (s1.length == 1 && s2.length > 1) return -1;
+        if (s1.length > 1 && s2.length == 1) return 1;
+        if (s1.length > 1 && s2.length > 1) return s2[1].compareToIgnoreCase(s1[1]);
+        return 0;
+    }
+
+    private static int parseIntSafe(String s) {
+        try {
+            return Integer.parseInt(s.replaceAll("[^0-9]", ""));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private static FabricVersion[] deserializeRawVersions(String jsonArrayIn) throws DownloadUtils.ParseException {
