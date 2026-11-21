@@ -1,0 +1,5 @@
+First stable release (v3.50):
+- Verified Fabric, Quilt (SemVer fix), Forge, and NeoForge on Minecraft 26.3+
+- Fixed multi-touch and coordinate mapping with Alternate Surface Rendering on and off
+- Native Rust controls and zero-overhead telemetry (~31 MB stripped build)
+- Built-in Adreno Turnip driver manager and .librepack instance sharing
