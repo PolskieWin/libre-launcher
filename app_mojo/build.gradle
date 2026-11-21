@@ -120,6 +120,7 @@ android {
         targetSdkVersion 36
         versionCode 350
         versionName "3.50"
+        archivesBaseName = "LibreLauncher"
         multiDexEnabled false //important
         resValue 'string', 'curseforge_api_key', getCFApiKey()
         resValue 'string', 'group_id', 'git.artdeell'

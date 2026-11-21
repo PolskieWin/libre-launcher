@@ -137,8 +137,7 @@ public class ControlJoystick extends JoystickView implements ControlInterface {
     }
 
     private int getDirectionInt(int angle, int intensity) {
-        if (intensity == 0) return DIRECTION_NONE;
-        return (int) (((angle + 22.5) / 45) % 8);
+        return git.artdeell.mojo.input.LibreControls.processJoystick(angle, intensity, 0);
     }
 
     private void updateDirection(int oldDir, int newDir) {

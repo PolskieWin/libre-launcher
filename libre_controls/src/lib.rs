@@ -737,6 +737,15 @@ pub extern "C" fn libre_controls_process_joystick(angle: i32, strength: i32, dea
 }
 
 #[no_mangle]
+pub extern "C" fn libre_controls_process_joystick_id(angle: i32, strength: i32, deadzone: i32) -> i32 {
+    if strength <= deadzone {
+        return -1;
+    }
+    let normalized = ((angle % 360) + 360) % 360;
+    (((normalized as f32 + 22.5) / 45.0) as i32) % 8
+}
+
+#[no_mangle]
 pub extern "C" fn libre_controls_process_aim(
     dx: f32,
     dy: f32,

@@ -33,9 +33,14 @@ public abstract class TouchEventProcessor {
         applyMoveVector(vector[0], vector[1]);
     }
 
+    private final float[] mRustAimOut = new float[2];
+
     protected void applyMoveVector(float x, float y) {
-        Platform.cursorX += x * LauncherPreferences.PREF_MOUSESPEED;
-        Platform.cursorY += y * LauncherPreferences.PREF_MOUSESPEED;
+        git.artdeell.mojo.input.LibreControls.processAim(
+                x, y, LauncherPreferences.PREF_MOUSESPEED,
+                git.artdeell.mojo.input.LibreControls.AIM_LINEAR, 1.0f, mRustAimOut);
+        Platform.cursorX += mRustAimOut[0];
+        Platform.cursorY += mRustAimOut[1];
         Platform.sendCursorPosition();
     }
 

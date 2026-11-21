@@ -81,6 +81,7 @@ add_library(mojort SHARED
         affinity.c
         telemetry_afk.c
         touch_bridge.c
+        libre_controls_jni.c
         preboot_scanner.c
         libremobile/libremobile.cpp
 )
