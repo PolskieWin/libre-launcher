@@ -50,7 +50,9 @@ static bool is_platform_dependency(const char* dep) {
     if (strcasecmp(dep, "fabricloader") == 0) return true;
     if (strcasecmp(dep, "fabric-loader") == 0) return true;
     if (strcasecmp(dep, "fabric") == 0) return true;
+    if (strcasecmp(dep, "fabric-api") == 0) return true;
     if (strcasecmp(dep, "fabric-api-base") == 0) return true;
+    if (strcasecmp(dep, "modmenu") == 0) return true;
     if (strcasecmp(dep, "quilt_loader") == 0) return true;
     if (strcasecmp(dep, "quilt-loader") == 0) return true;
     if (strcasecmp(dep, "quilted_fabric_api") == 0) return true;
@@ -185,26 +187,60 @@ static void parse_depends_object(const char* json, ModManifest* mod) {
 
     int depth = 1;
     while (*p && depth > 0 && mod->depend_count < MAX_DEPS_PER_MOD) {
-        if (*p == '{') depth++;
-        else if (*p == '}') { depth--; if (depth == 0) break; }
-        else if (*p == '\"' && depth == 1) {
+        if (*p == '{') {
+            depth++;
+            p++;
+        } else if (*p == '}') {
+            depth--;
+            if (depth == 0) break;
+            p++;
+        } else if (*p == '\"' && depth == 1) {
             p++;
             char dep_id[MAX_STR_LEN];
             size_t di = 0;
             while (*p && *p != '\"' && di + 1 < sizeof(dep_id)) {
+                if (*p == '\\' && *(p + 1)) p++;
                 dep_id[di++] = *p++;
             }
             dep_id[di] = '\0';
             if (*p == '\"') p++;
 
-            while (*p && *p != ':' && *p != '}') p++;
-            if (*p == ':') p++;
+            while (*p && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) p++;
+            if (*p == ':') {
+                p++;
+                while (*p && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) p++;
+                if (*p == '\"') {
+                    p++;
+                    while (*p && *p != '\"') {
+                        if (*p == '\\' && *(p + 1)) p++;
+                        p++;
+                    }
+                    if (*p == '\"') p++;
+                } else if (*p == '[') {
+                    int arr_depth = 1;
+                    p++;
+                    while (*p && arr_depth > 0) {
+                        if (*p == '[') arr_depth++;
+                        else if (*p == ']') arr_depth--;
+                        p++;
+                    }
+                } else if (*p == '{') {
+                    int obj_depth = 1;
+                    p++;
+                    while (*p && obj_depth > 0) {
+                        if (*p == '{') obj_depth++;
+                        else if (*p == '}') obj_depth--;
+                        p++;
+                    }
+                }
+            }
 
-            if (di > 0) {
+            if (di > 0 && !is_platform_dependency(dep_id)) {
                 strncpy(mod->depends[mod->depend_count++], dep_id, MAX_STR_LEN - 1);
             }
+        } else {
+            p++;
         }
-        p++;
     }
 }
 

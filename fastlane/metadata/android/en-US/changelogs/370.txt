@@ -1,0 +1,5 @@
+Release v3.70:
+- Upgraded pre-launch mod compatibility scanner to proper JSON parsing (org.json.JSONObject)
+- Fixed dependency resolution to extract keys and separate version ranges
+- Added nested JAR scanning (META-INF/jars/) to detect bundled Fabric API submodules
+- Excluded built-in runtime dependencies (fabricloader, minecraft, java, fabric-api-base, modmenu)

@@ -118,8 +118,8 @@ android {
         applicationId "org.libre.launcher"
         minSdkVersion 23
         targetSdkVersion 36
-        versionCode 360
-        versionName "3.60"
+        versionCode 370
+        versionName "3.70"
         archivesBaseName = "LibreLauncher"
         multiDexEnabled false //important
         resValue 'string', 'curseforge_api_key', getCFApiKey()
