@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/License-LGPLv3-blue" alt="License: LGPLv3">
 </p>
 
-Libre Launcher (Android) is a lightweight, open-source Minecraft: Java Edition launcher for Android (`arm64-v8a`), developed by PolskieWin. Built with native Rust controls, the `LibreMobile` renderer, bundled Java 21 & Java 25 runtimes in a ~21 MB stripped APK, Modrinth mod/shader integration, and Material You home-screen widgets.
+Libre Launcher (Android) is a lightweight, open-source Minecraft: Java Edition launcher for Android (`arm64-v8a`), developed by PolskieWin. Built with native Rust controls, the `LibreMobile` renderer, bundled Java 21 & Java 25 runtimes in a 31 MB stripped APK (without bundled runtime), Modrinth mod/shader integration, and Material You home-screen widgets.
 
 > [!NOTE]
 > **Distinction from Desktop PC Launchers**: Libre Launcher (Android) is specifically engineered and optimized for Android mobile devices (`arm64-v8a`). It is an independent project developed by PolskieWin and is completely unrelated to desktop PC launchers or multi-platform desktop clients that share the "LibreLauncher" name.

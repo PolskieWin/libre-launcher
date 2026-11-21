@@ -3,10 +3,10 @@ Libre Launcher is an open-source, lightweight, high-performance Minecraft: Java 
 Key Features:
 - Native Rust Controls (libre_controls): Zero-heap allocation virtual touch controls, sprint lock debounce, and exponential moving average aim smoothing.
 - Thermal-Aware AFK Hibernate: Monitors device SoC temperatures and scales FPS down to 5 FPS with OLED pure-black screen during AFK sessions to protect battery health.
-- Modern Version Support: Full support from rd-132211 up to modern calendar versions (26.3, 26.4), NeoForge 4-part versions, Fabric, Quilt, and OptiFine.
+- Modern Version Support: Full support from rd-132211 up to Minecraft 26.4 & 26.3 snapshots (LWJGL 3.4.3, Shaderc symbols, Java 25 FFM compatibility), NeoForge 4-part versions, Fabric, Quilt, and OptiFine.
 - Native Pre-Boot Compatibility Scanner: Inspects mod manifests before launching the JVM to diagnose mod conflicts, missing dependencies, or incompatible native libraries.
 - Material 3 Design: Clean, consistent interface with pinned home-screen instance shortcuts.
-- Renderer & Driver Choices: Built-in support for Mesa Zink (OpenGL over Vulkan), GL4ES, VirGL, ANGLE, and custom Turnip GPU drivers.
+- Renderer & Driver Choices: Built-in support for Mesa Zink (OpenGL over Vulkan), GL4ES, VirGL, ANGLE, and custom Turnip GPU drivers. Expanded Snapdragon 6 Gen 1/3/4, 6s Gen 4, 7-series SoC, and Adreno 7xx/8xx Turnip profiles.
 - Completely Tracker-Free: Zero telemetry, zero analytics, zero proprietary advertising SDKs.
 
 Anti-Features Notice:
