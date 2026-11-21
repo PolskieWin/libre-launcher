@@ -96,15 +96,6 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
             if (isFlagship) {
                 // Flagship Tuned Turnip
                 envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
-                boolean is7xx8xx = glInfo.renderer != null && (
-                        glInfo.renderer.contains("730") || glInfo.renderer.contains("740") ||
-                        glInfo.renderer.contains("750") || glInfo.renderer.contains("830") ||
-                        glInfo.renderer.contains("840") || glInfo.renderer.contains("825") ||
-                        glInfo.renderer.contains("810") || glInfo.renderer.contains("735") ||
-                        glInfo.renderer.contains("732") || glInfo.renderer.contains("725") ||
-                        glInfo.renderer.contains("722") || glInfo.renderer.contains("720") ||
-                        glInfo.renderer.contains("710")
-                );
                 envMap.remove("FD_DEV_FEATURES");
             } else {
                 // Normal / Untuned Standard Turnip
@@ -179,6 +170,8 @@ public class LibreMobileRenderSpec extends MesaRenderSpec {
                 }
                 if (bestTurnip != null && DriverManager.getPreferredDriver() instanceof BuiltinDriver) {
                     DriverManager.setPreferredDriver(bestTurnip);
+                    File root = DriverManager.getDriverRoot(bestTurnip);
+                    MojoExec.configureCustomVulkanDriver(bestTurnip.getMainLibrary(), root == null ? null : root.getAbsolutePath());
                 }
             } catch (Throwable t) {
                 Log.w("LibreMobile", "Failed to auto-select flagship Turnip driver", t);

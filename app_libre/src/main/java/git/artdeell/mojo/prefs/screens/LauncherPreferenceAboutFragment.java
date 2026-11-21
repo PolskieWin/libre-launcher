@@ -40,5 +40,14 @@ public class LauncherPreferenceAboutFragment extends LauncherPreferenceFragment 
                 return true;
             });
         }
+
+        Preference websitePref = findPreference("about_website");
+        if (websitePref != null) {
+            websitePref.setOnPreferenceClickListener(pref -> {
+                Activity activity = getActivity();
+                if (activity != null) Tools.openURL(activity, "https://polskiewin.github.io");
+                return true;
+            });
+        }
     }
 }

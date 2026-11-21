@@ -44,6 +44,13 @@
             android:summary="https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58168"
             android:icon="@drawable/ic_px_verify_hash"
             android:persistent="false" />
+
+        <Preference
+            android:key="about_website"
+            android:title="@string/preference_about_website_title"
+            android:summary="https://polskiewin.github.io"
+            android:icon="@drawable/ic_px_world"
+            android:persistent="false" />
     </PreferenceCategory>
 
 </PreferenceScreen>

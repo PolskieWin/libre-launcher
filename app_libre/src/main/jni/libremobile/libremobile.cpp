@@ -46,6 +46,7 @@ extern "C" EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surf);
 
 static pthread_once_t s_init_once = PTHREAD_ONCE_INIT;
 static bool s_libre_mobile_active = false;
+static void* s_current_egl_handle = NULL;
 static PFNGLGETSTRINGPROC s_real_glGetString = NULL;
 static PFNEGLGETPROCADDRESSPROC s_real_eglGetProcAddress = NULL;
 
@@ -57,7 +58,10 @@ static pfn_APerformanceHint_closeSession s_pfn_closeSession = NULL;
 
 static APerformanceHintManager* s_adpf_manager = NULL;
 static APerformanceHintSession* s_adpf_session = NULL;
-static int64_t s_adpf_target_duration_ns = 8333333LL;
+static bool s_adpf_session_attempted = false;
+static int32_t s_adpf_session_tid = 0;
+static int64_t s_adpf_target_duration_ns = 16666667LL; // 60 FPS default frame budget
+static pthread_mutex_t s_adpf_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct timespec s_last_swap_time = {0, 0};
 
 // Flagship SoC Lookup Table (< 4 KB)
@@ -73,7 +77,7 @@ static const uint16_t s_flagship_soc_ids[] = {
 static const size_t s_flagship_soc_count = sizeof(s_flagship_soc_ids) / sizeof(s_flagship_soc_ids[0]);
 
 static const uint16_t s_adreno_7xx_8xx_soc_ids[] = {
-    457, 482, 519, 530, 531, 536, 540, 552, 557, 577, 603, 619, 621, 623, 693
+    457, 482, 519, 530, 531, 536, 540, 552, 557, 577, 603, 619, 621, 623, 673, 674, 693, 709, 710
 };
 static const size_t s_adreno_7xx_8xx_soc_count = sizeof(s_adreno_7xx_8xx_soc_ids) / sizeof(s_adreno_7xx_8xx_soc_ids[0]);
 
@@ -89,8 +93,9 @@ static const char* const s_flagship_platform_names[] = {
 static const size_t s_flagship_platform_count = sizeof(s_flagship_platform_names) / sizeof(s_flagship_platform_names[0]);
 
 static const char* const s_adreno_7xx_8xx_names[] = {
-    "sm8450", "sm8475", "sm8550", "sm8650", "sm8750", "sm7475", "sm7675",
-    "taro", "kalama", "pineapple", "sun"
+    "sm8450", "sm8475", "sm8550", "sm8650", "sm8735", "sm8750", "sm8850",
+    "sm7475", "sm7550", "sm7635", "sm7675", "sm7750",
+    "taro", "cape", "kalama", "pineapple", "sun", "canoe", "volcano", "cliffs"
 };
 static const size_t s_adreno_7xx_8xx_name_count = sizeof(s_adreno_7xx_8xx_names) / sizeof(s_adreno_7xx_8xx_names[0]);
 
@@ -129,12 +134,19 @@ static bool detect_is_flagship_adreno() {
     if (soc_id > 0 && id_in_array(soc_id, s_flagship_soc_ids, s_flagship_soc_count)) {
         return true;
     }
+    static const char* const prop_keys[] = {
+        "ro.soc.model",
+        "ro.board.platform",
+        "ro.hardware.chipname",
+        "ro.chipname",
+        "ro.product.board",
+        "ro.hardware"
+    };
     char prop[PROP_VALUE_MAX];
-    if (__system_property_get("ro.soc.model", prop) > 0) {
-        if (str_in_list(prop, s_flagship_platform_names, s_flagship_platform_count)) return true;
-    }
-    if (__system_property_get("ro.board.platform", prop) > 0) {
-        if (str_in_list(prop, s_flagship_platform_names, s_flagship_platform_count)) return true;
+    for (size_t k = 0; k < sizeof(prop_keys) / sizeof(prop_keys[0]); k++) {
+        if (__system_property_get(prop_keys[k], prop) > 0) {
+            if (str_in_list(prop, s_flagship_platform_names, s_flagship_platform_count)) return true;
+        }
     }
     return false;
 }
@@ -144,17 +156,27 @@ static bool detect_is_adreno_7xx_8xx() {
     if (soc_id > 0 && id_in_array(soc_id, s_adreno_7xx_8xx_soc_ids, s_adreno_7xx_8xx_soc_count)) {
         return true;
     }
+    static const char* const prop_keys[] = {
+        "ro.soc.model",
+        "ro.board.platform",
+        "ro.hardware.chipname",
+        "ro.chipname",
+        "ro.product.board",
+        "ro.hardware"
+    };
     char prop[PROP_VALUE_MAX];
-    if (__system_property_get("ro.soc.model", prop) > 0) {
-        if (str_in_list(prop, s_adreno_7xx_8xx_names, s_adreno_7xx_8xx_name_count)) return true;
-    }
-    if (__system_property_get("ro.board.platform", prop) > 0) {
-        if (str_in_list(prop, s_adreno_7xx_8xx_names, s_adreno_7xx_8xx_name_count)) return true;
+    for (size_t k = 0; k < sizeof(prop_keys) / sizeof(prop_keys[0]); k++) {
+        if (__system_property_get(prop_keys[k], prop) > 0) {
+            if (str_in_list(prop, s_adreno_7xx_8xx_names, s_adreno_7xx_8xx_name_count)) return true;
+        }
     }
     return false;
 }
 
+static void* s_libandroid_handle = NULL;
+
 static void init_adpf() {
+    if (s_libandroid_handle) return;
     void* libandroid = dlopen("libandroid.so", RTLD_NOW | RTLD_LOCAL);
     if (!libandroid) return;
 
@@ -167,37 +189,76 @@ static void init_adpf() {
     if (s_pfn_getManager) {
         s_adpf_manager = s_pfn_getManager();
     }
+
+    if (!s_adpf_manager || !s_pfn_createSession || !s_pfn_reportActualWorkDuration) {
+        dlclose(libandroid);
+        s_pfn_getManager = NULL;
+        s_pfn_createSession = NULL;
+        s_pfn_reportActualWorkDuration = NULL;
+        s_pfn_updateTargetWorkDuration = NULL;
+        s_pfn_closeSession = NULL;
+        s_adpf_manager = NULL;
+    } else {
+        s_libandroid_handle = libandroid;
+    }
+}
+
+static void refresh_egl_handles() {
+    void* handle = mojoexec_acq_egl_handle();
+    if (!handle) {
+        handle = dlopen("libEGL_mesa.so", RTLD_NOLOAD);
+    }
+    if (handle && handle != s_current_egl_handle) {
+        s_current_egl_handle = handle;
+        PFNEGLGETPROCADDRESSPROC egpa = (PFNEGLGETPROCADDRESSPROC)dlsym(handle, "eglGetProcAddress");
+        if (egpa && egpa != (PFNEGLGETPROCADDRESSPROC)&eglGetProcAddress && egpa != (PFNEGLGETPROCADDRESSPROC)&libre_eglGetProcAddress) {
+            s_real_eglGetProcAddress = egpa;
+        }
+        PFNGLGETSTRINGPROC glgs = (PFNGLGETSTRINGPROC)dlsym(handle, "glGetString");
+        if (glgs && glgs != (PFNGLGETSTRINGPROC)&glGetString && glgs != (PFNGLGETSTRINGPROC)&libre_glGetString) {
+            s_real_glGetString = glgs;
+        }
+    }
 }
 
 static void init_libremobile_pointers_internal() {
     const char* lm = getenv("LIBRE_MOBILE_ACTIVE");
     s_libre_mobile_active = (lm != NULL && (strcmp(lm, "1") == 0 || strcasecmp(lm, "true") == 0));
 
-    void* egl_handle = mojoexec_acq_egl_handle();
-    if (!egl_handle) {
-        egl_handle = dlopen("libEGL_mesa.so", RTLD_NOLOAD);
-    }
-    if (egl_handle) {
-        s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(egl_handle, "eglGetProcAddress");
-        s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(egl_handle, "glGetString");
-    }
+    refresh_egl_handles();
+
     if (!s_real_eglGetProcAddress) {
-        s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(RTLD_NEXT, "eglGetProcAddress");
+        PFNEGLGETPROCADDRESSPROC next_egpa = (PFNEGLGETPROCADDRESSPROC)dlsym(RTLD_NEXT, "eglGetProcAddress");
+        if (next_egpa && next_egpa != (PFNEGLGETPROCADDRESSPROC)&eglGetProcAddress && next_egpa != (PFNEGLGETPROCADDRESSPROC)&libre_eglGetProcAddress) {
+            s_real_eglGetProcAddress = next_egpa;
+        }
     }
     if (!s_real_eglGetProcAddress) {
         void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
         if (libegl) {
-            s_real_eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)dlsym(libegl, "eglGetProcAddress");
+            PFNEGLGETPROCADDRESSPROC libegl_egpa = (PFNEGLGETPROCADDRESSPROC)dlsym(libegl, "eglGetProcAddress");
+            if (libegl_egpa && libegl_egpa != (PFNEGLGETPROCADDRESSPROC)&eglGetProcAddress && libegl_egpa != (PFNEGLGETPROCADDRESSPROC)&libre_eglGetProcAddress) {
+                s_real_eglGetProcAddress = libegl_egpa;
+            }
             if (!s_real_glGetString) {
-                s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(libegl, "glGetString");
+                PFNGLGETSTRINGPROC libegl_glgs = (PFNGLGETSTRINGPROC)dlsym(libegl, "glGetString");
+                if (libegl_glgs && libegl_glgs != (PFNGLGETSTRINGPROC)&glGetString && libegl_glgs != (PFNGLGETSTRINGPROC)&libre_glGetString) {
+                    s_real_glGetString = libegl_glgs;
+                }
             }
         }
     }
     if (!s_real_glGetString && s_real_eglGetProcAddress) {
-        s_real_glGetString = (PFNGLGETSTRINGPROC)s_real_eglGetProcAddress("glGetString");
+        PFNGLGETSTRINGPROC egpa_glgs = (PFNGLGETSTRINGPROC)s_real_eglGetProcAddress("glGetString");
+        if (egpa_glgs && egpa_glgs != (PFNGLGETSTRINGPROC)&glGetString && egpa_glgs != (PFNGLGETSTRINGPROC)&libre_glGetString) {
+            s_real_glGetString = egpa_glgs;
+        }
     }
     if (!s_real_glGetString) {
-        s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(RTLD_NEXT, "glGetString");
+        PFNGLGETSTRINGPROC next_glgs = (PFNGLGETSTRINGPROC)dlsym(RTLD_NEXT, "glGetString");
+        if (next_glgs && next_glgs != (PFNGLGETSTRINGPROC)&glGetString && next_glgs != (PFNGLGETSTRINGPROC)&libre_glGetString) {
+            s_real_glGetString = next_glgs;
+        }
     }
 
     init_adpf();
@@ -210,8 +271,17 @@ static inline void ensure_initialized() {
 extern "C" __attribute__((visibility("default")))
 const unsigned char* libre_glGetString(unsigned int name) {
     ensure_initialized();
+    refresh_egl_handles();
+
+    if (!s_libre_mobile_active) {
+        const char* lm = getenv("LIBRE_MOBILE_ACTIVE");
+        if (lm != NULL && (strcmp(lm, "1") == 0 || strcasecmp(lm, "true") == 0)) {
+            s_libre_mobile_active = true;
+        }
+    }
+
     if (s_libre_mobile_active && name == GL_RENDERER) {
-        static const unsigned char s_libre_mobile_renderer[] = "Libre Mobile";
+        static const unsigned char s_libre_mobile_renderer[] = "Libre Mobile 2.10";
         return s_libre_mobile_renderer;
     }
     if (!s_real_glGetString) {
@@ -225,7 +295,10 @@ const unsigned char* libre_glGetString(unsigned int name) {
             s_real_glGetString = (PFNGLGETSTRINGPROC)s_real_eglGetProcAddress("glGetString");
         }
         if (!s_real_glGetString) {
-            s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(RTLD_DEFAULT, "glGetString");
+            s_real_glGetString = (PFNGLGETSTRINGPROC)dlsym(RTLD_NEXT, "glGetString");
+        }
+        if (s_real_glGetString == (PFNGLGETSTRINGPROC)&glGetString || s_real_glGetString == (PFNGLGETSTRINGPROC)&libre_glGetString) {
+            s_real_glGetString = NULL;
         }
     }
     if (s_real_glGetString) {
@@ -237,13 +310,13 @@ const unsigned char* libre_glGetString(unsigned int name) {
         static const unsigned char s_fallback_vendor[] = "Libre Launcher";
         return s_fallback_vendor;
     } else if (name == 0x1F01 /* GL_RENDERER */) {
-        static const unsigned char s_fallback_renderer[] = "Libre Mobile";
+        static const unsigned char s_fallback_renderer[] = "Libre Mobile 2.10";
         return s_fallback_renderer;
     } else if (name == 0x1F02 /* GL_VERSION */) {
-        static const unsigned char s_fallback_version[] = "4.6.0 Libre Mobile";
+        static const unsigned char s_fallback_version[] = "4.6.0 Libre Mobile 2.10";
         return s_fallback_version;
     } else if (name == 0x8B8C /* GL_SHADING_LANGUAGE_VERSION */) {
-        static const unsigned char s_fallback_glsl[] = "4.60 Libre Mobile";
+        static const unsigned char s_fallback_glsl[] = "4.60 Libre Mobile 2.10";
         return s_fallback_glsl;
     }
     static const unsigned char s_empty_str[] = "";
@@ -262,18 +335,38 @@ void libre_adpf_report_swap() {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
 
-    if (s_pfn_createSession && s_adpf_manager && !s_adpf_session) {
-        int32_t tid = (int32_t)gettid();
-        s_adpf_session = s_pfn_createSession(s_adpf_manager, &tid, 1, s_adpf_target_duration_ns);
+    int32_t tid = (int32_t)gettid();
+
+    pthread_mutex_lock(&s_adpf_mutex);
+    if (s_pfn_createSession && s_adpf_manager) {
+        if (!s_adpf_session_attempted) {
+            s_adpf_session_attempted = true;
+            s_adpf_session_tid = tid;
+            s_adpf_session = s_pfn_createSession(s_adpf_manager, &tid, 1, s_adpf_target_duration_ns);
+        }
     }
 
-    if (s_last_swap_time.tv_sec != 0 && s_adpf_session && s_pfn_reportActualWorkDuration) {
+    if (s_last_swap_time.tv_sec != 0 && s_adpf_session && s_pfn_reportActualWorkDuration && tid == s_adpf_session_tid) {
         int64_t dur = (int64_t)(now.tv_sec - s_last_swap_time.tv_sec) * 1000000000LL +
                       (int64_t)(now.tv_nsec - s_last_swap_time.tv_nsec);
-        if (dur > 0 && dur < 500000000LL) {
+        if (dur > 1000000LL && dur < 100000000LL) {
+            int64_t new_target = s_adpf_target_duration_ns;
+            if (dur <= 9000000LL) {
+                new_target = 8333333LL; // 120 FPS
+            } else if (dur <= 18000000LL) {
+                new_target = 16666667LL; // 60 FPS
+            } else if (dur <= 36000000LL) {
+                new_target = 33333333LL; // 30 FPS
+            }
+            if (new_target != s_adpf_target_duration_ns && s_pfn_updateTargetWorkDuration) {
+                s_adpf_target_duration_ns = new_target;
+                s_pfn_updateTargetWorkDuration(s_adpf_session, new_target);
+            }
             s_pfn_reportActualWorkDuration(s_adpf_session, dur);
         }
     }
+    pthread_mutex_unlock(&s_adpf_mutex);
+
     s_last_swap_time = now;
 }
 
@@ -281,6 +374,7 @@ extern "C" __attribute__((visibility("default")))
 void* libre_eglGetProcAddress(const char* procname) {
     if (!procname) return NULL;
     ensure_initialized();
+    refresh_egl_handles();
 
     if (strcmp(procname, "glGetString") == 0) {
         return (void*)&libre_glGetString;
@@ -288,8 +382,18 @@ void* libre_eglGetProcAddress(const char* procname) {
     if (strcmp(procname, "eglSwapBuffers") == 0) {
         return (void*)&eglSwapBuffers;
     }
-    if (s_real_eglGetProcAddress) {
-        return (void*)s_real_eglGetProcAddress(procname);
+    if (strcmp(procname, "eglGetProcAddress") == 0) {
+        return (void*)&libre_eglGetProcAddress;
+    }
+    if (s_real_eglGetProcAddress &&
+        s_real_eglGetProcAddress != (PFNEGLGETPROCADDRESSPROC)&libre_eglGetProcAddress &&
+        s_real_eglGetProcAddress != (PFNEGLGETPROCADDRESSPROC)&eglGetProcAddress) {
+        void* ptr = (void*)s_real_eglGetProcAddress(procname);
+        if (ptr) return ptr;
+    }
+    if (s_current_egl_handle) {
+        void* ptr = dlsym(s_current_egl_handle, procname);
+        if (ptr) return ptr;
     }
     return NULL;
 }
@@ -304,9 +408,10 @@ static void apply_common_mobile_optimizations() {
     setpriority(PRIO_PROCESS, 0, -10);
 
     setenv("LIBRE_MOBILE_ACTIVE", "1", 1);
+    s_libre_mobile_active = true;
     setenv("MESA_LOADER_DRIVER_OVERRIDE", "zink", 1);
     setenv("MESA_GLSL_VERSION_OVERRIDE", "460", 1);
-    setenv("MESA_GL_VERSION_OVERRIDE", "4.6COMPAT", 1);
+    setenv("MESA_GL_VERSION_OVERRIDE", "4.6", 1);
     setenv("allow_higher_compat_version", "true", 1);
     setenv("allow_glsl_extension_directive_midshader", "true", 1);
     setenv("MESA_NO_ERROR", "1", 1);
@@ -367,11 +472,17 @@ Java_git_artdeell_mojo_game_renderer_impl_LibreMobileRenderSpec_nativeSetupMobil
             LOGI("Configuring Flagship Tuned Turnip profile (7xx/8xx=%d)", is7xx8xx);
             setenv("MESA_VK_WSI_PRESENT_MODE", "mailbox", 1);
             unsetenv("FD_DEV_FEATURES");
-            unsetenv("TU_DEBUG");
+            const char* existing_tu = getenv("TU_DEBUG");
+            if (!existing_tu || existing_tu[0] == '\0') {
+                unsetenv("TU_DEBUG");
+            }
         } else {
             LOGI("Configuring Mid-Range Standard Turnip profile");
             unsetenv("FD_DEV_FEATURES");
-            unsetenv("TU_DEBUG");
+            const char* existing_tu = getenv("TU_DEBUG");
+            if (!existing_tu || existing_tu[0] == '\0') {
+                unsetenv("TU_DEBUG");
+            }
             unsetenv("MESA_VK_WSI_PRESENT_MODE");
         }
     } else if (isMali) {

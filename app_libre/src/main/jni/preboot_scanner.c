@@ -462,6 +462,15 @@ Java_git_artdeell_mojo_modding_PrebootScanner_nativeScanMods(
 
     ModManifest* manifests = (ModManifest*)calloc(MAX_MODS, sizeof(ModManifest));
     ScanIssue* issues = (ScanIssue*)calloc(MAX_ISSUES, sizeof(ScanIssue));
+    if (!manifests || !issues) {
+        if (manifests) free(manifests);
+        if (issues) free(issues);
+        closedir(dir);
+        if (j_renderer) (*env)->ReleaseStringUTFChars(env, j_renderer, renderer);
+        if (j_abi) (*env)->ReleaseStringUTFChars(env, j_abi, abi);
+        (*env)->ReleaseStringUTFChars(env, j_mods_dir, mods_dir);
+        return (*env)->NewStringUTF(env, "{\"hasIssues\":false,\"scannedModCount\":0,\"issues\":[]}");
+    }
     int mod_count = 0;
     int issue_count = 0;
 

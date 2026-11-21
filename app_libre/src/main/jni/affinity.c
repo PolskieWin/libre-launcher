@@ -12,12 +12,14 @@
 #include <stdlib.h>
 #include <sched.h>
 #include <string.h>
+#include <pthread.h>
 #include <jni.h>
 
 static _Thread_local bool big_core_affine = false;
 
 static cpu_set_t bigcore_affinity_set;
 static bool has_affinity_set;
+static pthread_once_t s_affinity_once = PTHREAD_ONCE_INIT;
 
 #define FREQ_MAX 256
 #define MAX_CORES 32
@@ -80,7 +82,7 @@ static void create_affinity_set() {
 
 void make_big_core_affine() {
     if(big_core_affine) return;
-    if(!has_affinity_set) create_affinity_set();
+    pthread_once(&s_affinity_once, create_affinity_set);
     int result = sched_setaffinity(0, CPU_SETSIZE, &bigcore_affinity_set);
     if(result != 0) {
         printf("bigcore: setting affinity failed: %s\n", strerror(result));

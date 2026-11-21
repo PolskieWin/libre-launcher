@@ -1014,6 +1014,7 @@
     <string name="preference_build_debug">Debug</string>
     <string name="preference_build_release">Release</string>
     <string name="preference_about_wiki_summary">Lineage, performance specs, and open-source history</string>
+    <string name="preference_about_website_title">Website</string>
 
     <!-- LibrePack -->
     <string name="preference_librepack_title">LibrePack</string>

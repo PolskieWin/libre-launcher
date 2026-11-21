@@ -98,7 +98,10 @@ void libre_touch_bridge_set_enabled(bool enabled) {
 
 __attribute__((visibility("default")))
 bool libre_touch_bridge_is_enabled(void) {
-    return s_bridge_enabled;
+    pthread_mutex_lock(&s_bridge_mutex);
+    bool enabled = s_bridge_enabled;
+    pthread_mutex_unlock(&s_bridge_mutex);
+    return enabled;
 }
 
 JNIEXPORT void JNICALL
@@ -121,7 +124,7 @@ Java_git_artdeell_mojo_input_TouchBridge_nativePollTouch(
         jclass clazz,
         jfloatArray out_array) {
     (void)clazz;
-    if (!out_array) return 0;
+    if (!out_array || (*env)->GetArrayLength(env, out_array) < 6) return 0;
     LibreTouchEvent evt;
     if (libre_touch_bridge_poll(&evt)) {
         jfloat buf[6];

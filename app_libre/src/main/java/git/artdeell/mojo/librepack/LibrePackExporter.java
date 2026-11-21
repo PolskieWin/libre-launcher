@@ -15,7 +15,7 @@ import java.util.zip.ZipOutputStream;
  * Layout inside the archive:
  *   instance.json          — instance metadata (copied verbatim)
  *   icon.webp              — custom icon, if present
- *   data/                  — full recursive copy of the instance game directory
+ *   data/                  — recursive copy of the instance game directory (excluding saves/, logs/, crash-reports/)
  *
  * The archive is written to a temporary file first so callers get an atomic result.
  */
@@ -87,6 +87,12 @@ public final class LibrePackExporter {
         File[] entries = dir.listFiles();
         if (entries == null) return;
         for (File entry : entries) {
+            if ("data/".equals(prefix)) {
+                String name = entry.getName();
+                if ("saves".equals(name) || "logs".equals(name) || "crash-reports".equals(name)) {
+                    continue;
+                }
+            }
             String entryPath = prefix + entry.getName();
             if (entry.isDirectory()) {
                 packDirectory(zos, entry, entryPath + "/", listener);

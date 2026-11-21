@@ -1,0 +1,5 @@
+Release v3.60:
+- Added official website link (https://polskiewin.github.io) in About screen
+- Native JNI telemetry and controls robustness: fixed mutex concurrency and bounds checking
+- LibreMobile driver manager and Turnip auto-configuration optimizations
+- LibrePack exporter excludes transient runtime folders (saves, logs, crash-reports)

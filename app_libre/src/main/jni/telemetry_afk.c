@@ -8,6 +8,7 @@
 #include <time.h>
 #include <dlfcn.h>
 #include <math.h>
+#include <pthread.h>
 #include <EGL/egl.h>
 #include <android/log.h>
 
@@ -25,6 +26,7 @@ static int s_count = 0;
 static uint64_t s_total_frames = 0;
 static uint64_t s_last_frame_time_ns = 0;
 static uint64_t s_last_native_present_ns = 0;
+static pthread_mutex_t s_telemetry_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static volatile bool s_is_afk = false;
 static volatile int s_target_fps = 5; // Default 5 FPS (200ms frame budget)
@@ -64,10 +66,12 @@ void libre_on_present_swap(void) {
     if (delta_ms <= 0.001f) delta_ms = 0.001f;
     if (delta_ms > 1000.0f) delta_ms = 1000.0f;
 
+    pthread_mutex_lock(&s_telemetry_mutex);
     s_frame_times[s_head] = delta_ms;
     s_head = (s_head + 1) % TELEMETRY_WINDOW;
     if (s_count < TELEMETRY_WINDOW) s_count++;
     s_total_frames++;
+    pthread_mutex_unlock(&s_telemetry_mutex);
 
     // Hibernate pacing on render thread
     if (s_is_afk && s_target_fps > 0) {
@@ -83,26 +87,33 @@ void libre_on_present_swap(void) {
 extern void* mojoexec_acq_egl_handle();
 extern void libre_adpf_report_swap();
 
-__attribute__((visibility("default")))
-EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surf) {
-    if (__builtin_expect(!s_real_eglSwapBuffers, 0)) {
-        void* egl_handle = mojoexec_acq_egl_handle();
-        if (!egl_handle) {
-            egl_handle = dlopen("libEGL_mesa.so", RTLD_NOLOAD);
-        }
-        if (egl_handle) {
-            s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(egl_handle, "eglSwapBuffers");
-        }
-        if (!s_real_eglSwapBuffers) {
-            void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
-            if (libegl) {
-                s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(libegl, "eglSwapBuffers");
-            }
-        }
-        if (!s_real_eglSwapBuffers) {
-            s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(RTLD_NEXT, "eglSwapBuffers");
+static pthread_once_t s_egl_swap_once = PTHREAD_ONCE_INIT;
+
+static void init_real_egl_swap() {
+    void* egl_handle = mojoexec_acq_egl_handle();
+    if (!egl_handle) {
+        egl_handle = dlopen("libEGL_mesa.so", RTLD_NOLOAD);
+    }
+    if (egl_handle) {
+        s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(egl_handle, "eglSwapBuffers");
+    }
+    if (!s_real_eglSwapBuffers) {
+        void* libegl = dlopen("libEGL.so", RTLD_GLOBAL | RTLD_LAZY);
+        if (libegl) {
+            s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(libegl, "eglSwapBuffers");
         }
     }
+    if (!s_real_eglSwapBuffers) {
+        s_real_eglSwapBuffers = (eglSwapBuffers_t)dlsym(RTLD_NEXT, "eglSwapBuffers");
+    }
+    if (s_real_eglSwapBuffers == (eglSwapBuffers_t)&eglSwapBuffers) {
+        s_real_eglSwapBuffers = NULL;
+    }
+}
+
+__attribute__((visibility("default")))
+EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surf) {
+    pthread_once(&s_egl_swap_once, init_real_egl_swap);
 
     libre_on_present_swap();
     libre_adpf_report_swap();
@@ -134,6 +145,25 @@ EGLBoolean eglSwapInterval(EGLDisplay dpy, EGLint interval) {
 typedef void* (*AThermal_acquireManager_fn)(void);
 typedef float (*AThermal_getThermalHeadroom_fn)(void*, int);
 
+static void* s_thermal_libandroid = NULL;
+static AThermal_acquireManager_fn s_thermal_acquire_fn = NULL;
+static AThermal_getThermalHeadroom_fn s_thermal_headroom_fn = NULL;
+static pthread_once_t s_thermal_once = PTHREAD_ONCE_INIT;
+
+static void init_thermal_pointers(void) {
+    s_thermal_libandroid = dlopen("libandroid.so", RTLD_NOW);
+    if (s_thermal_libandroid) {
+        s_thermal_acquire_fn = (AThermal_acquireManager_fn)dlsym(s_thermal_libandroid, "AThermal_acquireManager");
+        s_thermal_headroom_fn = (AThermal_getThermalHeadroom_fn)dlsym(s_thermal_libandroid, "AThermal_getThermalHeadroom");
+        if (!s_thermal_acquire_fn || !s_thermal_headroom_fn) {
+            dlclose(s_thermal_libandroid);
+            s_thermal_libandroid = NULL;
+            s_thermal_acquire_fn = NULL;
+            s_thermal_headroom_fn = NULL;
+        }
+    }
+}
+
 static float read_ndk_thermal_headroom() {
     uint64_t now_ms = get_current_time_ms();
     if (s_last_thermal_poll_ms > 0 && (now_ms - s_last_thermal_poll_ms) < 10000ULL) {
@@ -141,16 +171,12 @@ static float read_ndk_thermal_headroom() {
     }
     s_last_thermal_poll_ms = now_ms;
 
-    void* handle = dlopen("libandroid.so", RTLD_NOW);
-    if (!handle) return s_cached_thermal_headroom;
+    pthread_once(&s_thermal_once, init_thermal_pointers);
 
-    AThermal_acquireManager_fn acquire_fn = (AThermal_acquireManager_fn)dlsym(handle, "AThermal_acquireManager");
-    AThermal_getThermalHeadroom_fn headroom_fn = (AThermal_getThermalHeadroom_fn)dlsym(handle, "AThermal_getThermalHeadroom");
-
-    if (acquire_fn && headroom_fn) {
-        void* manager = acquire_fn();
+    if (s_thermal_acquire_fn && s_thermal_headroom_fn) {
+        void* manager = s_thermal_acquire_fn();
         if (manager) {
-            float hr = headroom_fn(manager, 10);
+            float hr = s_thermal_headroom_fn(manager, 10);
             if (!isnan(hr) && hr >= 0.0f) {
                 s_cached_thermal_headroom = hr;
             }
@@ -224,10 +250,12 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeRecordFrame(
     if (delta_ms <= 0.001f) delta_ms = 0.001f;
     if (delta_ms > 1000.0f) delta_ms = 1000.0f;
 
+    pthread_mutex_lock(&s_telemetry_mutex);
     s_frame_times[s_head] = delta_ms;
     s_head = (s_head + 1) % TELEMETRY_WINDOW;
     if (s_count < TELEMETRY_WINDOW) s_count++;
     s_total_frames++;
+    pthread_mutex_unlock(&s_telemetry_mutex);
 }
 
 JNIEXPORT jlong JNICALL
@@ -245,39 +273,53 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeComputeTelemetryPacked(
         JNIEnv *env,
         jclass clazz,
         jlongArray out_array) {
-    if (out_array == NULL) return 0;
+    if (out_array == NULL || (*env)->GetArrayLength(env, out_array) < 8) return 0;
 
     float fps = 0.0f;
     float one_percent_low = 0.0f;
     float latest_delta = 0.0f;
     float jitter_ms = 0.0f;
 
-    if (s_count > 0) {
+    float local_frames[TELEMETRY_WINDOW];
+    int count = 0;
+    int head = 0;
+    uint64_t total_frames = 0;
+
+    pthread_mutex_lock(&s_telemetry_mutex);
+    count = s_count;
+    head = s_head;
+    total_frames = s_total_frames;
+    if (count > 0) {
+        memcpy(local_frames, s_frame_times, (size_t)count * sizeof(float));
+    }
+    pthread_mutex_unlock(&s_telemetry_mutex);
+
+    if (count > 0) {
         float sum = 0.0f;
         float min_val = 100000.0f;
         float max_val = 0.0f;
         float sorted[TELEMETRY_WINDOW];
 
-        for (int i = 0; i < s_count; i++) {
-            float val = s_frame_times[i];
+        for (int i = 0; i < count; i++) {
+            float val = local_frames[i];
             sum += val;
             if (val < min_val) min_val = val;
             if (val > max_val) max_val = val;
             sorted[i] = val;
         }
 
-        float avg_delta = sum / (float)s_count;
+        float avg_delta = sum / (float)count;
         fps = avg_delta > 0.0f ? (1000.0f / avg_delta) : 0.0f;
 
         // Frame Jitter calculation (Mean Absolute Deviation in ms)
         float jitter_sum = 0.0f;
-        for (int i = 0; i < s_count; i++) {
-            jitter_sum += fabsf(s_frame_times[i] - avg_delta);
+        for (int i = 0; i < count; i++) {
+            jitter_sum += fabsf(local_frames[i] - avg_delta);
         }
-        jitter_ms = jitter_sum / (float)s_count;
+        jitter_ms = jitter_sum / (float)count;
 
         // 1% Low FPS (99th percentile worst frame time)
-        for (int i = 1; i < s_count; i++) {
+        for (int i = 1; i < count; i++) {
             int j = i;
             while (j > 0 && sorted[j - 1] > sorted[j]) {
                 float tmp = sorted[j];
@@ -286,13 +328,13 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeComputeTelemetryPacked(
                 j--;
             }
         }
-        int p99_idx = (int)((float)s_count * 0.99f);
-        if (p99_idx >= s_count) p99_idx = s_count - 1;
+        int p99_idx = (int)((float)count * 0.99f);
+        if (p99_idx >= count) p99_idx = count - 1;
         float p99_delta = sorted[p99_idx];
         one_percent_low = p99_delta > 0.0f ? (1000.0f / p99_delta) : 0.0f;
 
-        int latest_idx = (s_head + TELEMETRY_WINDOW - 1) % TELEMETRY_WINDOW;
-        latest_delta = s_frame_times[latest_idx];
+        int latest_idx = (head + TELEMETRY_WINDOW - 1) % TELEMETRY_WINDOW;
+        latest_delta = local_frames[latest_idx];
     }
 
     uint32_t ram_used = 0, ram_total = 0;
@@ -308,7 +350,7 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeComputeTelemetryPacked(
     buf[4] = (jlong)ram_used;
     buf[5] = (jlong)(thermal_headroom * 100.0f);
     buf[6] = (jlong)(s_is_afk ? 1 : 0);
-    buf[7] = (jlong)s_total_frames;
+    buf[7] = (jlong)total_frames;
 
     (*env)->SetLongArrayRegion(env, out_array, 0, 8, buf);
     return 8;
@@ -320,25 +362,42 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeGetTelemetry(
         jclass clazz,
         jfloatArray out_floats,
         jintArray out_ints) {
-    if (s_count == 0) return;
+    if (!out_floats || !out_ints) return;
+    if ((*env)->GetArrayLength(env, out_floats) < 6 || (*env)->GetArrayLength(env, out_ints) < 4) return;
+
+    float local_frames[TELEMETRY_WINDOW];
+    int count = 0;
+    int head = 0;
+    uint64_t total_frames = 0;
+
+    pthread_mutex_lock(&s_telemetry_mutex);
+    count = s_count;
+    head = s_head;
+    total_frames = s_total_frames;
+    if (count > 0) {
+        memcpy(local_frames, s_frame_times, (size_t)count * sizeof(float));
+    }
+    pthread_mutex_unlock(&s_telemetry_mutex);
+
+    if (count == 0) return;
 
     float sum = 0.0f;
     float min_val = 100000.0f;
     float max_val = 0.0f;
     float sorted[TELEMETRY_WINDOW];
 
-    for (int i = 0; i < s_count; i++) {
-        float val = s_frame_times[i];
+    for (int i = 0; i < count; i++) {
+        float val = local_frames[i];
         sum += val;
         if (val < min_val) min_val = val;
         if (val > max_val) max_val = val;
         sorted[i] = val;
     }
 
-    float avg_delta = sum / (float)s_count;
+    float avg_delta = sum / (float)count;
     float fps = avg_delta > 0.0f ? (1000.0f / avg_delta) : 0.0f;
 
-    for (int i = 1; i < s_count; i++) {
+    for (int i = 1; i < count; i++) {
         int j = i;
         while (j > 0 && sorted[j - 1] > sorted[j]) {
             float tmp = sorted[j];
@@ -347,13 +406,13 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeGetTelemetry(
             j--;
         }
     }
-    int p99_idx = (int)((float)s_count * 0.99f);
-    if (p99_idx >= s_count) p99_idx = s_count - 1;
+    int p99_idx = (int)((float)count * 0.99f);
+    if (p99_idx >= count) p99_idx = count - 1;
     float p99_delta = sorted[p99_idx];
     float one_percent_low = p99_delta > 0.0f ? (1000.0f / p99_delta) : 0.0f;
 
-    int latest_idx = (s_head + TELEMETRY_WINDOW - 1) % TELEMETRY_WINDOW;
-    float latest_delta = s_frame_times[latest_idx];
+    int latest_idx = (head + TELEMETRY_WINDOW - 1) % TELEMETRY_WINDOW;
+    float latest_delta = local_frames[latest_idx];
 
     uint32_t ram_used = 0, ram_total = 0;
     read_memory_info(&ram_used, &ram_total);
@@ -367,7 +426,7 @@ Java_git_artdeell_mojo_telemetry_LibreTelemetry_nativeGetTelemetry(
     float_buf[5] = read_ndk_thermal_headroom();
 
     jint int_buf[4];
-    int_buf[0] = (jint)(s_total_frames & 0x7FFFFFFF);
+    int_buf[0] = (jint)(total_frames & 0x7FFFFFFF);
     int_buf[1] = (jint)ram_used;
     int_buf[2] = (jint)ram_total;
     int_buf[3] = s_is_afk ? 1 : 0;

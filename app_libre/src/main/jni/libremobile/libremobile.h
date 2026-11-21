@@ -7,6 +7,7 @@ extern "C" {
 #endif
 
 const unsigned char* libre_glGetString(unsigned int name);
+const unsigned char* glGetString(unsigned int name);
 void* libre_eglGetProcAddress(const char* procname);
 void libre_adpf_report_swap();
 

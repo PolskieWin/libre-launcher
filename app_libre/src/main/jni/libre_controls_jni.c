@@ -77,7 +77,7 @@ JNIEXPORT void JNICALL
 Java_git_artdeell_mojo_input_LibreControls_nativeProcessTouch(
         JNIEnv* env, jclass clazz, jint pointerId, jint action, jfloat x, jfloat y, jfloat sensitivity, jfloatArray outDelta) {
     (void)clazz;
-    if (!outDelta) return;
+    if (!outDelta || (*env)->GetArrayLength(env, outDelta) < 2) return;
     jfloat res[2] = { 0.0f, 0.0f };
     if (ensure_loaded() && p_touch) {
         LibreMotionResult r = p_touch(pointerId, action, x, y, sensitivity);
@@ -91,7 +91,7 @@ JNIEXPORT void JNICALL
 Java_git_artdeell_mojo_input_LibreControls_nativeProcessAim(
         JNIEnv* env, jclass clazz, jfloat dx, jfloat dy, jfloat sensitivity, jint profile, jfloat accelExp, jfloatArray outDelta) {
     (void)clazz;
-    if (!outDelta) return;
+    if (!outDelta || (*env)->GetArrayLength(env, outDelta) < 2) return;
     jfloat res[2] = { dx * sensitivity, dy * sensitivity };
     if (ensure_loaded() && p_aim) {
         LibreAimResult r = p_aim(dx, dy, sensitivity, profile, accelExp);
