@@ -19,7 +19,7 @@
         android:padding="4dp"
         android:scaleType="fitCenter"
         android:contentDescription="@string/home_tile_instance"
-        android:src="@drawable/ic_mojo_full" />
+        android:src="@drawable/ic_libre_full" />
 
     <LinearLayout
         android:id="@+id/widget_launch_button"

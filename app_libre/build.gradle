@@ -88,7 +88,7 @@ android {
         }
         googlePlayBuild {
             if (System.getenv("UPLOAD_KEYSTORE_PASSWORD") != null && !System.getenv("UPLOAD_KEYSTORE_PASSWORD").isEmpty()) {
-                storeFile file("mojo_upload_next.jks")
+                storeFile file("libre_upload_next.jks")
                 storePassword System.getenv("UPLOAD_KEYSTORE_PASSWORD")
                 keyAlias "key0"
                 keyPassword System.getenv("UPLOAD_KEYSTORE_PASSWORD")
@@ -101,7 +101,7 @@ android {
         }
         publicBuild {
             if (System.getenv("MOJOPUB_KEYSTORE_PASSWORD") != null && !System.getenv("MOJOPUB_KEYSTORE_PASSWORD").isEmpty()) {
-                storeFile file("mojo_release_next.jks")
+                storeFile file("libre_release_next.jks")
                 storePassword System.getenv("MOJOPUB_KEYSTORE_PASSWORD")
                 keyAlias "key0"
                 keyPassword System.getenv("MOJOPUB_KEYSTORE_PASSWORD")

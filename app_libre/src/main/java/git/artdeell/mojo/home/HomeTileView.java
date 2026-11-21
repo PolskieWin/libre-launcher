@@ -187,7 +187,7 @@ final class HomeTileView extends ViewGroup {
         setClickable(true);
         setFocusable(true);
         mIcon = newIcon();
-        mIcon.setImageResource(R.drawable.ic_mojo_full);
+        mIcon.setImageResource(R.drawable.ic_libre_full);
         mTitle = newText(13, true);
         mSubtitle = newText(11, false);
         mSubtitle.setTextColor(ThemeColors.get(this, com.google.android.material.R.attr.colorOnSurfaceVariant));
@@ -257,7 +257,7 @@ final class HomeTileView extends ViewGroup {
         mEditButton.setEnabled(!missing);
         mEditButton.setAlpha(missing ? 0.4f : 1f);
         if (instance == null) {
-            mIcon.setImageResource(R.drawable.ic_mojo_full);
+            mIcon.setImageResource(R.drawable.ic_libre_full);
             mTitle.setText(R.string.home_instance_missing);
             mSubtitle.setText("");
             setContentDescription(resources.getString(R.string.home_instance_missing));

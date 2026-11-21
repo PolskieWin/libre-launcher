@@ -76,7 +76,7 @@ public class QuickInstanceWidgetProvider extends AppWidgetProvider {
                 drawable.draw(canvas);
                 views.setImageViewBitmap(R.id.widget_instance_icon, bitmap);
             } catch (Throwable t) {
-                views.setImageViewResource(R.id.widget_instance_icon, R.drawable.ic_mojo_full);
+                views.setImageViewResource(R.id.widget_instance_icon, R.drawable.ic_libre_full);
             }
 
             Intent launchIntent = new Intent(context, TestStorageActivity.class);
@@ -98,7 +98,7 @@ public class QuickInstanceWidgetProvider extends AppWidgetProvider {
         } else {
             views.setTextViewText(R.id.widget_instance_name, context.getString(R.string.app_short_name));
             views.setTextViewText(R.id.widget_instance_version, context.getString(R.string.home_instance_missing));
-            views.setImageViewResource(R.id.widget_instance_icon, R.drawable.ic_mojo_full);
+            views.setImageViewResource(R.id.widget_instance_icon, R.drawable.ic_libre_full);
 
             Intent openLauncher = new Intent(context, TestStorageActivity.class);
             openLauncher.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);

@@ -303,7 +303,7 @@ public class LauncherActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         boolean launchFromShortcut = savedInstanceState == null && selectShortcutInstance(getIntent());
-        setContentView(R.layout.activity_mojo_ui);
+        setContentView(R.layout.activity_libre_ui);
         MoJsonDownloader.prepareSubstitutionMap(getAssets());
 
         try {
