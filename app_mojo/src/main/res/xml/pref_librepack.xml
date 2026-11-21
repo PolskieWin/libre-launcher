@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <git.artdeell.mojo.prefs.BackButtonPreference />
+
+    <PreferenceCategory android:title="@string/librepack_category_export">
+
+        <androidx.preference.ListPreference
+            android:key="librepack_instance_selector"
+            android:title="@string/librepack_instance_selector_title"
+            android:summary="@string/librepack_instance_selector_summary"
+            android:icon="@drawable/ic_px_folder"
+            android:persistent="false"
+            app:useSimpleSummaryProvider="false" />
+
+        <Preference
+            android:key="librepack_export"
+            android:title="@string/librepack_export_title"
+            android:summary="@string/librepack_export_summary"
+            android:icon="@drawable/ic_px_datapack"
+            android:persistent="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/librepack_category_import">
+
+        <Preference
+            android:key="librepack_import"
+            android:title="@string/librepack_import_title"
+            android:summary="@string/librepack_import_summary"
+            android:icon="@drawable/ic_px_data_import"
+            android:persistent="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

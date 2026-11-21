@@ -1014,4 +1014,27 @@
     <string name="preference_build_debug">Debug</string>
     <string name="preference_build_release">Release</string>
     <string name="preference_about_wiki_summary">Lineage, performance specs, and open-source history</string>
+
+    <!-- LibrePack -->
+    <string name="preference_librepack_title">LibrePack</string>
+    <string name="preference_librepack_description">Export and import instances as .librepack archives</string>
+    <string name="librepack_category_export">Export</string>
+    <string name="librepack_category_import">Import</string>
+    <string name="librepack_instance_selector_title">Instance to export</string>
+    <string name="librepack_instance_selector_summary">Select an instance from the list</string>
+    <string name="librepack_no_instances">No instances found</string>
+    <string name="librepack_export_title">Export .librepack</string>
+    <string name="librepack_export_summary">Pack the selected instance into a .librepack archive</string>
+    <string name="librepack_export_button">Export</string>
+    <string name="librepack_export_confirm_title">Export instance</string>
+    <string name="librepack_export_confirm_message">The archive will be saved to:\n%s</string>
+    <string name="librepack_export_success">Exported: %s</string>
+    <string name="librepack_export_error">Export failed</string>
+    <string name="librepack_select_instance_first">Select an instance first</string>
+    <string name="librepack_instance_load_error">Could not load the selected instance</string>
+    <string name="librepack_import_title">Import .librepack</string>
+    <string name="librepack_import_summary">Restore an instance from a .librepack archive</string>
+    <string name="librepack_import_success">Imported: %s</string>
+    <string name="librepack_import_error_read">Could not read the selected file</string>
+    <string name="librepack_import_error_extract">Import failed</string>
 </resources>
