@@ -15,7 +15,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name='MojoLauncher'
-include ':app_mojo'
+include ':app_libre'
 
 include ':forge_installer'
 include ':glfw:jni_bindings'

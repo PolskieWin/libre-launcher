@@ -1,7 +1,7 @@
 # Libre Launcher (Android)
 
 <p align="center">
-  <img src="./app_mojo/src/main/ic_launcher-playstore.png" width="128" height="128" alt="Libre Launcher (Android) logo"><br>
+  <img src="./app_libre/src/main/ic_launcher-playstore.png" width="128" height="128" alt="Libre Launcher (Android) logo"><br>
   <b>A lightweight, open-source Minecraft: Java Edition launcher for Android</b><br>
   <i>Developed by PolskieWin &bull; Powered by Rust native controls and full Minecraft 26.x support</i>
 </p>
@@ -90,11 +90,11 @@ git clone --recurse-submodules https://github.com/PolskieWin/libre-launcher.git
 cd libre-launcher
 
 # Build Debug APK
-./gradlew :app_mojo:assembleFullDebug
+./gradlew :app_libre:assembleFullDebug
 ```
 
 The resulting APK will be located at:
-`app_mojo/build/outputs/apk/full/debug/app_mojo-full-debug.apk`
+`app_libre/build/outputs/apk/full/debug/app_libre-full-debug.apk`
 
 ### Building the Rust Controls Library
 

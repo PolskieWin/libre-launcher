@@ -32,15 +32,15 @@ jobs:
           workflow: android.yml
           workflow_conclusion: success
           name: output-aar
-          path: app_mojo/libs
+          path: app_libre/libs
 
       - name: Get Mesa
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p app_mojo/libs
-          if [ ! -f app_mojo/libs/mesa.aar ]; then
-            gh run download --repo CopperLauncher/Mesa-AAR-Builder --name mesa.aar --dir app_mojo/libs || true
+          mkdir -p app_libre/libs
+          if [ ! -f app_libre/libs/mesa.aar ]; then
+            gh run download --repo CopperLauncher/Mesa-AAR-Builder --name mesa.aar --dir app_libre/libs || true
           fi
 
       - name: Set up JDK 17
@@ -61,7 +61,7 @@ jobs:
           path: |
             /usr/local/lib/android/sdk/ndk/*/sources/third_party/shaderc/libs
             /usr/local/lib/android/sdk/ndk/*/sources/third_party/shaderc/obj
-          key: shaderc-ndk-v1-${{ runner.os }}-${{ hashFiles('app_mojo/src/main/jni/CMakeLists.txt') }}
+          key: shaderc-ndk-v1-${{ runner.os }}-${{ hashFiles('app_libre/src/main/jni/CMakeLists.txt') }}
 
       - name: Pre-build Shaderc Static Libraries
         if: steps.cache-shaderc.outputs.cache-hit != 'true'
@@ -86,7 +86,7 @@ jobs:
         if: github.repository_owner == 'CopperLauncher' && github.event_name != 'pull_request'
         run: |
           if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app_mojo/mojo_release_next.jks
+            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app_libre/mojo_release_next.jks
           fi
 
       # The Google Play upload key is only needed where the .aab is published
@@ -94,14 +94,14 @@ jobs:
         if: github.repository_owner == 'CopperLauncher' && (github.ref == 'refs/heads/v3_openjdk' || startsWith(github.ref, 'refs/tags/v'))
         run: |
           if [ -n "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > app_mojo/mojo_upload_next.jks
+            echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > app_libre/mojo_upload_next.jks
           fi
 
       - name: Build all variants
         run: |
           mkdir -p out
 
-          TASKS=":app_mojo:assembleFullDebug :app_mojo:assembleNoruntimeDebug :app_mojo:assembleStrippedDebug"
+          TASKS=":app_libre:assembleFullDebug :app_libre:assembleNoruntimeDebug :app_libre:assembleStrippedDebug"
 
           IS_OWNER="false"
           if [ "${{ github.repository_owner }}" = "PolskieWin" ] || [ "${{ github.repository_owner }}" = "CopperLauncher" ]; then
@@ -109,12 +109,12 @@ jobs:
           fi
 
           if [ "$IS_OWNER" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
-            TASKS="$TASKS :app_mojo:assembleFullPubRelease :app_mojo:assembleNoruntimePubRelease :app_mojo:assembleStrippedPubRelease"
+            TASKS="$TASKS :app_libre:assembleFullPubRelease :app_libre:assembleNoruntimePubRelease :app_libre:assembleStrippedPubRelease"
           fi
 
           if [ "${{ github.repository_owner }}" = "CopperLauncher" ]; then
             if [ "${{ github.ref }}" = "refs/heads/v3_openjdk" ] || [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-              TASKS="$TASKS :app_mojo:bundleFullGplay"
+              TASKS="$TASKS :app_libre:bundleFullGplay"
             fi
           fi
 
@@ -122,18 +122,18 @@ jobs:
 
       - name: Collect outputs
         run: |
-          mv app_mojo/build/outputs/apk/full/debug/app_mojo-full-debug.apk out/LibreLauncher-debug-full.apk
-          mv app_mojo/build/outputs/apk/noruntime/debug/app_mojo-noruntime-debug.apk out/LibreLauncher-debug-noruntime.apk
-          mv app_mojo/build/outputs/apk/stripped/debug/app_mojo-stripped-debug.apk out/LibreLauncher-debug-stripped.apk
+          mv app_libre/build/outputs/apk/full/debug/app_libre-full-debug.apk out/LibreLauncher-debug-full.apk
+          mv app_libre/build/outputs/apk/noruntime/debug/app_libre-noruntime-debug.apk out/LibreLauncher-debug-noruntime.apk
+          mv app_libre/build/outputs/apk/stripped/debug/app_libre-stripped-debug.apk out/LibreLauncher-debug-stripped.apk
 
-          [ -f app_mojo/build/outputs/apk/full/pubRelease/app_mojo-full-pubRelease.apk ] && \
-            mv app_mojo/build/outputs/apk/full/pubRelease/app_mojo-full-pubRelease.apk out/LibreLauncher-release.apk || true
-          [ -f app_mojo/build/outputs/apk/noruntime/pubRelease/app_mojo-noruntime-pubRelease.apk ] && \
-            mv app_mojo/build/outputs/apk/noruntime/pubRelease/app_mojo-noruntime-pubRelease.apk out/LibreLauncher-noruntime-release.apk || true
-          [ -f app_mojo/build/outputs/apk/stripped/pubRelease/app_mojo-stripped-pubRelease.apk ] && \
-            mv app_mojo/build/outputs/apk/stripped/pubRelease/app_mojo-stripped-pubRelease.apk out/LibreLauncher-stripped-release.apk || true
-          [ -f app_mojo/build/outputs/bundle/fullGplay/app_mojo-full-gplay.aab ] && \
-            mv app_mojo/build/outputs/bundle/fullGplay/app_mojo-full-gplay.aab out/app-gplay.aab || true
+          [ -f app_libre/build/outputs/apk/full/pubRelease/app_libre-full-pubRelease.apk ] && \
+            mv app_libre/build/outputs/apk/full/pubRelease/app_libre-full-pubRelease.apk out/LibreLauncher-release.apk || true
+          [ -f app_libre/build/outputs/apk/noruntime/pubRelease/app_libre-noruntime-pubRelease.apk ] && \
+            mv app_libre/build/outputs/apk/noruntime/pubRelease/app_libre-noruntime-pubRelease.apk out/LibreLauncher-noruntime-release.apk || true
+          [ -f app_libre/build/outputs/apk/stripped/pubRelease/app_libre-stripped-pubRelease.apk ] && \
+            mv app_libre/build/outputs/apk/stripped/pubRelease/app_libre-stripped-pubRelease.apk out/LibreLauncher-stripped-release.apk || true
+          [ -f app_libre/build/outputs/bundle/fullGplay/app_libre-full-gplay.aab ] && \
+            mv app_libre/build/outputs/bundle/fullGplay/app_libre-full-gplay.aab out/app-gplay.aab || true
 
           cd out && for f in *.apk *.aab; do [ -f "$f" ] && md5sum "$f" > "${f%.*}.md5"; done
 

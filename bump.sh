@@ -2,7 +2,7 @@
 set -euo pipefail
 
 STEP="${1:-50}"
-GRADLE_FILE="app_mojo/build.gradle"
+GRADLE_FILE="app_libre/build.gradle"
 
 python3 - "$GRADLE_FILE" "$STEP" <<'PY'
 import re, sys

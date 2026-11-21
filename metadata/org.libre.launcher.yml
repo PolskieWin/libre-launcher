@@ -20,7 +20,7 @@ Builds:
   - versionName: '3.00'
     versionCode: 300
     commit: v3.00
-    subdir: app_mojo
+    subdir: app_libre
     submodules: true
     sudo:
       - apt-get update
@@ -29,7 +29,7 @@ Builds:
       - noruntimeRelease
     prebuild: rm -rf libs/*.aar libs/*.jar
     scandelete:
-      - app_mojo/libs/
+      - app_libre/libs/
     ndk: 29.0.14206865
 
 AutoUpdateMode: Version

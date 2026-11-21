@@ -12,11 +12,11 @@ To comply strictly with official F-Droid inclusion policies and automated builde
 |---|---|---|
 | **Free / Libre Open Source License** | Compliant | Licensed under **GNU LGPL v3.0** (`LICENSE`). Fully compatible with F-Droid inclusion guidelines. |
 | **No Proprietary Tracking / Ads** | Compliant | Zero analytics, zero Firebase, zero Crashlytics, zero advertising SDKs (verified 0 trackers via Exodus Privacy). |
-| **No Prebuilt Binary Blobs in Maven** | Compliant | Removed `gson-2.8.6.jar`, `ExagearApacheCommons.jar`, and `exp4j-0.4.9-SNAPSHOT.jar` from `app_mojo/libs/`. Replaced with official Maven Central dependencies (`gson:2.10.1`, `commons-io:2.15.1`, `commons-compress:1.26.0`, `commons-lang3:3.14.0`, `exp4j:0.4.8`). |
+| **No Prebuilt Binary Blobs in Maven** | Compliant | Removed `gson-2.8.6.jar`, `ExagearApacheCommons.jar`, and `exp4j-0.4.9-SNAPSHOT.jar` from `app_libre/libs/`. Replaced with official Maven Central dependencies (`gson:2.10.1`, `commons-io:2.15.1`, `commons-compress:1.26.0`, `commons-lang3:3.14.0`, `exp4j:0.4.8`). |
 | **No Copyright-Infringing Assets** | Compliant | Removed unreferenced proprietary `minecraft_ten.ttf` font containing Mojang AB copyright headers from resources. |
 | **Trademark Disclaimers** | Compliant | Added mandatory Mojang/Microsoft trademark disclaimer across `README.md`, `strings.xml`, `wiki_dialog_content`, and Fastlane metadata. |
 | **Fastlane Metadata Structure** | Compliant | Standard Fastlane structure generated at `fastlane/metadata/android/en-US/` with `title.txt`, `short_description.txt`, `full_description.txt`, and 512x512 `icon.png`. |
-| **Deterministic Versioning** | Compliant | Updated `app_mojo/build.gradle` to support `-PversionCode` and `-PversionName` properties, environment variables, git commit counts, and semantic tags instead of hardcoded fallback numbers. |
+| **Deterministic Versioning** | Compliant | Updated `app_libre/build.gradle` to support `-PversionCode` and `-PversionName` properties, environment variables, git commit counts, and semantic tags instead of hardcoded fallback numbers. |
 | **Reproducible No-Runtime Flavor** | Compliant | `noruntime` flavor (`assembleNoruntimeRelease`) does not trigger arbitrary zip downloads during Gradle build execution. |
 | **Source-Built Native Libraries** | Compliant | Native components (`libfreetype.so`, `libGLMojo.so`, `libremobile`, `libre_controls`) compile directly from source submodules without precompiled blobs. |
 
@@ -97,7 +97,7 @@ Builds:
   - versionName: '3.00'
     versionCode: 300
     commit: v3.00
-    subdir: app_mojo
+    subdir: app_libre
     submodules: true
     sudo:
       - apt-get update
@@ -106,7 +106,7 @@ Builds:
       - noruntimeRelease
     ndk: 29.0.14206865
     scandelete:
-      - app_mojo/libs/
+      - app_libre/libs/
     prebuild:
       - rm -rf libs/*.aar libs/*.jar
 
