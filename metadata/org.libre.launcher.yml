@@ -25,18 +25,23 @@ Builds:
     submodules: true
     sudo:
       - apt-get update
-      - apt-get install -y cmake ninja-build
+      - apt-get install -y cmake ninja-build cargo rustc
     gradle:
       - noruntimeRelease
     rm:
       - app_libre/debug.keystore
       - app_libre/libre_release_next.jks
       - app_libre/libre_upload_next.jks
+      - app_libre/src/main/jniLibs/arm64-v8a/liblibre_controls.so
     prebuild:
       - rm -rf libs/*.aar libs/*.jar
       - sed -i '/signingConfig /d' build.gradle
+      - mkdir -p src/main/jniLibs/arm64-v8a
+      - (cd ../libre_controls && cargo build --release) || true
+      - '[ -f ../libre_controls/target/release/liblibre_controls.so ] && cp ../libre_controls/target/release/liblibre_controls.so src/main/jniLibs/arm64-v8a/ || true'
     scandelete:
       - app_libre/libs/
+      - app_libre/src/main/jniLibs/
     ndk: 29.0.14206865
 
 AutoUpdateMode: Version
