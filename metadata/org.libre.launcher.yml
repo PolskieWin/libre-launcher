@@ -1,8 +1,11 @@
 AntiFeatures:
   NonFreeNet:
-    en-US: Connects to Microsoft/Mojang authentication endpoints and downloads official Minecraft game assets from Mojang/Microsoft content delivery networks.
+    en-US: Connects to Microsoft/Mojang authentication endpoints and downloads 
+      official Minecraft game assets from Mojang/Microsoft content delivery 
+      networks.
   NonFreeDep:
-    en-US: Requires a valid Microsoft account and proprietary Minecraft Java Edition game files to function.
+    en-US: Requires a valid Microsoft account and proprietary Minecraft Java 
+      Edition game files to function.
 Categories:
   - Game Helper
 License: LGPL-3.0-or-later
@@ -36,12 +39,14 @@ Builds:
     prebuild:
       - rm -rf libs/*.aar libs/*.jar
       - sed -i '/signingConfig /d' build.gradle
-      - rustup toolchain install stable --profile minimal --target aarch64-linux-android
+      - rustup toolchain install stable --profile minimal --target 
+        aarch64-linux-android
       - rustup default stable
       - cargo install --locked cargo-ndk
       - export ANDROID_NDK_HOME=$$NDK$$
       - mkdir -p src/main/jniLibs/arm64-v8a
-      - (cd ../libre_controls && cargo ndk --platform 24 -t arm64-v8a -o ../app_libre/src/main/jniLibs build --release)
+      - (cd ../libre_controls && cargo ndk --platform 24 -t arm64-v8a -o 
+        ../app_libre/src/main/jniLibs build --release)
     scandelete:
       - app_libre/libs/
     ndk: 29.0.14206865
