@@ -7,6 +7,7 @@ Categories:
   - Game Helper
 License: LGPL-3.0-or-later
 AuthorName: Libre Launcher Contributors
+WebSite: https://polskiewin.github.io/
 SourceCode: https://github.com/PolskieWin/libre-launcher
 IssueTracker: https://github.com/PolskieWin/libre-launcher/issues
 Changelog: https://github.com/PolskieWin/libre-launcher/releases
@@ -17,9 +18,9 @@ RepoType: git
 Repo: https://github.com/PolskieWin/libre-launcher.git
 
 Builds:
-  - versionName: '3.00'
-    versionCode: 300
-    commit: v3.00
+  - versionName: '3.70'
+    versionCode: 370
+    commit: d24f06b3c5a71d2b8f362f080d89923345aca36b
     subdir: app_libre
     submodules: true
     sudo:
@@ -27,12 +28,18 @@ Builds:
       - apt-get install -y cmake ninja-build
     gradle:
       - noruntimeRelease
-    prebuild: rm -rf libs/*.aar libs/*.jar
+    rm:
+      - app_libre/debug.keystore
+      - app_libre/libre_release_next.jks
+      - app_libre/libre_upload_next.jks
+    prebuild:
+      - rm -rf libs/*.aar libs/*.jar
+      - sed -i '/signingConfig /d' build.gradle
     scandelete:
       - app_libre/libs/
     ndk: 29.0.14206865
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
-CurrentVersion: '3.00'
-CurrentVersionCode: 300
+CurrentVersion: '3.70'
+CurrentVersionCode: 370
