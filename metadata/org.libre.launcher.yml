@@ -25,7 +25,7 @@ Builds:
     submodules: true
     sudo:
       - apt-get update
-      - apt-get install -y cmake ninja-build cargo rustc
+      - apt-get install -y cmake ninja-build rustup
     gradle:
       - noruntimeRelease
     rm:
@@ -36,12 +36,14 @@ Builds:
     prebuild:
       - rm -rf libs/*.aar libs/*.jar
       - sed -i '/signingConfig /d' build.gradle
+      - rustup toolchain install stable --profile minimal --target aarch64-linux-android
+      - rustup default stable
+      - cargo install --locked cargo-ndk
+      - export ANDROID_NDK_HOME=$$NDK$$
       - mkdir -p src/main/jniLibs/arm64-v8a
-      - (cd ../libre_controls && cargo build --release) || true
-      - '[ -f ../libre_controls/target/release/liblibre_controls.so ] && cp ../libre_controls/target/release/liblibre_controls.so src/main/jniLibs/arm64-v8a/ || true'
+      - (cd ../libre_controls && cargo ndk --platform 24 -t arm64-v8a -o ../app_libre/src/main/jniLibs build --release)
     scandelete:
       - app_libre/libs/
-      - app_libre/src/main/jniLibs/
     ndk: 29.0.14206865
 
 AutoUpdateMode: Version
